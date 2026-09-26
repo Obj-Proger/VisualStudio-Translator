@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VisualStudioTranslator.Core/VisualStudioTranslator.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VisualStudioTranslator.Core.Tests/VisualStudioTranslator.Core.Tests.csproj" />
+  </Folder>
+</Solution>
