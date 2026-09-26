@@ -1,5 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using PolyType;
+using StreamJsonRpc;
 
 namespace VisualStudioTranslator.Core.Rpc;
 
@@ -7,7 +9,9 @@ namespace VisualStudioTranslator.Core.Rpc;
 /// The RPC contract exposed by the Engine process over the named pipe. Implemented by
 /// the Engine and consumed by the Vsix client through a StreamJsonRpc proxy.
 /// </summary>
-public interface ITranslatorService
+[JsonRpcContract]
+[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+public partial interface ITranslatorService
 {
     /// <summary>
     /// The first call a client makes after connecting. Lets both sides confirm they

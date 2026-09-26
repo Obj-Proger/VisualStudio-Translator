@@ -1,11 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="PolySharp" PrivateAssets="all" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="PolySharp" PrivateAssets="all" />
+		<PackageReference Include="StreamJsonRpc" />
+	</ItemGroup>
 
 </Project>
