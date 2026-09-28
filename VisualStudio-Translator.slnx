@@ -1,10 +1,13 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/VisualStudioTranslator.Core/VisualStudioTranslator.Core.csproj" />
-    <Project Path="src/VisualStudioTranslator.Engine/VisualStudioTranslator.Engine.csproj" Id="5998ea98-4783-4df8-afd3-680bc8b86c58" />
+    <Project Path="src/VisualStudioTranslator.Engine/VisualStudioTranslator.Engine.csproj" />
+    <Project Path="src/VisualStudioTranslator.Vsix/VisualStudioTranslator.Vsix.csproj">
+      <Deploy Solution="Debug|*" />
+    </Project>
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/VisualStudioTranslator.Core.Tests/VisualStudioTranslator.Core.Tests.csproj" />
-    <Project Path="tests/VisualStudioTranslator.Engine.Tests/VisualStudioTranslator.Engine.Tests.csproj" Id="780953b5-d8aa-4cf4-a3a8-e713263fa48f" />
+    <Project Path="tests/VisualStudioTranslator.Engine.Tests/VisualStudioTranslator.Engine.Tests.csproj" />
   </Folder>
 </Solution>

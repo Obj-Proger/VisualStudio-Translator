@@ -33,7 +33,6 @@ msbuild.wrn
 **/AppHost/
 
 ## Build results VSIX
-*.vsix
 BuildOutput/
 
 ## Test results
@@ -80,3 +79,6 @@ Thumbs.db
 *.pfx
 *.snk
 !build/signing/*.snk
+
+## VSIX generated manifests
+##.source.extension.vsixmanifest

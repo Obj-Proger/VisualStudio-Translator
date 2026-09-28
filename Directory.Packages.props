@@ -9,6 +9,26 @@
 		<PackageVersion Include="StreamJsonRpc" Version="2.25.29" />
 	</ItemGroup>
 
+	<!-- VisualStudioTranslator.Engine -->
+	<ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Engine'">
+		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+		<PackageVersion Include="StreamJsonRpc" Version="2.25.29" />
+	</ItemGroup>
+
+	<!-- VisualStudioTranslator.Vsix -->
+	<ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Vsix'">
+		<PackageVersion Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" />
+		<PackageVersion Include="Microsoft.VSSDK.BuildTools" Version="18.5.40034" />
+		<PackageVersion Include="VSIX-SdkProjectAdapter" Version="4.0.0" />
+
+		<!-- MessagePack is not referenced directly; it comes in transitively via
+         Microsoft.VisualStudio.SDK. GlobalPackageReference both adds the reference and
+         carries its own version - it must NOT be paired with a separate PackageVersion
+         entry for the same package, or NuGet reports NU1506 (duplicate). Pinned to
+         clear known advisories in the version the SDK would otherwise pull in. -->
+		<GlobalPackageReference Include="MessagePack" Version="3.1.10" />
+	</ItemGroup>
+	
 	<!-- VisualStudioTranslator.Core.Tests -->
 	<ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Core.Tests'">
 		<PackageVersion Include="xunit.v3" Version="4.0.1" />
@@ -16,24 +36,12 @@
 		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
 		<PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
 	</ItemGroup>
-
-	<!-- VisualStudioTranslator.Engine -->
-	<ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Engine'">
-		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
-		<PackageVersion Include="StreamJsonRpc" Version="2.25.29" />
-	</ItemGroup>
-
+	
 	<!-- VisualStudioTranslator.Engine.Tests -->
 	<ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Engine.Tests'">
 		<PackageVersion Include="xunit.v3" Version="4.0.1" />
 		<PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
 		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
 		<PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
-	</ItemGroup>
-
-	<!-- VisualStudioTranslator.Vsix -->
-	<ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Vsix'">
-		<PackageVersion Include="Microsoft.VisualStudio.SDK" Version="17.10.40171" />
-		<PackageVersion Include="Microsoft.VSSDK.BuildTools" Version="18.5.40034" />
 	</ItemGroup>
 </Project>
