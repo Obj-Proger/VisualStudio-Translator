@@ -80,6 +80,6 @@ internal sealed class NamedPipeRpcServer(ITranslatorService service, ILogger<Nam
     private static string BuildPipeName()
     {
         string? userSid = WindowsIdentity.GetCurrent().User?.Value;
-        return $"VisualStudioTranslator-{userSid}-v{ProtocolVersion.Major}";
+        return PipeNaming.GetPipeName(userSid ?? "unknown");
     }
 }

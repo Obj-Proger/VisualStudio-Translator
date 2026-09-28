@@ -1,38 +1,59 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
-    <GeneratePkgDefFile>true</GeneratePkgDefFile>
-    <!-- VSIX-SdkProjectAdapter's README says it sets this by default, but in practice
-         it still warns without it being set explicitly here — without it, the tasks
+	<PropertyGroup>
+		<TargetFramework>net48</TargetFramework>
+		<GeneratePkgDefFile>true</GeneratePkgDefFile>
+		<!-- VSIX-SdkProjectAdapter's README says it sets this by default, but in practice
+         it still warns without it being set explicitly here - without it, the tasks
          that actually build the .vsix container and deploy it never run. -->
-    <VSSDKBuildToolsAutoSetup>true</VSSDKBuildToolsAutoSetup>
-  </PropertyGroup>
+		<VSSDKBuildToolsAutoSetup>true</VSSDKBuildToolsAutoSetup>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <!-- Deploys the built VSIX into the experimental hive so F5 actually installs it,
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+		<!-- Deploys the built VSIX into the experimental hive so F5 actually installs it,
          instead of just starting a plain devenv.exe that knows nothing about it. -->
-    <DeployExtension>true</DeployExtension>
-  </PropertyGroup>
+		<DeployExtension>true</DeployExtension>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <!-- Launches the experimental instance on F5. -->
-    <StartAction>Program</StartAction>
-    <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
-    <StartArguments>/rootSuffix Exp /log</StartArguments>
-  </PropertyGroup>
+	<PropertyGroup>
+		<!-- Launches the experimental instance on F5. -->
+		<StartAction>Program</StartAction>
+		<StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+		<StartArguments>/rootSuffix Exp /log</StartArguments>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.SDK" />
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" />
-    <!-- Wires Microsoft.VSSDK.BuildTools correctly into an SDK-style project: brings in
-         the real packaging/deploy targets (tools\vssdk\Microsoft.VsSDK.targets), which
-         NuGet does not auto-import on its own, without the target-graph conflicts a bare
-         manual <Import> of that file caused (it broke the base "Build" target). -->
-    <PackageReference Include="VSIX-SdkProjectAdapter" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.VisualStudio.SDK" />
+		<PackageReference Include="Microsoft.VSSDK.BuildTools" />
+		<PackageReference Include="VSIX-SdkProjectAdapter" />
+	</ItemGroup>
 
-  <!-- Lets source.extension.vsixmanifest read a build-time version, like a NuGet package would. -->
-  <Target Name="GetVersion" Returns="$(Version)" />
+	<ItemGroup>
+		<!-- Contracts and the pure pipe-naming logic shared with the Engine. This is the
+         only cross-project reference allowed here: net48 cannot reference a
+         net10.0-windows assembly (Engine) under any circumstances, not even with
+         ReferenceOutputAssembly="false" - MSBuild rejects the reference itself before
+         it even gets to deciding what to link. The Vsix only ever talks to the Engine
+         as a separate process, over the named pipe (see Service/ServiceLauncher.cs and
+         Service/ServiceClient.cs). Visual Studio's own "Build Solution" step on F5
+         builds every project in the solution, Engine included, so its output is already
+         on disk by the time ServiceLauncher looks for it - no project-to-project
+         reference is needed for that ordering either. -->
+		<ProjectReference Include="..\VisualStudioTranslator.Core\VisualStudioTranslator.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Baked into the assembly so ServiceLauncher can find the Engine's build output
+         computed here, at build time, when $(MSBuildThisFileDirectory) is still the real
+         path on disk - even once this DLL is later running from the experimental hive's
+         deployed extension folder, nowhere near that path. Development-time only: this
+         whole discovery mechanism goes away once the real ServiceLauncher (a later
+         commit) copies the Engine into %LOCALAPPDATA% itself instead of running it in
+         place from the repository. -->
+		<AssemblyMetadata Include="DevelopmentEnginePath" Value="$(MSBuildThisFileDirectory)..\VisualStudioTranslator.Engine\bin\$(Configuration)\net10.0-windows\VisualStudioTranslator.Engine.exe" />
+	</ItemGroup>
+
+	<!-- Lets source.extension.vsixmanifest read a build-time version, like a NuGet package would. -->
+	<Target Name="GetVersion" Returns="$(Version)" />
 
 </Project>
