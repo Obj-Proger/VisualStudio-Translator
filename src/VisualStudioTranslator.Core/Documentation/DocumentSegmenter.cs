@@ -53,11 +53,17 @@ public static class DocumentSegmenter
     private static DocumentModel Walk(
         DocumentModel model, ref int nextId, Func<int, IReadOnlyList<Inline>, IReadOnlyList<Inline>> visit)
     {
+        // IDE0028 suggests collapsing this into a `[.. model.Examples.Select(...)]`
+        // collection expression. That would require capturing `nextId` - a ref
+        // parameter of this method - inside the Select lambda, which C# does not allow
+        // (CS1628). The explicit loop is the correct form here, not a style regression.
+#pragma warning disable IDE0028
         List<Section> examples = new(model.Examples.Count);
         foreach (Section example in model.Examples)
         {
             examples.Add(WalkSection(example, ref nextId, visit));
         }
+#pragma warning restore IDE0028
 
         return model with
         {
@@ -77,14 +83,17 @@ public static class DocumentSegmenter
     private static IReadOnlyList<NamedSection> WalkNamedSections(
         IReadOnlyList<NamedSection> sections, ref int nextId, Func<int, IReadOnlyList<Inline>, IReadOnlyList<Inline>> visit)
     {
-        // A ref parameter cannot be captured by a lambda, so this is an explicit loop
-        // rather than a LINQ Select - here and in the two walkers below.
+        // See the comment on the identical pragma in Walk(): a ref parameter cannot be
+        // captured by a lambda, so this cannot become a Select-based collection
+        // expression, and this is the explicit loop that IDE0028 does not account for.
+#pragma warning disable IDE0028
         List<NamedSection> result = new(sections.Count);
         foreach (NamedSection section in sections)
         {
             result.Add(section with { Content = WalkSection(section.Content, ref nextId, visit) });
         }
         return result;
+#pragma warning restore IDE0028
     }
 
     private static Section? WalkSectionOrNull(
@@ -94,12 +103,15 @@ public static class DocumentSegmenter
     private static Section WalkSection(
         Section section, ref int nextId, Func<int, IReadOnlyList<Inline>, IReadOnlyList<Inline>> visit)
     {
+        // See the comment on the identical pragma in Walk().
+#pragma warning disable IDE0028
         List<Block> blocks = new(section.Blocks.Count);
         foreach (Block block in section.Blocks)
         {
             blocks.Add(WalkBlock(block, ref nextId, visit));
         }
         return section with { Blocks = blocks };
+#pragma warning restore IDE0028
     }
 
     private static Block WalkBlock(Block block, ref int nextId, Func<int, IReadOnlyList<Inline>, IReadOnlyList<Inline>> visit)
@@ -110,12 +122,15 @@ public static class DocumentSegmenter
                 return paragraph with { Inlines = visit(nextId++, paragraph.Inlines) };
 
             case ListBlock list:
+                // See the comment on the identical pragma in Walk().
+#pragma warning disable IDE0028
                 List<ListItem> items = new(list.Items.Count);
                 foreach (ListItem item in list.Items)
                 {
                     items.Add(WalkListItem(item, ref nextId, visit));
                 }
                 return list with { Items = items };
+#pragma warning restore IDE0028
 
             // Paragraph with no inlines (defensive - the parser never produces one) and
             // CodeBlock (never a translation unit) both pass through unchanged.
