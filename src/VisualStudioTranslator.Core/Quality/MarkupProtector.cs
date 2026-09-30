@@ -111,6 +111,31 @@ public static class MarkupProtector
         return result;
     }
 
+    /// <summary>
+    /// Splits <paramref name="text"/> into alternating plain-text and placeholder-token
+    /// spans, using the same token syntax <see cref="Protect"/> produces. Exposed
+    /// internally so <see cref="GlossaryProtector"/> can apply glossary matching only
+    /// within the plain-text spans, never inside or across a placeholder token that
+    /// already protects real markup.
+    /// </summary>
+    internal static IEnumerable<(string Text, bool IsPlaceholder)> SplitOnPlaceholders(string text)
+    {
+        int position = 0;
+        foreach (Match match in PlaceholderPattern.Matches(text))
+        {
+            if (match.Index > position)
+            {
+                yield return (text[position..match.Index], false);
+            }
+            yield return (match.Value, true);
+            position = match.Index + match.Length;
+        }
+        if (position < text.Length)
+        {
+            yield return (text[position..], false);
+        }
+    }
+
     private static void AppendInlines(
         IReadOnlyList<Inline> inlines, StringBuilder text, Dictionary<int, ProtectedPlaceholder> placeholders, ref int nextId)
     {
