@@ -45,4 +45,13 @@ public sealed record TranslationValidationOptions
     /// output is expected, e.g. the text was already in the target language.
     /// </summary>
     public bool RequireDifferentFromSource { get; init; } = true;
+
+    /// <summary>
+    /// The defaults, with <see cref="TargetScripts"/> filled in from the language being
+    /// translated into ("ru" gives Cyrillic, "ja" gives Han, Hiragana and Katakana). Latin-script
+    /// languages, languages written in a script <see cref="WritingScript"/> does not list,
+    /// and invalid tags all get an empty set, so the script check simply does not run.
+    /// </summary>
+    public static TranslationValidationOptions ForTarget(string? targetLanguage) =>
+        new() { TargetScripts = LanguageScripts.For(targetLanguage) };
 }
