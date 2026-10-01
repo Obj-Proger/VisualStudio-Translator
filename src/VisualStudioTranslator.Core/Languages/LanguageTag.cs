@@ -43,7 +43,7 @@ public static class LanguageTag
             else if (i == 1 && subtag.Length == 4 && subtag.All(IsAsciiLetter))
             {
                 // Script: four letters, title case ("Hans", "Latn").
-                result[i] = char.ToUpperInvariant(subtag[0]) + subtag.Substring(1).ToLowerInvariant();
+                result[i] = char.ToUpperInvariant(subtag[0]) + subtag[1..].ToLowerInvariant();
                 hasScript = true;
             }
             else if (i <= (hasScript ? 2 : 1)

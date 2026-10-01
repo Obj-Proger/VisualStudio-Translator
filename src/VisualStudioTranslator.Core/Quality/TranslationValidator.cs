@@ -132,7 +132,8 @@ public static class TranslationValidator
 
     private static Dictionary<string, int> CountTokens(string text)
     {
-        Dictionary<string, int> counts = new(StringComparer.Ordinal);
+        // Dictionary<string, ...> compares keys ordinally by default, which is what token ids need.
+        Dictionary<string, int> counts = [];
 
         foreach ((string chunk, bool isPlaceholder) in MarkupProtector.SplitOnPlaceholders(text))
         {
@@ -164,14 +165,14 @@ public static class TranslationValidator
             }
 
             // A wrapper token is "⟦" + id + ":o" (or ":c") + "⟧". Dropping the leading
-            // bracket and the three trailing characters leaves the id, hence Length - 4.
+            // bracket and the three trailing characters leaves the id, which is [1..^3].
             if (chunk.EndsWith(":o⟧", StringComparison.Ordinal))
             {
-                open.Push(chunk.Substring(1, chunk.Length - 4));
+                open.Push(chunk[1..^3]);
             }
             else if (chunk.EndsWith(":c⟧", StringComparison.Ordinal))
             {
-                if (open.Count == 0 || open.Pop() != chunk.Substring(1, chunk.Length - 4))
+                if (open.Count == 0 || open.Pop() != chunk[1..^3])
                 {
                     return false;
                 }
@@ -197,7 +198,7 @@ public static class TranslationValidator
     }
 
     private static bool EndsWithTerminator(string text) =>
-        SentenceTerminators.IndexOf(text[text.Length - 1]) >= 0;
+        SentenceTerminators.IndexOf(text[^1]) >= 0;
 
     private static void CheckStatistics(
         string source, string translation, TranslationValidationOptions options, List<ValidationIssue> issues)
