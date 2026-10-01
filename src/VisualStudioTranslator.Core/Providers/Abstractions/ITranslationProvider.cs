@@ -3,7 +3,7 @@
 namespace VisualStudioTranslator.Core.Providers.Abstractions;
 
 /// <summary>
-/// A translation backend: the local Bergamot engine, or a cloud service. This is the only
+/// A translation backend: the local engine, or a cloud service. This is the only
 /// seam between the pipeline and a specific provider, so everything the pipeline needs to
 /// know about one is on this interface.
 /// <para>

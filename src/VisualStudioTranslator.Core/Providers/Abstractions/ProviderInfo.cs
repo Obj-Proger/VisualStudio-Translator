@@ -17,7 +17,7 @@ public enum ProviderKind
 public sealed record ProviderInfo
 {
     /// <summary>
-    /// Stable, lowercase identifier such as "bergamot". Part of every cache key and of the
+    /// Stable, lowercase identifier such as "azure". Part of every cache key and of the
     /// saved settings, so it must never change once released.
     /// </summary>
     public required string Id { get; init; }
