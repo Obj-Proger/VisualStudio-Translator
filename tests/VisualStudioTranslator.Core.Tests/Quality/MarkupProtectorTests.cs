@@ -241,4 +241,28 @@ public sealed partial class MarkupProtectorTests
             new EmphasisRun { Content = [new TextRun { Text = "never closed" }] },
         ]);
     }
+
+    [Theory]
+    [InlineData("⟦99999999999999999999⟧")] // does not fit an Int32
+    [InlineData("⟦\u0663⟧")] // Arabic-Indic digit three: \d matches it, int.Parse does not
+    [InlineData("⟦\u0663:o⟧x⟦\u0663:c⟧")]
+    public void Restore_PlaceholderIdThatIsNotAnInt32_DoesNotThrow(string translated)
+    {
+        Dictionary<int, ProtectedPlaceholder> placeholders = new()
+        {
+            [3] = new ProtectedPlaceholder { Kind = PlaceholderKind.Node, Node = new CodeSpan { Text = "x" } },
+        };
+
+        Action act = () => MarkupProtector.Restore(translated, placeholders);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Restore_PlaceholderIdThatIsNotAnInt32_DropsTokenAndKeepsSurroundingText()
+    {
+        IReadOnlyList<Inline> result = MarkupProtector.Restore("see ⟦\u0663⟧ now", new Dictionary<int, ProtectedPlaceholder>());
+
+        result.Should().BeEquivalentTo([new TextRun { Text = "see  now" }]);
+    }
 }

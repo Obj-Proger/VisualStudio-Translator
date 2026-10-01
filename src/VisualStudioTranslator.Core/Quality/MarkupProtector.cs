@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using VisualStudioTranslator.Core.Documentation;
 
@@ -65,7 +66,17 @@ public static class MarkupProtector
             pendingText.Append(translatedText, position, match.Index - position);
             position = match.Index + match.Length;
 
-            int id = int.Parse(match.Groups[1].Value);
+            // The pattern's \d matches any Unicode decimal digit, of any length, but only
+            // a plain ASCII id that fits an Int32 is one Protect could have issued. A
+            // provider may localize the digits (Arabic-Indic ones for an Arabic target) or
+            // mangle a token into an oversized number; int.Parse would throw
+            // FormatException or OverflowException on those. Such a token is dropped like
+            // any other unrecognized one.
+            if (!int.TryParse(match.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out int id))
+            {
+                continue;
+            }
+
             string? marker = match.Groups[2].Success ? match.Groups[2].Value : null;
 
             if (marker is null)
