@@ -12,6 +12,15 @@ public sealed record ProtectedSegment
     public required string Text { get; init; }
 
     public required IReadOnlyDictionary<int, ProtectedPlaceholder> Placeholders { get; init; }
+
+    /// <summary>
+    /// Whether any text outside the placeholder tokens contains a letter. A segment made only
+    /// of placeholders, digits and punctuation has nothing for a provider to translate, so
+    /// sending it would cost a request and risk a mangled result for no benefit. A method
+    /// rather than a property so it is never picked up as data if the record is serialized.
+    /// </summary>
+    public bool ContainsTranslatableText() =>
+        MarkupProtector.SplitOnPlaceholders(Text).Any(part => !part.IsPlaceholder && part.Text.Any(char.IsLetter));
 }
 
 public enum PlaceholderKind
