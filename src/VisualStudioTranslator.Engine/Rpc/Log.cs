@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using VisualStudioTranslator.Core.Languages;
 
 namespace VisualStudioTranslator.Engine.Rpc;
 
@@ -26,4 +27,10 @@ internal static partial class Log
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "A client connection on '{PipeName}' ended unexpectedly.")]
     public static partial void ClientConnectionEndedUnexpectedly(this ILogger logger, string pipeName, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "No registered provider can translate {LanguagePair}.")]
+    public static partial void NoProviderAvailable(this ILogger logger, LanguagePair languagePair);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Translated documentation: {Segments} segments, {Cached} cached, {Translated} translated, {Unchanged} unchanged.")]
+    public static partial void DocumentationTranslated(this ILogger logger, int segments, int cached, int translated, int unchanged);
 }

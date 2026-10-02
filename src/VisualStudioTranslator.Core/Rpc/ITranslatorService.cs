@@ -18,4 +18,13 @@ public partial interface ITranslatorService
     /// speak a compatible protocol version before anything else happens.
     /// </summary>
     Task<ServiceInfo> HandshakeAsync(ClientInfo client, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Translates one documentation comment. Never fails because of the content: whatever
+    /// cannot be translated comes back in its original language, and
+    /// <see cref="TranslateDocumentationResult.Outcome"/> and the counts say how much was done.
+    /// Added in protocol version 1.1.
+    /// </summary>
+    Task<TranslateDocumentationResult> TranslateDocumentationAsync(
+        TranslateDocumentationRequest request, CancellationToken cancellationToken);
 }

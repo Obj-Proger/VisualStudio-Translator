@@ -3,14 +3,15 @@
 /// <summary>
 /// How a <see cref="GlossaryEntry"/> should be handled when its term appears in text
 /// being translated.
+/// Sent over the RPC channel as a number: do not renumber, add new members at the end
 /// </summary>
 public enum GlossaryEntryKind
 {
     /// <summary>The term is left exactly as the author wrote it, in whatever casing matched.</summary>
-    DoNotTranslate,
+    DoNotTranslate = 0,
 
     /// <summary>The term is replaced with <see cref="GlossaryEntry.Replacement"/> before translation.</summary>
-    TranslateAs,
+    TranslateAs = 1,
 }
 
 /// <summary>One user-configured glossary term and how to handle it.</summary>
