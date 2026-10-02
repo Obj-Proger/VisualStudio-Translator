@@ -3,13 +3,15 @@ using Microsoft.Extensions.Hosting;
 using VisualStudioTranslator.Core.Caching;
 using VisualStudioTranslator.Core.Rpc;
 using VisualStudioTranslator.Engine.Caching;
+using VisualStudioTranslator.Engine.LocalTranslation;
 using VisualStudioTranslator.Engine.Rpc;
 using VisualStudioTranslator.Engine.Translation;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
-// Providers are registered here as they are written; with none registered the service
-// answers every translation request with NoProviderAvailable.
+// Providers are registered here as they are written. A provider whose models are not
+// installed simply reports that it does not support a language pair.
+builder.Services.AddLocalTranslation();
 builder.Services.AddSingleton<ITranslationCache, MemoryTranslationCache>();
 builder.Services.AddSingleton<TranslationOrchestrator>();
 builder.Services.AddSingleton<ITranslatorService, TranslatorService>();
