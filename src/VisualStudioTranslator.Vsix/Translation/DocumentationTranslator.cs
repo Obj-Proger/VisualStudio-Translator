@@ -19,22 +19,16 @@ namespace VisualStudioTranslator.Vsix.Translation;
 /// gets nothing, but the request is not abandoned: it carries on and fills the Engine's cache,
 /// so the next hover over the same symbol is answered at once.
 /// </summary>
-internal sealed class DocumentationTranslator
+internal sealed class DocumentationTranslator(EngineConnection connection)
 {
     // Documentation is written in English until the user can say otherwise.
     private const string SourceLanguage = "en";
 
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(60);
 
-    private readonly EngineConnection _connection;
-    private readonly InFlightRequests<DocumentModel?> _inFlight = new InFlightRequests<DocumentModel?>();
-    private readonly object _reportedSync = new object();
-    private readonly HashSet<TranslationOutcome> _reportedOutcomes = new HashSet<TranslationOutcome>();
-
-    public DocumentationTranslator(EngineConnection connection)
-    {
-        _connection = connection;
-    }
+    private readonly InFlightRequests<DocumentModel?> _inFlight = new();
+    private readonly object _reportedSync = new();
+    private readonly HashSet<TranslationOutcome> _reportedOutcomes = [];
 
     public static DocumentationTranslator Shared { get; } = new DocumentationTranslator(EngineConnection.Shared);
 
@@ -79,42 +73,40 @@ internal sealed class DocumentationTranslator
     private async Task<DocumentModel?> TranslateAsync(string documentationXml, string targetLanguage)
     {
         ITranslatorService? service = null;
+        using CancellationTokenSource timeout = new(RequestTimeout);
 
-        using (CancellationTokenSource timeout = new CancellationTokenSource(RequestTimeout))
+        try
         {
-            try
-            {
-                service = await _connection.GetServiceAsync(timeout.Token).ConfigureAwait(false);
+            service = await connection.GetServiceAsync(timeout.Token).ConfigureAwait(false);
 
-                TranslateDocumentationResult result = await service.TranslateDocumentationAsync(
-                    new TranslateDocumentationRequest
-                    {
-                        DocumentationXml = documentationXml,
-                        SourceLanguage = SourceLanguage,
-                        TargetLanguage = targetLanguage,
-                    },
-                    timeout.Token).ConfigureAwait(false);
-
-                if (result.TranslatedCount + result.CachedCount == 0)
+            TranslateDocumentationResult result = await service.TranslateDocumentationAsync(
+                new TranslateDocumentationRequest
                 {
-                    ReportOnce(result);
-                    return null;
-                }
+                    DocumentationXml = documentationXml,
+                    SourceLanguage = SourceLanguage,
+                    TargetLanguage = targetLanguage,
+                },
+                timeout.Token).ConfigureAwait(false);
 
-                return DocumentationXmlParser.Parse(result.DocumentationXml);
-            }
-            catch (Exception ex)
+            if (result.TranslatedCount + result.CachedCount == 0)
             {
-                // A call the Engine answered with an error leaves the connection healthy; anything
-                // else (a broken pipe, a timeout) may not, so the next request connects afresh.
-                if (service != null && !(ex is RemoteInvocationException))
-                {
-                    _connection.ReportFailure(service);
-                }
-
-                ActivityLog.LogError(nameof(DocumentationTranslator), $"Translation request failed: {ex}");
+                ReportOnce(result);
                 return null;
             }
+
+            return DocumentationXmlParser.Parse(result.DocumentationXml);
+        }
+        catch (Exception ex)
+        {
+            // A call the Engine answered with an error leaves the connection healthy; anything
+            // else (a broken pipe, a timeout) may not, so the next request connects afresh.
+            if (service != null && ex is not RemoteInvocationException)
+            {
+                connection.ReportFailure(service);
+            }
+
+            ActivityLog.LogError(nameof(DocumentationTranslator), $"Translation request failed: {ex}");
+            return null;
         }
     }
 

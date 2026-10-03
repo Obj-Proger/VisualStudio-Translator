@@ -8,21 +8,14 @@ using Microsoft.VisualStudio.Text;
 namespace VisualStudioTranslator.Vsix.Symbols;
 
 /// <summary>The documentation of the symbol under the pointer, and where that symbol's token sits in the text.</summary>
-internal sealed class SymbolDocumentation
+internal sealed class SymbolDocumentation(string xml, int spanStart, int spanLength)
 {
-    public SymbolDocumentation(string xml, int spanStart, int spanLength)
-    {
-        Xml = xml;
-        SpanStart = spanStart;
-        SpanLength = spanLength;
-    }
-
     /// <summary>The documentation comment as XML, as <c>ISymbol.GetDocumentationCommentXml()</c> returns it.</summary>
-    public string Xml { get; }
+    public string Xml { get; } = xml;
 
-    public int SpanStart { get; }
+    public int SpanStart { get; } = spanStart;
 
-    public int SpanLength { get; }
+    public int SpanLength { get; } = spanLength;
 }
 
 /// <summary>

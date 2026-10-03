@@ -81,4 +81,11 @@ Thumbs.db
 !build/signing/*.snk
 
 ## VSIX generated manifests
-##.source.extension.vsixmanifest
+**/extension.vsixmanifest
+**/merged.source.extension.vsixmanifest
+
+## Visual Studio upgrade wizard leftovers
+Backup*/
+UpgradeLog*.htm
+UpgradeLog*.XML
+_UpgradeReport_Files/

@@ -193,11 +193,16 @@ internal sealed class TranslationOrchestrator(ITranslationCache cache, ILogger<T
             for (int i = 0; i < batch.Count; i++)
             {
                 Group group = batch[i];
-                string translated = results[i] ?? string.Empty;
 
                 // Every member shares the same protected text, so the first one stands for all.
+                ProtectedSegment protectedSegment = group.Members[0].Protected;
+
+                // Cleaned before validating and caching, so a stray character from the model is
+                // neither judged as part of the translation nor kept in the cache.
+                string translated = PlaceholderArtifacts.Clean(protectedSegment.Text, results[i] ?? string.Empty);
+
                 TranslationValidationResult validation = TranslationValidator.Validate(
-                    group.Members[0].Protected, translated, options);
+                    protectedSegment, translated, options);
 
                 if (!validation.IsValid)
                 {

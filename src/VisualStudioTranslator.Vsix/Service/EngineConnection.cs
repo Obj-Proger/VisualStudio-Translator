@@ -24,8 +24,8 @@ internal sealed class EngineConnection
     private static readonly TimeSpan RunningEngineTimeout = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan StartedEngineTimeout = TimeSpan.FromSeconds(15);
 
-    private readonly SemaphoreSlim _connecting = new SemaphoreSlim(1, 1);
-    private readonly object _sync = new object();
+    private readonly SemaphoreSlim _connecting = new(1, 1);
+    private readonly object _sync = new();
     private ServiceClient? _client;
 
     public static EngineConnection Shared { get; } = new EngineConnection();
@@ -127,7 +127,7 @@ internal sealed class EngineConnection
 
         try
         {
-            ClientInfo clientInfo = new ClientInfo
+            ClientInfo clientInfo = new()
             {
                 ProductName = "Visual Studio",
                 VisualStudioVersion = "unknown",

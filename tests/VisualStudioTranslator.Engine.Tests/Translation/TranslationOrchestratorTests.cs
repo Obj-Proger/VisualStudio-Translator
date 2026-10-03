@@ -31,6 +31,7 @@ public sealed class TranslationOrchestratorTests
         [Removes] = "Удаляет элемент из списка.",
         ["Returns the number of items in ⟦0⟧."] = "Возвращает количество элементов в ⟦0⟧.",
         ["Gets the ⟦0⟧ instance now."] = "Получает ⟦0⟧ экземпляр сейчас.",
+        ["Removes the ⟦0⟧ item from the list."] = "Удаляет элемент ⟦0⟧ ] из списка.",
     };
 
     private static readonly LanguagePair EnglishToRussian = LanguagePair.Create("en", "ru")!;
@@ -130,6 +131,35 @@ public sealed class TranslationOrchestratorTests
         Segment translated = DocumentSegmenter.Segment(result.Document).Single();
         translated.Inlines.OfType<CodeSpan>().Single().Text.Should().Be("List<T>");
         Texts(result.Document).Single().Should().Be("Возвращает количество элементов в .");
+    }
+
+    [Fact]
+    public async Task TranslateAsync_StrayBracketAfterAPlaceholder_IsRemovedBeforeTheTranslationIsUsed()
+    {
+        DocumentModel document = new()
+        {
+            Summary = new Section
+            {
+                Blocks =
+                [
+                    new Paragraph
+                    {
+                        Inlines =
+                        [
+                            new TextRun { Text = "Removes the " },
+                            new CodeSpan { Text = "x" },
+                            new TextRun { Text = " item from the list." },
+                        ],
+                    },
+                ],
+            },
+        };
+
+        TranslationResult result = await Orchestrator(new MemoryTranslationCache())
+            .TranslateAsync(Request(document), new FakeProvider(Translations), Token);
+
+        // Without the cleanup this would read "Удаляет элемент " + " ] из списка.".
+        Texts(result.Document).Single().Should().Be("Удаляет элемент  из списка.");
     }
 
     [Fact]

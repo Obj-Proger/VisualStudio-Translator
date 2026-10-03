@@ -64,7 +64,7 @@ public sealed class DocumentRendererTests
     }
 
     [Fact]
-    public void RenderParagraphs_LangwordIsAKeywordAndParamrefsAreCode()
+    public void RenderParagraphs_LangwordIsAKeywordAndParamrefsAreReferences()
     {
         Section section = ParagraphOf(
             new Ref { Kind = RefKind.Langword, Target = "null" },
@@ -73,8 +73,8 @@ public sealed class DocumentRendererTests
 
         DocumentRenderer.RenderParagraphs(section)[0].Should().Equal(
             new RenderedRun("null", RunStyle.Keyword),
-            new RenderedRun("value", RunStyle.Code),
-            new RenderedRun("T", RunStyle.Code));
+            new RenderedRun("value", RunStyle.Reference, ReferenceKind.Parameter),
+            new RenderedRun("T", RunStyle.Reference, ReferenceKind.TypeParameter));
     }
 
     [Theory]
@@ -85,11 +85,39 @@ public sealed class DocumentRendererTests
     [InlineData("M:Foo.Bar``1(``0)", "Bar")]
     [InlineData("M:Foo.Bar.#ctor(System.Int32)", "Bar")]
     [InlineData("String", "String")] // unresolved, no kind prefix
-    public void RenderParagraphs_CrefWithoutDisplayText_ShowsTheShortName(string target, string expected)
+    public void RenderParagraphs_UnresolvedCref_ShowsAGuessedShortName(string target, string expected)
     {
         Section section = ParagraphOf(new Ref { Kind = RefKind.Cref, Target = target });
 
-        DocumentRenderer.RenderParagraphs(section)[0].Should().Equal(new RenderedRun(expected, RunStyle.Code));
+        DocumentRenderer.RenderParagraphs(section)[0].Should().Equal(
+            new RenderedRun(expected, RunStyle.Reference, ReferenceKind.Unknown));
+    }
+
+    [Fact]
+    public void RenderParagraphs_ResolvedCref_ShowsTheResolvedTextAndKind()
+    {
+        // The id has lost the name of the type parameter; resolving it brings it back.
+        Dictionary<string, ResolvedReference> references = new()
+        {
+            ["T:Ns.Result`1"] = new ResolvedReference("Result<TValue>", ReferenceKind.Class),
+        };
+        Section section = ParagraphOf(new Ref { Kind = RefKind.Cref, Target = "T:Ns.Result`1" });
+
+        DocumentRenderer.RenderParagraphs(section, references)[0].Should().Equal(
+            new RenderedRun("Result<TValue>", RunStyle.Reference, ReferenceKind.Class));
+    }
+
+    [Fact]
+    public void RenderParagraphs_CrefAbsentFromTheResolvedSet_FallsBackToTheGuessedName()
+    {
+        Dictionary<string, ResolvedReference> references = new()
+        {
+            ["T:Other"] = new ResolvedReference("Other", ReferenceKind.Class),
+        };
+        Section section = ParagraphOf(new Ref { Kind = RefKind.Cref, Target = "T:Ns.Result`1" });
+
+        DocumentRenderer.RenderParagraphs(section, references)[0].Should().Equal(
+            new RenderedRun("Result", RunStyle.Reference, ReferenceKind.Unknown));
     }
 
     [Fact]
@@ -154,5 +182,38 @@ public sealed class DocumentRendererTests
 
         DocumentRenderer.RenderParagraphs(section)[0].Should().Equal(
             new RenderedRun("var x = 1;\nreturn x;", RunStyle.Code));
+    }
+
+    // --- CollectReferenceTargets ---
+
+    [Fact]
+    public void CollectReferenceTargets_FindsCrefsEverywhereOnceEach()
+    {
+        Section summary = ParagraphOf(
+            new Ref { Kind = RefKind.Cref, Target = "T:A" },
+            new EmphasisRun { Content = [new Ref { Kind = RefKind.Cref, Target = "T:B" }] },
+            new Ref { Kind = RefKind.Langword, Target = "null" },
+            new Ref { Kind = RefKind.Paramref, Target = "p" });
+
+        Section remarks = SectionOf(new ListBlock
+        {
+            Kind = ListKind.Bullet,
+            Items =
+            [
+                new ListItem
+                {
+                    Term = [],
+                    Description = [new Ref { Kind = RefKind.Cref, Target = "T:A" }, new Ref { Kind = RefKind.Cref, Target = "T:C" }],
+                },
+            ],
+        });
+
+        DocumentRenderer.CollectReferenceTargets(summary, null, remarks).Should().Equal("T:A", "T:B", "T:C");
+    }
+
+    [Fact]
+    public void CollectReferenceTargets_NothingToCollect_IsEmpty()
+    {
+        DocumentRenderer.CollectReferenceTargets(null, ParagraphOf(new TextRun { Text = "plain" })).Should().BeEmpty();
     }
 }

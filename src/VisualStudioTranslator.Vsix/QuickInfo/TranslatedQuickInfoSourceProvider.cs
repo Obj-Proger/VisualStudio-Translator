@@ -1,12 +1,14 @@
-﻿using System;
-using System.ComponentModel.Composition;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.Language.Intellisense;
+﻿using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Adornments;
 using Microsoft.VisualStudio.Utilities;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.Composition;
+using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
 using VisualStudioTranslator.Core.Documentation;
 using VisualStudioTranslator.Vsix.Symbols;
 using VisualStudioTranslator.Vsix.Translation;
@@ -28,24 +30,17 @@ internal sealed class TranslatedQuickInfoSourceProvider : IAsyncQuickInfoSourceP
 /// original. Whatever goes wrong, the original tooltip is unaffected: this source answers with
 /// nothing rather than failing.
 /// </summary>
-internal sealed class TranslatedQuickInfoSource : IAsyncQuickInfoSource
+internal sealed class TranslatedQuickInfoSource(ITextBuffer buffer) : IAsyncQuickInfoSource
 {
     // How long a hover may be held up waiting for a translation. Longer than a cached answer
     // takes, shorter than anyone would wait for a tooltip.
     private static readonly TimeSpan Budget = TimeSpan.FromMilliseconds(800);
 
-    private readonly ITextBuffer _buffer;
-
-    public TranslatedQuickInfoSource(ITextBuffer buffer)
-    {
-        _buffer = buffer;
-    }
-
     public async Task<QuickInfoItem?> GetQuickInfoItemAsync(IAsyncQuickInfoSession session, CancellationToken cancellationToken)
     {
         try
         {
-            SnapshotPoint? triggerPoint = session.GetTriggerPoint(_buffer.CurrentSnapshot);
+            SnapshotPoint? triggerPoint = session.GetTriggerPoint(buffer.CurrentSnapshot);
             if (triggerPoint is null)
             {
                 return null;
@@ -69,7 +64,14 @@ internal sealed class TranslatedQuickInfoSource : IAsyncQuickInfoSource
                 return null;
             }
 
-            ContainerElement? content = DocumentationElements.CreateSummary(translated);
+            // The documentation ids carry less than the author wrote (a generic's type parameters
+            // are gone), so the compilation is asked what each reference really is.
+            IReadOnlyList<string> targets = DocumentRenderer.CollectReferenceTargets(translated.Summary, translated.Remarks);
+            IReadOnlyDictionary<string, ResolvedReference> references = await VisualStudioTranslator.Vsix.Symbols.ReferenceResolver
+                .ResolveAsync(snapshot, targets, cancellationToken)
+                .ConfigureAwait(false);
+
+            ContainerElement? content = DocumentationElements.Create(translated, references);
             if (content is null)
             {
                 return null;

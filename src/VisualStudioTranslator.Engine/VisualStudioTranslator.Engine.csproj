@@ -5,6 +5,18 @@
 		<OutputType>Exe</OutputType>
 	</PropertyGroup>
 
+	<!-- Development convenience: the Vsix starts the Engine from this project's own output folder
+	     and leaves it running, which locks the DLLs the next build needs to overwrite. Stop it
+	     first. Debug builds on Windows only; a Release build never touches a running Engine. -->
+	<Target Name="StopRunningEngine" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Debug' And '$(OS)' == 'Windows_NT'">
+		<Exec Command="taskkill /F /IM VisualStudioTranslator.Engine.exe"
+		      IgnoreExitCode="true"
+		      ContinueOnError="true"
+		      IgnoreStandardErrorWarningFormat="true"
+		      StandardOutputImportance="low"
+		      StandardErrorImportance="low" />
+	</Target>
+	
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="StreamJsonRpc" />
