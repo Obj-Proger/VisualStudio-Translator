@@ -43,6 +43,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- Roslyn is supplied by Visual Studio itself at run time, so only the reference
+         assemblies are needed here. ExcludeAssets="runtime" keeps copies out of the .vsix,
+         where a second copy next to the one VS loads would cause type-identity trouble.
+         ExcludeAssets on one package does not reach its dependencies, hence all three listed. -->
+		<PackageReference Include="Microsoft.CodeAnalysis.Common" ExcludeAssets="runtime" />
+		<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" ExcludeAssets="runtime" />
+		<PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" ExcludeAssets="runtime" />
+	</ItemGroup>
+	
+	<ItemGroup>
 		<!-- Baked into the assembly so ServiceLauncher can find the Engine's build output
          computed here, at build time, when $(MSBuildThisFileDirectory) is still the real
          path on disk - even once this DLL is later running from the experimental hive's

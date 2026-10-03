@@ -24,6 +24,9 @@
          entry for the same package, or NuGet reports NU1506 (duplicate). Pinned to
          clear known advisories in the version the SDK would otherwise pull in. -->
     <GlobalPackageReference Include="MessagePack" Version="3.1.10" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="5.9.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="5.9.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="4.14.0" />
   </ItemGroup>
   <!-- VisualStudioTranslator.Core.Tests -->
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Core.Tests'">
