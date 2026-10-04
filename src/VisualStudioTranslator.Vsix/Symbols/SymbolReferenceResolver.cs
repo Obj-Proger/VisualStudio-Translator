@@ -15,7 +15,7 @@ namespace VisualStudioTranslator.Vsix.Symbols;
 /// for them: "T:Ns.Result`1" becomes "Result&lt;TValue&gt;", and the kind of symbol it is decides
 /// the colour. The documentation id alone cannot say either; only the compilation can.
 /// </summary>
-internal static class ReferenceResolver
+internal static class SymbolReferenceResolver
 {
     // Names only, with type parameters and the containing type for members, so a property
     // reads "Service.BasePrice" and a generic type "Result<TValue>". Parameter lists are left
@@ -64,7 +64,7 @@ internal static class ReferenceResolver
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            ActivityLog.LogWarning(nameof(ReferenceResolver), $"Could not resolve references: {ex.Message}");
+            ActivityLog.LogWarning(nameof(SymbolReferenceResolver), $"Could not resolve references: {ex.Message}");
         }
 
         return resolved;

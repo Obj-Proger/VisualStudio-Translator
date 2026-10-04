@@ -13,12 +13,26 @@ public enum ProviderKind
     Cloud,
 }
 
-/// <summary>Identity of a provider, as it appears in settings, logs and cache keys.</summary>
+/// <summary>
+/// How good a provider's translations are, relative to other providers. Only the order matters:
+/// it decides whether a translation cached by one provider may stand in for another's, and a
+/// better one is never replaced by a worse one.
+/// </summary>
+public static class QualityTiers
+{
+    /// <summary>Compact on-device models: fast and private, but a plain translation of technical text.</summary>
+    public const int Compact = 1;
+
+    /// <summary>Cloud translation services, used when the user chooses higher quality over keeping text local.</summary>
+    public const int Cloud = 2;
+}
+
+/// <summary>Identity of a provider, as it appears in settings, logs and cached entries.</summary>
 public sealed record ProviderInfo
 {
     /// <summary>
-    /// Stable, lowercase identifier such as "azure". Part of every cache key and of the
-    /// saved settings, so it must never change once released.
+    /// Stable, lowercase identifier such as "azure". Stored with every cached translation and in
+    /// the saved settings, so it must never change once released.
     /// </summary>
     public required string Id { get; init; }
 
@@ -26,10 +40,13 @@ public sealed record ProviderInfo
 
     /// <summary>
     /// Changes whenever the provider could return different output for the same input: a
-    /// new model version, a changed API version. Cached translations are keyed on it, so
-    /// bumping it retires every entry the old revision produced.
+    /// new model version, a changed API version. A cached translation made by the same provider
+    /// under an older revision is no longer used.
     /// </summary>
     public required string Revision { get; init; }
 
     public required ProviderKind Kind { get; init; }
+
+    /// <summary>Higher is better; see <see cref="QualityTiers"/>. Every provider states its own.</summary>
+    public required int QualityTier { get; init; }
 }

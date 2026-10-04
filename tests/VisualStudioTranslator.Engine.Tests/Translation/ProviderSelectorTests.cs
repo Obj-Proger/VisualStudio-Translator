@@ -11,14 +11,38 @@ public sealed class ProviderSelectorTests
     private static readonly LanguagePair EnglishToRussian = LanguagePair.Create("en", "ru")!;
 
     [Fact]
-    public void Select_LocalProvider_WinsOverCloudWhateverTheRegistrationOrder()
+    public void Select_LocalAndCloudWithoutConsent_UsesTheLocalOneWhateverTheRegistrationOrder()
     {
         StubProvider cloud = new("cloud", ProviderKind.Cloud);
         StubProvider local = new("local");
 
-        ProviderSelection selection = ProviderSelector.Select([cloud, local], EnglishToRussian, allowCloud: true);
+        ProviderSelector.Select([cloud, local], EnglishToRussian, allowCloud: false)
+            .Provider.Should().BeSameAs(local);
+        ProviderSelector.Select([local, cloud], EnglishToRussian, allowCloud: false)
+            .Provider.Should().BeSameAs(local);
+    }
 
-        selection.Provider.Should().BeSameAs(local);
+    [Fact]
+    public void Select_LocalAndCloudWithConsent_PrefersTheCloudOneWhateverTheRegistrationOrder()
+    {
+        // Agreeing to cloud translation is asking for better quality.
+        StubProvider cloud = new("cloud", ProviderKind.Cloud);
+        StubProvider local = new("local");
+
+        ProviderSelector.Select([local, cloud], EnglishToRussian, allowCloud: true)
+            .Provider.Should().BeSameAs(cloud);
+        ProviderSelector.Select([cloud, local], EnglishToRussian, allowCloud: true)
+            .Provider.Should().BeSameAs(cloud);
+    }
+
+    [Fact]
+    public void Select_WithConsentButTheCloudProviderCannotDoThePair_FallsBackToLocal()
+    {
+        StubProvider cloud = new("cloud", ProviderKind.Cloud) { SupportsPair = _ => false };
+        StubProvider local = new("local");
+
+        ProviderSelector.Select([cloud, local], EnglishToRussian, allowCloud: true)
+            .Provider.Should().BeSameAs(local);
     }
 
     [Fact]
@@ -28,6 +52,16 @@ public sealed class ProviderSelectorTests
         StubProvider second = new("second");
 
         ProviderSelector.Select([first, second], EnglishToRussian, allowCloud: false)
+            .Provider.Should().BeSameAs(first);
+    }
+
+    [Fact]
+    public void Select_AmongCloudProvidersWithConsent_TheFirstRegisteredWins()
+    {
+        StubProvider first = new("first", ProviderKind.Cloud);
+        StubProvider second = new("second", ProviderKind.Cloud);
+
+        ProviderSelector.Select([first, second], EnglishToRussian, allowCloud: true)
             .Provider.Should().BeSameAs(first);
     }
 

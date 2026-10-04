@@ -11,8 +11,12 @@ public static class CacheVersions
     /// How cache keys are derived and what is stored under them. Raise it whenever
     /// <see cref="TranslationCacheKey.Create"/> or the stored value's meaning changes. A
     /// test pins the derivation, so forgetting to raise this fails loudly.
+    /// <para>
+    /// 2: the provider left the key and moved into the entry (<see cref="CachedTranslation"/>),
+    /// so a better provider's translation can replace a worse one.
+    /// </para>
     /// </summary>
-    public const int Schema = 1;
+    public const int Schema = 2;
 
     /// <summary>
     /// The behavior of the translation pipeline around the provider. Raise it whenever a

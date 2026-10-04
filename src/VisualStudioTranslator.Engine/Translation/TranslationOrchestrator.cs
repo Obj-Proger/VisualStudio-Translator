@@ -16,6 +16,13 @@ namespace VisualStudioTranslator.Engine.Translation;
 /// was. The one exception is cancellation, which is the caller's own request and propagates.
 /// </para>
 /// <para>
+/// The cache holds one translation per segment, and a better provider's translation replaces a
+/// worse one. A cached translation is used only if it is at least as good as what the chosen
+/// provider would produce, so choosing a better provider re-translates what a weaker one
+/// translated, and the new result then serves everyone, including the weaker provider when
+/// the better one is switched off.
+/// </para>
+/// <para>
 /// Deliberately not here: choosing a provider, retrying, falling back to another one, and
 /// deciding whether the user consented to a cloud provider. The orchestrator is handed a
 /// provider and a consent flag, and only refuses to send text where consent is missing.
@@ -49,21 +56,22 @@ internal sealed class TranslationOrchestrator(ITranslationCache cache, ILogger<T
             { ProviderFailure = ProviderFailureKind.UnsupportedLanguagePair };
         }
 
-        List<Group> groups = Prepare(request, provider.Info, segments);
+        List<Group> groups = Prepare(request, segments);
 
         List<Group> misses = [];
         foreach (Group group in groups)
         {
-            string? cached = await TryGetCachedAsync(group.Key, cancellationToken).ConfigureAwait(false);
+            CachedTranslation? cached = await TryGetCachedAsync(group.Key, cancellationToken).ConfigureAwait(false);
 
-            if (cached is null)
+            // A stored translation counts only if it is at least as good as this provider's would be.
+            if (cached is not null && cached.Satisfies(provider.Info))
             {
-                misses.Add(group);
+                group.Translation = cached.Text;
+                group.FromCache = true;
             }
             else
             {
-                group.Translation = cached;
-                group.FromCache = true;
+                misses.Add(group);
             }
         }
 
@@ -112,7 +120,7 @@ internal sealed class TranslationOrchestrator(ITranslationCache cache, ILogger<T
 
     // Protects every segment and groups the ones whose protected text is identical, so each
     // distinct text is looked up and translated once however often it occurs.
-    private static List<Group> Prepare(TranslationRequest request, ProviderInfo provider, IReadOnlyList<Segment> segments)
+    private static List<Group> Prepare(TranslationRequest request, IReadOnlyList<Segment> segments)
     {
         string glossaryFingerprint = GlossaryFingerprint.Compute(request.Glossary);
 
@@ -131,7 +139,6 @@ internal sealed class TranslationOrchestrator(ITranslationCache cache, ILogger<T
 
             TranslationCacheKey key = TranslationCacheKey.Create(new TranslationCacheKeyInputs
             {
-                Provider = provider,
                 Languages = request.Languages,
                 MarkupProtection = MarkupSupport.None,
                 GlossaryFingerprint = glossaryFingerprint,
@@ -206,13 +213,21 @@ internal sealed class TranslationOrchestrator(ITranslationCache cache, ILogger<T
 
                 if (!validation.IsValid)
                 {
-                    logger.TranslationRejected(
-                        group.Members[0].Segment.Id, string.Join(", ", validation.Issues.Select(issue => issue.Kind)));
+                    if (logger.IsEnabled(LogLevel.Warning))
+                    {
+                        logger.TranslationRejected(
+                            group.Members[0].Segment.Id, string.Join(", ", validation.Issues.Select(issue => issue.Kind)));
+                    }
+
                     continue;
                 }
 
                 group.Translation = translated;
-                await TrySetCachedAsync(group.Key, translated, cancellationToken).ConfigureAwait(false);
+
+                // Stored with who made it. If a better provider's translation is already there the
+                // cache keeps it, so this write can never make the stored translation worse.
+                await TrySetCachedAsync(
+                    group.Key, CachedTranslation.From(provider.Info, translated), cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -260,7 +275,7 @@ internal sealed class TranslationOrchestrator(ITranslationCache cache, ILogger<T
 
     // The cache is an optimization, so a cache that misbehaves must cost speed, never
     // correctness: a failed read is a miss and a failed write is dropped.
-    private async Task<string?> TryGetCachedAsync(TranslationCacheKey key, CancellationToken cancellationToken)
+    private async Task<CachedTranslation?> TryGetCachedAsync(TranslationCacheKey key, CancellationToken cancellationToken)
     {
         try
         {
@@ -277,7 +292,7 @@ internal sealed class TranslationOrchestrator(ITranslationCache cache, ILogger<T
         }
     }
 
-    private async Task TrySetCachedAsync(TranslationCacheKey key, string translation, CancellationToken cancellationToken)
+    private async Task TrySetCachedAsync(TranslationCacheKey key, CachedTranslation translation, CancellationToken cancellationToken)
     {
         try
         {

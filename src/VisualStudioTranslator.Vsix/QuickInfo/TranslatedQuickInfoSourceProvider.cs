@@ -6,7 +6,6 @@ using Microsoft.VisualStudio.Utilities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using VisualStudioTranslator.Core.Documentation;
@@ -67,7 +66,7 @@ internal sealed class TranslatedQuickInfoSource(ITextBuffer buffer) : IAsyncQuic
             // The documentation ids carry less than the author wrote (a generic's type parameters
             // are gone), so the compilation is asked what each reference really is.
             IReadOnlyList<string> targets = DocumentRenderer.CollectReferenceTargets(translated.Summary, translated.Remarks);
-            IReadOnlyDictionary<string, ResolvedReference> references = await VisualStudioTranslator.Vsix.Symbols.ReferenceResolver
+            IReadOnlyDictionary<string, ResolvedReference> references = await SymbolReferenceResolver
                 .ResolveAsync(snapshot, targets, cancellationToken)
                 .ConfigureAwait(false);
 

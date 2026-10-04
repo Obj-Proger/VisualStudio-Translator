@@ -13,10 +13,10 @@ internal sealed class MemoryTranslationCache : ITranslationCache
 
     private readonly int _capacity;
     private readonly Lock _gate = new();
-    private readonly Dictionary<string, LinkedListNode<KeyValuePair<string, string>>> _index = [];
+    private readonly Dictionary<string, LinkedListNode<KeyValuePair<string, CachedTranslation>>> _index = [];
 
     // Most recently used at the front, so the entry to evict is always the last one.
-    private readonly LinkedList<KeyValuePair<string, string>> _recency = new();
+    private readonly LinkedList<KeyValuePair<string, CachedTranslation>> _recency = new();
 
     public MemoryTranslationCache(int capacity = DefaultCapacity)
     {
@@ -35,42 +35,48 @@ internal sealed class MemoryTranslationCache : ITranslationCache
         }
     }
 
-    public Task<string?> TryGetAsync(TranslationCacheKey key, CancellationToken cancellationToken)
+    public Task<CachedTranslation?> TryGetAsync(TranslationCacheKey key, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_gate)
         {
-            if (_index.TryGetValue(key.Value, out LinkedListNode<KeyValuePair<string, string>>? node))
+            if (_index.TryGetValue(key.Value, out LinkedListNode<KeyValuePair<string, CachedTranslation>>? node))
             {
                 _recency.Remove(node);
                 _recency.AddFirst(node);
-                return Task.FromResult<string?>(node.Value.Value);
+                return Task.FromResult<CachedTranslation?>(node.Value.Value);
             }
         }
 
-        return Task.FromResult<string?>(null);
+        return Task.FromResult<CachedTranslation?>(null);
     }
 
-    public Task SetAsync(TranslationCacheKey key, string translation, CancellationToken cancellationToken)
+    public Task SetAsync(TranslationCacheKey key, CachedTranslation translation, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_gate)
         {
-            if (_index.TryGetValue(key.Value, out LinkedListNode<KeyValuePair<string, string>>? existing))
+            if (_index.TryGetValue(key.Value, out LinkedListNode<KeyValuePair<string, CachedTranslation>>? existing))
             {
-                existing.Value = new KeyValuePair<string, string>(key.Value, translation);
+                // Decided inside the lock, together with the write: a slow local translation that
+                // finishes after a cloud one must not be able to undo it.
+                if (CachedTranslation.ShouldReplace(existing.Value.Value, translation))
+                {
+                    existing.Value = new KeyValuePair<string, CachedTranslation>(key.Value, translation);
+                }
+
                 _recency.Remove(existing);
                 _recency.AddFirst(existing);
             }
             else
             {
-                _index[key.Value] = _recency.AddFirst(new KeyValuePair<string, string>(key.Value, translation));
+                _index[key.Value] = _recency.AddFirst(new KeyValuePair<string, CachedTranslation>(key.Value, translation));
 
                 if (_index.Count > _capacity)
                 {
-                    LinkedListNode<KeyValuePair<string, string>> oldest = _recency.Last!;
+                    LinkedListNode<KeyValuePair<string, CachedTranslation>> oldest = _recency.Last!;
                     _recency.RemoveLast();
                     _index.Remove(oldest.Value.Key);
                 }

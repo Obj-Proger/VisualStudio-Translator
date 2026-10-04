@@ -8,17 +8,8 @@ namespace VisualStudioTranslator.Core.Tests.Caching;
 
 public sealed class TranslationCacheKeyTests
 {
-    private static readonly ProviderInfo LocalProvider = new()
-    {
-        Id = "local",
-        DisplayName = "Local engine",
-        Revision = "1",
-        Kind = ProviderKind.Local,
-    };
-
     private static TranslationCacheKeyInputs Baseline => new()
     {
-        Provider = LocalProvider,
         Languages = LanguagePair.Create("en", "ru")!,
         MarkupProtection = MarkupSupport.None,
         GlossaryFingerprint = "glossary-fp",
@@ -45,8 +36,6 @@ public sealed class TranslationCacheKeyTests
         TranslationCacheKeyInputs[] variants =
         [
             baseline,
-            baseline with { Provider = baseline.Provider with { Id = "other" } },
-            baseline with { Provider = baseline.Provider with { Revision = "2" } },
             baseline with { Languages = LanguagePair.Create("en", "de")! },
             baseline with { Languages = LanguagePair.Create("fr", "ru")! },
             baseline with { MarkupProtection = MarkupSupport.Html },
@@ -60,22 +49,11 @@ public sealed class TranslationCacheKeyTests
     }
 
     [Fact]
-    public void Create_ProviderDisplayNameAndKind_DoNotAffectTheKey()
-    {
-        TranslationCacheKeyInputs renamed = Baseline with
-        {
-            Provider = LocalProvider with { DisplayName = "Renamed", Kind = ProviderKind.Cloud },
-        };
-
-        TranslationCacheKey.Create(renamed).Should().Be(TranslationCacheKey.Create(Baseline));
-    }
-
-    [Fact]
     public void Create_FieldBoundaries_AreUnambiguous()
     {
         // The same characters split differently between two fields must not collide.
-        TranslationCacheKeyInputs first = Baseline with { Provider = LocalProvider with { Id = "a", Revision = "bc" } };
-        TranslationCacheKeyInputs second = Baseline with { Provider = LocalProvider with { Id = "ab", Revision = "c" } };
+        TranslationCacheKeyInputs first = Baseline with { GlossaryFingerprint = "a", Text = "bc" };
+        TranslationCacheKeyInputs second = Baseline with { GlossaryFingerprint = "ab", Text = "c" };
 
         TranslationCacheKey.Create(first).Should().NotBe(TranslationCacheKey.Create(second));
     }
@@ -95,6 +73,6 @@ public sealed class TranslationCacheKeyTests
         // every cache on every machine would silently stop matching: raise
         // CacheVersions.Schema together with updating this value, deliberately.
         TranslationCacheKey.Create(Baseline).Value
-            .Should().Be("df05931ef5b0e8e3b238caf26db2e8f24f94119eb05b9f6ccb71174efd755c61");
+            .Should().Be("77165dc652eda0d48b56f898c2d34e4db77db7838121a9957a7a5e7326193b0a");
     }
 }

@@ -7,7 +7,8 @@ namespace VisualStudioTranslator.Engine.Tests.Translation;
 internal sealed class StubProvider(
     string id,
     ProviderKind kind = ProviderKind.Local,
-    IReadOnlyDictionary<string, string>? translations = null) : ITranslationProvider
+    IReadOnlyDictionary<string, string>? translations = null,
+    int? qualityTier = null) : ITranslationProvider
 {
     public Func<LanguagePair, bool> SupportsPair { get; init; } = _ => true;
 
@@ -15,7 +16,15 @@ internal sealed class StubProvider(
 
     public List<IReadOnlyList<string>> Calls { get; } = [];
 
-    public ProviderInfo Info { get; } = new() { Id = id, DisplayName = id, Revision = "1", Kind = kind };
+    // A cloud stub is of the cloud tier and a local one of the compact tier, unless a test says otherwise.
+    public ProviderInfo Info { get; } = new()
+    {
+        Id = id,
+        DisplayName = id,
+        Revision = "1",
+        Kind = kind,
+        QualityTier = qualityTier ?? (kind == ProviderKind.Cloud ? QualityTiers.Cloud : QualityTiers.Compact),
+    };
 
     public ProviderCapabilities Capabilities { get; } = new()
     {

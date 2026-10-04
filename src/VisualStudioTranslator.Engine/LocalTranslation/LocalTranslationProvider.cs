@@ -32,6 +32,7 @@ internal sealed class LocalTranslationProvider(
         DisplayName = "Local translation",
         Revision = models.ComputeRevision(),
         Kind = ProviderKind.Local,
+        QualityTier = QualityTiers.Compact,
     });
 
     public ProviderInfo Info => _info.Value;

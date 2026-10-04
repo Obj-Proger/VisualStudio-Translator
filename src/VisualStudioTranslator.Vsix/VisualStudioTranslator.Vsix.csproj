@@ -65,5 +65,14 @@
 
 	<!-- Lets source.extension.vsixmanifest read a build-time version, like a NuGet package would. -->
 	<Target Name="GetVersion" Returns="$(Version)" />
+	<ItemGroup>
+	  <PackageVersion Update="MessagePack" Version="3.1.11" />
+	</ItemGroup>
+	<ItemGroup>
+	  <PackageReference Update="MessagePack">
+	    <PrivateAssets>all</PrivateAssets>
+	    <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+	  </PackageReference>
+	</ItemGroup>
 
 </Project>

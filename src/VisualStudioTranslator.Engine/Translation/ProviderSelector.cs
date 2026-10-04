@@ -10,16 +10,18 @@ namespace VisualStudioTranslator.Engine.Translation;
 internal sealed record ProviderSelection(ITranslationProvider? Provider, bool CloudConsentRequired);
 
 /// <summary>
-/// Chooses which registered provider translates a request. The rule is deliberately simple
-/// and favors privacy: a provider that runs on this machine always wins over one that sends
-/// text away, and a cloud provider is only chosen when no local one can do the job and the user
-/// has agreed. Within each kind, the order of registration decides.
+/// Chooses which registered provider translates a request. The user's consent to cloud
+/// translation is read as a request for better quality, because nobody agrees to send their text
+/// away to get the same result: with consent, a cloud provider that can do the job wins. Without
+/// it text stays on this machine, and a cloud provider is never used. Within each kind, the order
+/// of registration decides.
 /// </summary>
 internal static class ProviderSelector
 {
     public static ProviderSelection Select(
         IEnumerable<ITranslationProvider> providers, LanguagePair languages, bool allowCloud)
     {
+        ITranslationProvider? firstLocal = null;
         ITranslationProvider? firstCloud = null;
 
         foreach (ITranslationProvider provider in providers)
@@ -31,21 +33,28 @@ internal static class ProviderSelector
 
             if (provider.Info.Kind == ProviderKind.Local)
             {
-                return new ProviderSelection(provider, CloudConsentRequired: false);
+                firstLocal ??= provider;
             }
-
-            firstCloud ??= provider;
+            else
+            {
+                firstCloud ??= provider;
+            }
         }
 
         if (firstCloud is null)
         {
-            return new ProviderSelection(null, CloudConsentRequired: false);
+            return new ProviderSelection(firstLocal, CloudConsentRequired: false);
         }
 
-        // A cloud provider could do it. Whether it may is the user's call, and the caller
-        // is told that is the only obstacle, so it can ask instead of just giving up.
-        return allowCloud
-            ? new ProviderSelection(firstCloud, CloudConsentRequired: false)
+        if (allowCloud)
+        {
+            return new ProviderSelection(firstCloud, CloudConsentRequired: false);
+        }
+
+        // A cloud provider could do it but the user has not agreed. A local one still can, if there is one.
+        // Otherwise the caller is told that consent is the only obstacle, so it can ask instead of giving up.
+        return firstLocal is not null
+            ? new ProviderSelection(firstLocal, CloudConsentRequired: false)
             : new ProviderSelection(null, CloudConsentRequired: true);
     }
 }

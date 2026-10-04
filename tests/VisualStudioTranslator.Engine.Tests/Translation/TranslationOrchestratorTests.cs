@@ -405,6 +405,78 @@ public sealed class TranslationOrchestratorTests
         result.ProviderFailure.Should().Be(ProviderFailureKind.UnsupportedLanguagePair);
     }
 
+    [Fact]
+    public async Task TranslateAsync_CloudTranslation_ReplacesTheLocalOneInTheCacheForEveryoneAfterwards()
+    {
+        MemoryTranslationCache cache = new();
+        TranslationOrchestrator orchestrator = Orchestrator(cache);
+        TranslationRequest localRequest = Request(Doc(Returns));
+        TranslationRequest cloudRequest = localRequest with { AllowCloudProvider = true };
+
+        FakeProvider local = new(Translations);
+        FakeProvider cloud = new(new Dictionary<string, string> { [Returns] = "Возвращает число элементов." })
+        {
+            Id = "cloud",
+            Kind = ProviderKind.Cloud,
+        };
+
+        // 1. The local engine translates first, and its result is cached.
+        TranslationResult first = await orchestrator.TranslateAsync(localRequest, local, Token);
+        Texts(first.Document).Single().Should().Be("Возвращает количество элементов.");
+
+        // 2. The user turns the cloud on. The cached local translation is not good enough,
+        //    so the cloud is asked, and its translation takes the place of the local one.
+        TranslationResult upgraded = await orchestrator.TranslateAsync(cloudRequest, cloud, Token);
+        Texts(upgraded.Document).Single().Should().Be("Возвращает число элементов.");
+        upgraded.TranslatedCount.Should().Be(1);
+        cloud.Calls.Should().ContainSingle();
+
+        // 3. Afterwards, even with the cloud out of the picture, the better translation is what is
+        //    served, and the local engine is not asked again.
+        local.Calls.Clear();
+        TranslationResult afterwards = await orchestrator.TranslateAsync(localRequest, local, Token);
+        Texts(afterwards.Document).Single().Should().Be("Возвращает число элементов.");
+        afterwards.CachedCount.Should().Be(1);
+        local.Calls.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task TranslateAsync_SecondRunWithTheSameCloudProvider_IsServedFromTheCache()
+    {
+        MemoryTranslationCache cache = new();
+        TranslationOrchestrator orchestrator = Orchestrator(cache);
+        TranslationRequest request = Request(Doc(Returns)) with { AllowCloudProvider = true };
+        FakeProvider cloud = new(Translations) { Id = "cloud", Kind = ProviderKind.Cloud };
+
+        await orchestrator.TranslateAsync(request, cloud, Token);
+        TranslationResult second = await orchestrator.TranslateAsync(request, cloud, Token);
+
+        cloud.Calls.Should().ContainSingle();
+        second.CachedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task TranslateAsync_AnotherCloudProviderOfTheSameTier_IsAskedAgainAndReplacesTheEntry()
+    {
+        MemoryTranslationCache cache = new();
+        TranslationOrchestrator orchestrator = Orchestrator(cache);
+        TranslationRequest request = Request(Doc(Returns)) with { AllowCloudProvider = true };
+
+        FakeProvider first = new(Translations) { Id = "first-cloud", Kind = ProviderKind.Cloud };
+        FakeProvider second = new(new Dictionary<string, string> { [Returns] = "Возвращает число элементов." })
+        {
+            Id = "second-cloud",
+            Kind = ProviderKind.Cloud,
+        };
+
+        await orchestrator.TranslateAsync(request, first, Token);
+        TranslationResult result = await orchestrator.TranslateAsync(request, second, Token);
+
+        // The user chose the second provider, so it is asked rather than served the first one's work.
+        second.Calls.Should().ContainSingle();
+        Texts(result.Document).Single().Should().Be("Возвращает число элементов.");
+    }
+
     private static GlossaryEntry Keep(string term) => new() { Term = term, Kind = GlossaryEntryKind.DoNotTranslate };
 
     private sealed class FakeProvider(IReadOnlyDictionary<string, string> translations) : ITranslationProvider
@@ -423,7 +495,16 @@ public sealed class TranslationOrchestratorTests
 
         public List<IReadOnlyList<string>> Calls { get; } = [];
 
-        public ProviderInfo Info => new() { Id = "fake", DisplayName = "Fake", Revision = "1", Kind = Kind };
+        public string Id { get; init; } = "fake";
+
+        public ProviderInfo Info => new()
+        {
+            Id = Id,
+            DisplayName = Id,
+            Revision = "1",
+            Kind = Kind,
+            QualityTier = Kind == ProviderKind.Cloud ? QualityTiers.Cloud : QualityTiers.Compact,
+        };
 
         public ProviderCapabilities Capabilities => new()
         {
@@ -461,10 +542,10 @@ public sealed class TranslationOrchestratorTests
 
     private sealed class ThrowingCache : ITranslationCache
     {
-        public Task<string?> TryGetAsync(TranslationCacheKey key, CancellationToken cancellationToken) =>
+        public Task<CachedTranslation?> TryGetAsync(TranslationCacheKey key, CancellationToken cancellationToken) =>
             throw new InvalidOperationException("boom");
 
-        public Task SetAsync(TranslationCacheKey key, string translation, CancellationToken cancellationToken) =>
+        public Task SetAsync(TranslationCacheKey key, CachedTranslation translation, CancellationToken cancellationToken) =>
             throw new InvalidOperationException("boom");
     }
 }

@@ -3,12 +3,14 @@ using VisualStudioTranslator.Core.Providers.Abstractions;
 
 namespace VisualStudioTranslator.Core.Caching;
 
-/// <summary>Everything that decides what a provider would return for one segment.</summary>
+/// <summary>
+/// Everything that decides what any provider would return for one segment. The provider is
+/// deliberately not here: which provider made a translation is recorded in the cached entry
+/// (<see cref="CachedTranslation"/>), so that a better provider's translation can replace a
+/// worse one under the same key.
+/// </summary>
 public sealed record TranslationCacheKeyInputs
 {
-    /// <summary>Only <see cref="ProviderInfo.Id"/> and <see cref="ProviderInfo.Revision"/> are used.</summary>
-    public required ProviderInfo Provider { get; init; }
-
     public required LanguagePair Languages { get; init; }
 
     /// <summary>The protection strategy actually applied to the text, not merely what the provider could do.</summary>
@@ -43,8 +45,6 @@ public sealed record TranslationCacheKey
         {
             writer.Write(CacheVersions.Schema);
             writer.Write(CacheVersions.Pipeline);
-            writer.Write(inputs.Provider.Id);
-            writer.Write(inputs.Provider.Revision);
             writer.Write(inputs.Languages.Source);
             writer.Write(inputs.Languages.Target);
             writer.Write((int)inputs.MarkupProtection);

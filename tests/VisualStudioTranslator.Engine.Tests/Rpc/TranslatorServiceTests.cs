@@ -111,15 +111,27 @@ public sealed class TranslatorServiceTests
     }
 
     [Fact]
-    public async Task TranslateDocumentationAsync_LocalAndCloudProviders_UsesTheLocalOne()
+    public async Task TranslateDocumentationAsync_LocalAndCloudProvidersWithoutConsent_UsesTheLocalOne()
+    {
+        StubProvider cloud = new("cloud", ProviderKind.Cloud, Translations);
+        StubProvider local = new("local", translations: Translations);
+
+        await Service(cloud, local).TranslateDocumentationAsync(Request(), Token);
+
+        cloud.Calls.Should().BeEmpty();
+        local.Calls.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task TranslateDocumentationAsync_LocalAndCloudProvidersWithConsent_UsesTheCloudOne()
     {
         StubProvider cloud = new("cloud", ProviderKind.Cloud, Translations);
         StubProvider local = new("local", translations: Translations);
 
         await Service(cloud, local).TranslateDocumentationAsync(Request() with { AllowCloudProvider = true }, Token);
 
-        cloud.Calls.Should().BeEmpty();
-        local.Calls.Should().ContainSingle();
+        cloud.Calls.Should().ContainSingle();
+        local.Calls.Should().BeEmpty();
     }
 
     [Fact]
