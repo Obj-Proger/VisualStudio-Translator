@@ -109,27 +109,37 @@ internal sealed class SqliteTranslationCache(
     {
         lock (_gate)
         {
-            for (int attempt = 0; !_disabled; attempt++)
+            if (TryWork(operation, work, out T result, out bool fileReplaced))
             {
-                try
-                {
-                    SqliteConnection connection = _connection ??= OpenAndPrepare();
-                    T result = work(connection);
-                    _failures = 0;
-                    return result;
-                }
-                catch (Exception exception) when (exception is SqliteException or IOException or UnauthorizedAccessException or InvalidOperationException)
-                {
-                    bool recovered = HandleFailure(operation, exception);
-
-                    if (!recovered || attempt > 0)
-                    {
-                        return fallback;
-                    }
-                }
+                return result;
             }
 
-            return fallback;
+            // The file was damaged and has just been replaced by an empty one: one more try on it.
+            return fileReplaced && TryWork(operation, work, out result, out _) ? result : fallback;
+        }
+    }
+
+    private bool TryWork<T>(string operation, Func<SqliteConnection, T> work, out T result, out bool fileReplaced)
+    {
+        result = default!;
+        fileReplaced = false;
+
+        if (_disabled)
+        {
+            return false;
+        }
+
+        try
+        {
+            SqliteConnection connection = _connection ??= OpenAndPrepare();
+            result = work(connection);
+            _failures = 0;
+            return true;
+        }
+        catch (Exception exception) when (exception is SqliteException or IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            fileReplaced = HandleFailure(operation, exception);
+            return false;
         }
     }
 

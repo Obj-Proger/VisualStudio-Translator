@@ -178,7 +178,9 @@ public sealed class SqliteTranslationCacheTests : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(DbPath)!);
 
         // Not zeros: an all-zero file is a valid empty database. This is plainly not one.
-        File.WriteAllBytes(DbPath, Enumerable.Repeat((byte)'A', 4096).ToArray());
+        byte[] garbage = new byte[4096];
+        Array.Fill(garbage, (byte)'A');
+        File.WriteAllBytes(DbPath, garbage);
         SqliteTranslationCache cache = Cache();
 
         await cache.SetAsync(Key("a"), Entry("after recovery"), Token);

@@ -6,16 +6,20 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using StreamJsonRpc;
 using VisualStudioTranslator.Core.Rpc;
+using VisualStudioTranslator.Engine.Lifecycle;
 
 namespace VisualStudioTranslator.Engine.Rpc;
 
 /// <summary>
 /// Hosts <see cref="ITranslatorService"/> on a named pipe restricted to the current
 /// Windows user, accepting connections from one or more Vsix clients for as long as
-/// the Engine process is running.
+/// the Engine process is running. Each connection is reported to <see cref="ClientTracker"/>,
+/// which is what lets the Engine notice when the last client has gone.
 /// </summary>
-internal sealed class NamedPipeRpcServer(ITranslatorService service, ILogger<NamedPipeRpcServer> logger)
-    : BackgroundService
+internal sealed class NamedPipeRpcServer(
+    ITranslatorService service,
+    ClientTracker clients,
+    ILogger<NamedPipeRpcServer> logger) : BackgroundService
 {
     /// <summary>
     /// The name of the pipe this Engine build listens on. Scoped to the current user and
@@ -48,24 +52,33 @@ internal sealed class NamedPipeRpcServer(ITranslatorService service, ILogger<Nam
 
     private async Task HandleConnectionAsync(NamedPipeServerStream pipe, CancellationToken stoppingToken)
     {
-        using (pipe)
-        using (JsonRpc jsonRpc = new(pipe, pipe))
-        {
-            jsonRpc.AddLocalRpcTarget(service);
-            jsonRpc.StartListening();
+        clients.ClientConnected();
 
-            try
+        try
+        {
+            using (pipe)
+            using (JsonRpc jsonRpc = new(pipe, pipe))
             {
-                await jsonRpc.Completion.WaitAsync(stoppingToken).ConfigureAwait(false);
+                jsonRpc.AddLocalRpcTarget(service);
+                jsonRpc.StartListening();
+
+                try
+                {
+                    await jsonRpc.Completion.WaitAsync(stoppingToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // The Engine is shutting down; the pipe is disposed by the using block above.
+                }
+                catch (Exception ex)
+                {
+                    logger.ClientConnectionEndedUnexpectedly(PipeName, ex);
+                }
             }
-            catch (OperationCanceledException)
-            {
-                // The Engine is shutting down; the pipe is disposed by the using block above.
-            }
-            catch (Exception ex)
-            {
-                logger.ClientConnectionEndedUnexpectedly(PipeName, ex);
-            }
+        }
+        finally
+        {
+            clients.ClientDisconnected();
         }
     }
 
