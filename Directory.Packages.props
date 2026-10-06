@@ -12,6 +12,7 @@
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
     <PackageVersion Include="StreamJsonRpc" Version="2.25.29" />
     <PackageVersion Include="BergamotTranslatorSharp" Version="0.7.0" />
+	<PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.11" />
   </ItemGroup>
   <!-- VisualStudioTranslator.Vsix -->
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Vsix'">

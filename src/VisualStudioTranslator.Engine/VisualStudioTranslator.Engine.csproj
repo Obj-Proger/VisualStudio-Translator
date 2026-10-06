@@ -21,6 +21,7 @@
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="StreamJsonRpc" />
 		<PackageReference Include="BergamotTranslatorSharp" />
+		<PackageReference Include="Microsoft.Data.Sqlite" />
 	</ItemGroup>
 
 	<ItemGroup>
