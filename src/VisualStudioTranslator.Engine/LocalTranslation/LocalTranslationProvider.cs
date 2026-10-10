@@ -15,8 +15,9 @@ namespace VisualStudioTranslator.Engine.LocalTranslation;
 /// translates one text per call, so a batch is translated text by text.
 /// </para>
 /// <para>
-/// Replacing a model on disk takes effect after the Engine restarts: the loaded one stays in use
-/// and the revision in cache keys was fixed when the process started, which keeps the two consistent.
+/// A model that is already loaded stays in use until the Engine restarts. A newly installed one is
+/// picked up at once, and the revision in cache keys is worked out again when the set of installed
+/// models changes, so translations made before the install are not mistaken for the new model's.
 /// </para>
 /// </summary>
 internal sealed class LocalTranslationProvider(
@@ -26,16 +27,35 @@ internal sealed class LocalTranslationProvider(
 {
     private readonly ConcurrentDictionary<string, Lazy<Task<LoadedModel>>> _loaded = new();
 
-    private readonly Lazy<ProviderInfo> _info = new(() => new ProviderInfo
-    {
-        Id = "local",
-        DisplayName = "Local translation",
-        Revision = models.ComputeRevision(),
-        Kind = ProviderKind.Local,
-        QualityTier = QualityTiers.Compact,
-    });
+    private readonly Lock _infoGate = new();
+    private ProviderInfo? _info;
+    private int _infoChangeCount = -1;
 
-    public ProviderInfo Info => _info.Value;
+    public ProviderInfo Info
+    {
+        get
+        {
+            lock (_infoGate)
+            {
+                // Rebuilt when the set of installed models has changed since it was last built; scanning
+                // the files on every request would be wasteful, and caching it for good would go stale.
+                if (_info is null || _infoChangeCount != models.ChangeCount)
+                {
+                    _infoChangeCount = models.ChangeCount;
+                    _info = new ProviderInfo
+                    {
+                        Id = "local",
+                        DisplayName = "Local translation",
+                        Revision = models.ComputeRevision(),
+                        Kind = ProviderKind.Local,
+                        QualityTier = QualityTiers.Compact,
+                    };
+                }
+
+                return _info;
+            }
+        }
+    }
 
     public ProviderCapabilities Capabilities { get; } = new()
     {

@@ -10,6 +10,7 @@ using VisualStudioTranslator.Engine.Lifecycle;
 using VisualStudioTranslator.Engine.Rpc;
 using VisualStudioTranslator.Engine.Tests.Translation;
 using VisualStudioTranslator.Engine.Translation;
+using VisualStudioTranslator.Engine.Tests.LocalTranslation;
 using Xunit;
 
 namespace VisualStudioTranslator.Engine.Tests.Rpc;
@@ -98,12 +99,16 @@ public sealed class NamedPipeRpcServerTests
     // test a proxy for the contract. Tests in one class run one after another, so they can
     // safely share the pipe name.
     private static async Task WithProxyAsync(
-        ITranslationProvider[] providers, Func<ITranslatorService, Task> test, ClientTracker? tracker = null)
+    ITranslationProvider[] providers,
+    Func<ITranslatorService, Task> test,
+    ClientTracker? tracker = null,
+    FakeModelInstaller? installer = null)
     {
         TranslatorService service = new(
             NullLogger<TranslatorService>.Instance,
             new TranslationOrchestrator(new MemoryTranslationCache(), NullLogger<TranslationOrchestrator>.Instance),
-            providers);
+            providers,
+            installer ?? new FakeModelInstaller());
         NamedPipeRpcServer server = new(
             service, tracker ?? new ClientTracker(TimeProvider.System), NullLogger<NamedPipeRpcServer>.Instance);
 
@@ -135,5 +140,35 @@ public sealed class NamedPipeRpcServerTests
         }
 
         condition().Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetModelStatusAsync_RoundTripsOverNamedPipe()
+    {
+        FakeModelInstaller installer = new()
+        {
+            Status = new ModelInstallStatus
+            {
+                State = ModelInstallState.Installing,
+                TotalBytes = 41_000_000,
+                DoneBytes = 12_345_678,
+                SourceHost = "models.example.test",
+                Detail = null,
+            },
+        };
+
+        await WithProxyAsync(
+            [],
+            async proxy =>
+            {
+                ModelInstallStatus status = await proxy.GetModelStatusAsync("en", "ru", Token);
+
+                status.State.Should().Be(ModelInstallState.Installing);
+                status.TotalBytes.Should().Be(41_000_000);
+                status.DoneBytes.Should().Be(12_345_678);
+                status.SourceHost.Should().Be("models.example.test");
+                status.Detail.Should().BeNull();
+            },
+            installer: installer);
     }
 }

@@ -1,11 +1,13 @@
 ﻿using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using VisualStudioTranslator.Core.Caching;
+using VisualStudioTranslator.Core.Languages;
 using VisualStudioTranslator.Core.Providers.Abstractions;
 using VisualStudioTranslator.Core.Quality;
 using VisualStudioTranslator.Core.Rpc;
 using VisualStudioTranslator.Engine.Caching;
 using VisualStudioTranslator.Engine.Rpc;
+using VisualStudioTranslator.Engine.Tests.LocalTranslation;
 using VisualStudioTranslator.Engine.Tests.Translation;
 using VisualStudioTranslator.Engine.Translation;
 using Xunit;
@@ -26,10 +28,14 @@ public sealed class TranslatorServiceTests
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    private static TranslatorService Service(params ITranslationProvider[] providers) => new(
+    private static TranslatorService Service(params ITranslationProvider[] providers) =>
+    Service(new FakeModelInstaller(), providers);
+
+    private static TranslatorService Service(FakeModelInstaller installer, params ITranslationProvider[] providers) => new(
         NullLogger<TranslatorService>.Instance,
         new TranslationOrchestrator(new MemoryTranslationCache(), NullLogger<TranslationOrchestrator>.Instance),
-        providers);
+        providers,
+        installer);
 
     private static TranslateDocumentationRequest Request(string target = "ru") => new()
     {
@@ -191,5 +197,49 @@ public sealed class TranslatorServiceTests
             .TranslateDocumentationAsync(Request(), cts.Token);
 
         await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task GetModelStatusAsync_AsksTheInstallerAboutTheNormalizedPair()
+    {
+        FakeModelInstaller installer = new();
+
+        ModelInstallStatus status = await Service(installer).GetModelStatusAsync("EN", "ru_RU", Token);
+
+        status.State.Should().Be(ModelInstallState.NotInstalled);
+        installer.StatusRequests.Should().ContainSingle().Which.Should().Be(LanguagePair.Create("en", "ru-RU"));
+    }
+
+    [Fact]
+    public async Task GetModelStatusAsync_InvalidLanguage_IsUnavailableWithoutAskingTheInstaller()
+    {
+        FakeModelInstaller installer = new();
+
+        ModelInstallStatus status = await Service(installer).GetModelStatusAsync("en", "english", Token);
+
+        status.State.Should().Be(ModelInstallState.Unavailable);
+        installer.StatusRequests.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task StartModelInstallAsync_StartsTheInstallerForThePair()
+    {
+        FakeModelInstaller installer = new();
+
+        ModelInstallStatus status = await Service(installer).StartModelInstallAsync("en", "ru", Token);
+
+        status.State.Should().Be(ModelInstallState.Installing);
+        installer.StartRequests.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task StartModelInstallAsync_InvalidLanguage_IsUnavailableAndStartsNothing()
+    {
+        FakeModelInstaller installer = new();
+
+        ModelInstallStatus status = await Service(installer).StartModelInstallAsync("en", "", Token);
+
+        status.State.Should().Be(ModelInstallState.Unavailable);
+        installer.StartRequests.Should().BeEmpty();
     }
 }

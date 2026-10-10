@@ -6,6 +6,7 @@ using VisualStudioTranslator.Core.Languages;
 using VisualStudioTranslator.Core.Providers.Abstractions;
 using VisualStudioTranslator.Core.Quality;
 using VisualStudioTranslator.Core.Rpc;
+using VisualStudioTranslator.Engine.LocalTranslation;
 using VisualStudioTranslator.Engine.Translation;
 
 namespace VisualStudioTranslator.Engine.Rpc;
@@ -17,7 +18,8 @@ namespace VisualStudioTranslator.Engine.Rpc;
 internal sealed class TranslatorService(
     ILogger<TranslatorService> logger,
     TranslationOrchestrator orchestrator,
-    IEnumerable<ITranslationProvider> providers) : ITranslatorService
+    IEnumerable<ITranslationProvider> providers,
+    IModelInstaller modelInstaller) : ITranslatorService
 {
     public Task<ServiceInfo> HandshakeAsync(ClientInfo client, CancellationToken cancellationToken)
     {
@@ -100,6 +102,29 @@ internal sealed class TranslatorService(
             ProviderFailure = translation.ProviderFailure,
         };
     }
+
+    public Task<ModelInstallStatus> GetModelStatusAsync(
+        string sourceLanguage, string targetLanguage, CancellationToken cancellationToken)
+    {
+        LanguagePair? pair = LanguagePair.Create(sourceLanguage, targetLanguage);
+
+        return pair is null ? Task.FromResult(InvalidLanguageStatus()) : modelInstaller.GetStatusAsync(pair, cancellationToken);
+    }
+
+    public Task<ModelInstallStatus> StartModelInstallAsync(
+        string sourceLanguage, string targetLanguage, CancellationToken cancellationToken)
+    {
+        LanguagePair? pair = LanguagePair.Create(sourceLanguage, targetLanguage);
+
+        return pair is null ? Task.FromResult(InvalidLanguageStatus()) : modelInstaller.StartInstallAsync(pair, cancellationToken);
+    }
+
+    // A direction that is not even a valid pair of languages has no model to install.
+    private static ModelInstallStatus InvalidLanguageStatus() => new()
+    {
+        State = ModelInstallState.Unavailable,
+        Detail = "The language is not valid.",
+    };
 
     private static TranslationOutcome OutcomeOf(TranslationResult translation)
     {

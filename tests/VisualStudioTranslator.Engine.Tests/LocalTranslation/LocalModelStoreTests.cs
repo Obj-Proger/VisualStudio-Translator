@@ -72,4 +72,26 @@ public sealed class LocalModelStoreTests : IDisposable
 
         Store().ComputeRevision().Should().Be(before);
     }
+
+    [Fact]
+    public void NotifyChanged_RaisesTheChangeCount()
+    {
+        LocalModelStore store = Store();
+        int before = store.ChangeCount;
+
+        store.NotifyChanged();
+
+        store.ChangeCount.Should().Be(before + 1);
+    }
+
+    [Fact]
+    public void ComputeRevision_IgnoresAFolderThatIsStillBeingInstalled()
+    {
+        WriteFile("en-ru/model.bin", 10);
+        string before = Store().ComputeRevision();
+
+        WriteFile($"{LocalModelStore.InstallingPrefix}abc/model.bin", 999);
+
+        Store().ComputeRevision().Should().Be(before);
+    }
 }

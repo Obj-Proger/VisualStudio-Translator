@@ -9,8 +9,8 @@ public static class ProtocolVersion
 {
     public const int Major = 1;
 
-    /// <summary>1: added <c>TranslateDocumentationAsync</c>.</summary>
-    public const int Minor = 1;
+    /// <summary>1: added <c>TranslateDocumentationAsync</c>. 2: added the model installation methods.</summary>
+    public const int Minor = 2;
 
     /// <summary>
     /// Whether a peer advertising <paramref name="otherMajor"/> as its major version
