@@ -103,20 +103,34 @@ internal sealed class TranslatorService(
         };
     }
 
-    public Task<ModelInstallStatus> GetModelStatusAsync(
-        string sourceLanguage, string targetLanguage, CancellationToken cancellationToken)
+    public async Task<ModelInstallStatus> GetModelStatusAsync(
+    string sourceLanguage, string targetLanguage, CancellationToken cancellationToken)
     {
         LanguagePair? pair = LanguagePair.Create(sourceLanguage, targetLanguage);
 
-        return pair is null ? Task.FromResult(InvalidLanguageStatus()) : modelInstaller.GetStatusAsync(pair, cancellationToken);
+        if (pair is null)
+        {
+            return InvalidLanguageStatus();
+        }
+
+        ModelInstallStatus status = await modelInstaller.GetStatusAsync(pair, cancellationToken);
+        logger.ModelStatusAnswered(pair, status.State);
+        return status;
     }
 
-    public Task<ModelInstallStatus> StartModelInstallAsync(
+    public async Task<ModelInstallStatus> StartModelInstallAsync(
         string sourceLanguage, string targetLanguage, CancellationToken cancellationToken)
     {
         LanguagePair? pair = LanguagePair.Create(sourceLanguage, targetLanguage);
 
-        return pair is null ? Task.FromResult(InvalidLanguageStatus()) : modelInstaller.StartInstallAsync(pair, cancellationToken);
+        if (pair is null)
+        {
+            return InvalidLanguageStatus();
+        }
+
+        ModelInstallStatus status = await modelInstaller.StartInstallAsync(pair, cancellationToken);
+        logger.ModelInstallRequested(pair, status.State);
+        return status;
     }
 
     // A direction that is not even a valid pair of languages has no model to install.

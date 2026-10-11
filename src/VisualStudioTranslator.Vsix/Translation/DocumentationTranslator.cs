@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
@@ -9,6 +10,7 @@ using VisualStudioTranslator.Core.Concurrency;
 using VisualStudioTranslator.Core.Documentation;
 using VisualStudioTranslator.Core.Rpc;
 using VisualStudioTranslator.Vsix.Service;
+using VisualStudioTranslator.Vsix.Setup;
 
 namespace VisualStudioTranslator.Vsix.Translation;
 
@@ -21,6 +23,8 @@ namespace VisualStudioTranslator.Vsix.Translation;
 /// </summary>
 internal sealed class DocumentationTranslator(EngineConnection connection)
 {
+    private const string Source = nameof(DocumentationTranslator);
+
     // Documentation is written in English until the user can say otherwise.
     private const string SourceLanguage = "en";
 
@@ -29,8 +33,17 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
     private readonly InFlightRequests<DocumentModel?> _inFlight = new();
     private readonly object _reportedSync = new();
     private readonly HashSet<TranslationOutcome> _reportedOutcomes = [];
+    private bool _loggedNoTarget;
 
-    public static DocumentationTranslator Shared { get; } = new DocumentationTranslator(EngineConnection.Shared);
+    static DocumentationTranslator()
+    {
+        // The first line of the log says which build is running, which settles at once whether a
+        // problem is in the code being looked at or in an older copy still loaded.
+        string location = typeof(DocumentationTranslator).Assembly.Location;
+        DiagnosticLog.Info(Source, $"Extension loaded from {location} (built {File.GetLastWriteTimeUtc(location):u}).");
+    }
+
+    public static DocumentationTranslator Shared { get; } = new(EngineConnection.Shared);
 
     /// <returns>
     /// The translated document, or <see langword="null"/> when there is nothing to show: no target
@@ -41,6 +54,12 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
         string? targetLanguage = GetTargetLanguage();
         if (targetLanguage is null)
         {
+            if (!_loggedNoTarget)
+            {
+                _loggedNoTarget = true;
+                DiagnosticLog.Info(Source, $"Nothing to translate into: the display language is '{CultureInfo.CurrentUICulture.Name}'.");
+            }
+
             return null;
         }
 
@@ -62,7 +81,7 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
     {
         string tag = CultureInfo.CurrentUICulture.Name;
 
-        if (tag.Length == 0 || tag.StartsWith("en", StringComparison.OrdinalIgnoreCase) && (tag.Length == 2 || tag[2] == '-'))
+        if (tag.Length == 0 || (tag.StartsWith("en", StringComparison.OrdinalIgnoreCase) && (tag.Length == 2 || tag[2] == '-')))
         {
             return null;
         }
@@ -88,9 +107,13 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
                 },
                 timeout.Token).ConfigureAwait(false);
 
+            DiagnosticLog.Info(
+                Source,
+                $"The Engine answered {result.Outcome}: {result.TranslatedCount} translated, {result.CachedCount} cached, {result.UnchangedCount} unchanged.");
+
             if (result.TranslatedCount + result.CachedCount == 0)
             {
-                ReportOnce(result);
+                ReportOnce(result, targetLanguage);
                 return null;
             }
 
@@ -105,14 +128,22 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
                 connection.ReportFailure(service);
             }
 
-            ActivityLog.LogError(nameof(DocumentationTranslator), $"Translation request failed: {ex}");
+            DiagnosticLog.Error(Source, $"Translation request failed: {ex}");
             return null;
         }
     }
 
     // Logged once per kind, not per hover: "no model installed" would otherwise fill the log.
-    private void ReportOnce(TranslateDocumentationResult result)
+    private void ReportOnce(TranslateDocumentationResult result, string targetLanguage)
     {
+        if (result.Outcome == TranslationOutcome.NoProviderAvailable)
+        {
+            // Quite possibly just because no model is installed yet. The setup prompt works that out
+            // (without touching the network) and, if so, offers to download one; it is a no-op for any
+            // language it has already dealt with this session.
+            ModelSetupPrompt.Shared.Offer(targetLanguage);
+        }
+
         if (result.Outcome == TranslationOutcome.Completed)
         {
             return;
@@ -127,6 +158,6 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
         }
 
         string detail = result.ProviderFailure.HasValue ? $" ({result.ProviderFailure.Value})" : string.Empty;
-        ActivityLog.LogWarning(nameof(DocumentationTranslator), $"No translation was produced: {result.Outcome}{detail}.");
+        ActivityLog.LogWarning(Source, $"No translation was produced: {result.Outcome}{detail}.");
     }
 }
