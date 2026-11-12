@@ -22,4 +22,16 @@ internal static partial class LlamaLog
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Stopped the model server.")]
     public static partial void ServerStopped(this ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Installing the model server and {Model}.")]
+    public static partial void InstallStarted(this ILogger logger, string model);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Installed the model server, build {Version}.")]
+    public static partial void RuntimeInstalled(this ILogger logger, string version);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Installed {Model}; local translation is ready.")]
+    public static partial void Installed(this ILogger logger, string model);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Installing the model server or the model failed.")]
+    public static partial void InstallFailed(this ILogger logger, Exception exception);
 }

@@ -32,7 +32,10 @@ public sealed record ModelInstallStatus
 {
     public required ModelInstallState State { get; init; }
 
-    /// <summary>The size of the download in bytes while installing, or 0 when not known.</summary>
+    /// <summary>
+    /// The size of the download in bytes: what there is to download before it starts, so the user can be told,
+    /// and the whole of it while installing. 0 when not known.
+    /// </summary>
     public long TotalBytes { get; init; }
 
     /// <summary>How much of it has arrived.</summary>
