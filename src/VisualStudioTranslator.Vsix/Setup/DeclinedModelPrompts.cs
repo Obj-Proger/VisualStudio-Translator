@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-
-namespace VisualStudioTranslator.Vsix.Setup;
+﻿namespace VisualStudioTranslator.Vsix.Setup;
 
 /// <summary>
 /// Remembers the languages the user said "don't ask again" about, so a model is never offered

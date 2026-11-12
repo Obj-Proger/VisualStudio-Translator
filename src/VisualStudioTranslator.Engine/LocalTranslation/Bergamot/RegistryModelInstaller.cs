@@ -27,7 +27,7 @@ internal sealed class RegistryModelInstaller(
     ITextTranslatorFactory factory,
     ILogger<RegistryModelInstaller> logger,
     TimeProvider? time = null,
-    string? registryUrl = null) : IModelInstaller
+    string? registryUrl = null) : IModelInstaller, IDisposable
 {
     public const string DefaultRegistryUrl =
         "https://storage.googleapis.com/moz-fx-translations-data--303e-prod-translations-data/db/models.json";
@@ -97,6 +97,13 @@ internal sealed class RegistryModelInstaller(
         _ = Task.Run(() => RunAsync(pair, job), CancellationToken.None);
 
         return Task.FromResult(job.Snapshot(_registryUri.Host));
+    }
+
+    // The HTTP client is not released here: it was handed in, so whoever made it owns it.
+    public void Dispose()
+    {
+        _registryGate.Dispose();
+        _registry?.Dispose();
     }
 
     // Runs in the background, so nothing may escape from it: an unhandled exception here would end the Engine.

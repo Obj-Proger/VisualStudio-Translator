@@ -1,6 +1,5 @@
 ﻿using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
-using VisualStudioTranslator.Core.Caching;
 using VisualStudioTranslator.Core.Languages;
 using VisualStudioTranslator.Core.Providers.Abstractions;
 using VisualStudioTranslator.Core.Quality;

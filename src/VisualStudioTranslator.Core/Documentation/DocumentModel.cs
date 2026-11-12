@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace VisualStudioTranslator.Core.Documentation;
+﻿namespace VisualStudioTranslator.Core.Documentation;
 
 /// <summary>
 /// A structured representation of a symbol's XML documentation comment, parsed once and

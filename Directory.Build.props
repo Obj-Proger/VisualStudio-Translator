@@ -5,9 +5,20 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
-  <!-- Locally warnings stay warnings. With CI=true (the check run before every push, and any
-       CI service) every warning is an error, so nothing is pushed with one. -->
+  <!-- Code analysis on every build: the .NET analyzers at their recommended set, plus the code-style
+       rules .editorconfig marks as warnings. Locally they stay warnings. With CI=true (the check
+       run before every push, and any CI service) every warning is an error, so nothing is pushed
+       with one. -->
   <PropertyGroup>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <TreatWarningsAsErrors Condition="'$(CI)' == 'true'">true</TreatWarningsAsErrors>
+
+    <!-- The compiler reports unnecessary usings (IDE0005) only when it builds the XML documentation,
+         which also checks every doc comment that is written. Comments are written where they explain
+         something, not on every member or parameter, so neither a missing doc comment (CS1591) nor
+         a parameter left out of one (CS1573) is a warning. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
   </PropertyGroup>
 </Project>

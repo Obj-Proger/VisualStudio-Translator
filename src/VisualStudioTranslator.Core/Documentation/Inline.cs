@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace VisualStudioTranslator.Core.Documentation;
+﻿namespace VisualStudioTranslator.Core.Documentation;
 
 /// <summary>
 /// One inline element within a <see cref="Paragraph"/> or <see cref="ListItem"/>. This is

@@ -1,5 +1,4 @@
 ﻿using AwesomeAssertions;
-using VisualStudioTranslator.Core.Documentation;
 using VisualStudioTranslator.Core.Quality;
 using Xunit;
 

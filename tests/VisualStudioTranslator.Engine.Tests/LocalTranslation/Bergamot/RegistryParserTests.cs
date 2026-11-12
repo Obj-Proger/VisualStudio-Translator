@@ -10,7 +10,7 @@ public sealed class RegistryParserTests
 {
     private const string Hash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
-    private static JsonElement Registry(string json) => JsonDocument.Parse(json).RootElement;
+    private static JsonElement Registry(string json) => JsonElement.Parse(json);
 
     private static string Files(string tag) => $$"""
         { "model": { "path": "{{tag}}/model.bin.gz" }, "vocab": { "path": "{{tag}}/vocab.spm.gz" } }

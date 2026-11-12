@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using VisualStudioTranslator.Core.Quality;
+﻿using VisualStudioTranslator.Core.Quality;
 
 namespace VisualStudioTranslator.Core.Rpc;
 

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VisualStudioTranslator.Vsix.Service;
@@ -33,5 +30,15 @@ public sealed class VisualStudioTranslatorPackage : AsyncPackage
         EngineConnection.Shared.WarmUp();
 
         return Task.CompletedTask;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            EngineConnection.Shared.Dispose();
+        }
+
+        base.Dispose(disposing);
     }
 }

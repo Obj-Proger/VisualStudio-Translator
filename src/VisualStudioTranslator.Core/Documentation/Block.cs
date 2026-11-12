@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace VisualStudioTranslator.Core.Documentation;
+﻿namespace VisualStudioTranslator.Core.Documentation;
 
 /// <summary>
 /// One block-level element within a <see cref="Section"/>: a paragraph, a list, or a

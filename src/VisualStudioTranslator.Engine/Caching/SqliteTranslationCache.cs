@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using System.Globalization;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using VisualStudioTranslator.Core.Caching;
 
@@ -66,7 +67,7 @@ internal sealed class SqliteTranslationCache(
 
     /// <summary>How many entries are stored right now. For tests; 0 when the cache is unavailable.</summary>
     internal int Count =>
-        Run("count", connection => (int)Convert.ToInt64(Scalar(connection, "SELECT COUNT(*) FROM translations;")), fallback: 0);
+        Run("count", connection => (int)Convert.ToInt64(Scalar(connection, "SELECT COUNT(*) FROM translations;"), CultureInfo.InvariantCulture), fallback: 0);
 
     public Task<CachedTranslation?> TryGetAsync(TranslationCacheKey key, CancellationToken cancellationToken)
     {
@@ -181,7 +182,7 @@ internal sealed class SqliteTranslationCache(
             Execute(connection, "PRAGMA journal_mode = WAL;");
             Execute(connection, "PRAGMA synchronous = NORMAL;");
 
-            if (Convert.ToInt64(Scalar(connection, "PRAGMA user_version;")) != SchemaVersion)
+            if (Convert.ToInt64(Scalar(connection, "PRAGMA user_version;"), CultureInfo.InvariantCulture) != SchemaVersion)
             {
                 CreateSchema(connection);
             }
@@ -295,7 +296,7 @@ internal sealed class SqliteTranslationCache(
 
         _writesSincePrune = 0;
 
-        long excess = Convert.ToInt64(Scalar(connection, "SELECT COUNT(*) FROM translations;")) - maxEntries;
+        long excess = Convert.ToInt64(Scalar(connection, "SELECT COUNT(*) FROM translations;"), CultureInfo.InvariantCulture) - maxEntries;
         if (excess <= 0)
         {
             return;

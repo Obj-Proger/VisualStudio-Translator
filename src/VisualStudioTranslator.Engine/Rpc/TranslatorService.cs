@@ -1,6 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using VisualStudioTranslator.Core.Documentation;
 using VisualStudioTranslator.Core.Languages;
 using VisualStudioTranslator.Core.Providers.Abstractions;

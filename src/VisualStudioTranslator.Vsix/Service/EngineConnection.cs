@@ -1,9 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
-using System.Security.Principal;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Security.Principal;
 using Microsoft.VisualStudio.Shell;
 using VisualStudioTranslator.Core.Rpc;
 
@@ -19,7 +14,7 @@ namespace VisualStudioTranslator.Vsix.Service;
 /// shutdown, belong to the Engine's lifecycle work, which is still to come.
 /// </para>
 /// </summary>
-internal sealed class EngineConnection
+internal sealed class EngineConnection : IDisposable
 {
     private static readonly TimeSpan RunningEngineTimeout = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan StartedEngineTimeout = TimeSpan.FromSeconds(15);
@@ -106,6 +101,23 @@ internal sealed class EngineConnection
         }
 
         toDispose?.Dispose();
+    }
+
+    /// <summary>
+    /// Closes the connection when Visual Studio shuts down. The Engine notices the client has
+    /// gone and, if it was the last one, ends itself after its idle period.
+    /// </summary>
+    public void Dispose()
+    {
+        ServiceClient? client;
+        lock (_sync)
+        {
+            client = _client;
+            _client = null;
+        }
+
+        client?.Dispose();
+        _connecting.Dispose();
     }
 
     private static async Task<ServiceClient> ConnectAsync(CancellationToken cancellationToken)
