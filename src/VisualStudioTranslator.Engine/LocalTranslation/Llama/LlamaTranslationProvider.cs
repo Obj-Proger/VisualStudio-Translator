@@ -19,8 +19,8 @@ namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
 /// again, at the cost of a few seconds of loading.
 /// </para>
 /// <para>
-/// It replaces the Bergamot provider and takes over its identifier, so the saved choice of provider keeps
-/// working. Its revision is a different one, so translations made by Bergamot are not served as its own.
+/// Its identifier, "local", is the one the Bergamot provider it replaced had, so a saved choice of provider
+/// keeps working. Its revision is a different one, so translations Bergamot made are not served as its own.
 /// </para>
 /// </summary>
 internal sealed class LlamaTranslationProvider : ITranslationProvider, IDisposable

@@ -91,7 +91,8 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
 
             string message =
                 $"Visual Studio Translator can translate documentation into {DisplayName(targetLanguage)} entirely on this computer. " +
-                $"That needs a one-time download of a language model (up to about 50 MB) from {status.SourceHost}. " +
+                $"That needs a one-time download of a language model ({DescribeSize(status.TotalBytes)}) from {status.SourceHost}, " +
+                "which then serves every language. " +
                 "Nothing from your code is sent.";
 
             InfoBarHandle? bar = null;
@@ -138,9 +139,9 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
 
             DiagnosticLog.Info(Source, $"Installing the model for {targetLanguage} was started: {status.State}.");
 
-            DateTime deadline = DateTime.UtcNow.AddMinutes(35);
-
-            while (status.State == ModelInstallState.Installing && DateTime.UtcNow < deadline)
+            // No time limit: gigabytes over a slow connection take hours. The Engine gives up on a download that
+            // has stopped moving, and the state then says so.
+            while (status.State == ModelInstallState.Installing)
             {
                 await ShowStatusAsync(DescribeProgress(status)).ConfigureAwait(false);
                 await Task.Delay(750).ConfigureAwait(false);
@@ -193,6 +194,11 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
 
         return $"Downloading the language model: {ToMegabytes(status.DoneBytes)} of {ToMegabytes(status.TotalBytes)} MB";
     }
+
+    private static string DescribeSize(long bytes) =>
+        bytes > 0
+            ? "about " + (bytes / 1073741824.0).ToString("0.0", CultureInfo.InvariantCulture) + " GB"
+            : "several gigabytes";
 
     private static string ToMegabytes(long bytes) =>
         (bytes / 1048576.0).ToString("0.0", CultureInfo.InvariantCulture);

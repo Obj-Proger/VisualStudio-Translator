@@ -23,7 +23,6 @@
          what the extension therefore runs on (it takes StreamJsonRpc from the Visual Studio SDK,
          not from here). The Engine stays on the same line so both ends behave alike. -->
     <PackageVersion Include="StreamJsonRpc" Version="2.22.23" />
-    <PackageVersion Include="BergamotTranslatorSharp" Version="0.7.0" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.11" />
   </ItemGroup>
   <!-- VisualStudioTranslator.Vsix -->
