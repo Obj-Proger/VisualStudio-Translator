@@ -9,10 +9,13 @@
 		<VSSDKBuildToolsAutoSetup>true</VSSDKBuildToolsAutoSetup>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+	<PropertyGroup>
 		<!-- Deploys the built VSIX into the experimental hive so F5 actually installs it,
-         instead of just starting a plain devenv.exe that knows nothing about it. -->
-		<DeployExtension>true</DeployExtension>
+         instead of just starting a plain devenv.exe that knows nothing about it. Only a Debug
+         build made by Visual Studio deploys: 'dotnet build' cannot (the VSSDK targets fail it
+         with "VSIX deployment is not supported"), and it still has to build the whole solution. -->
+		<DeployExtension>false</DeployExtension>
+		<DeployExtension Condition="'$(Configuration)' == 'Debug' And '$(BuildingInsideVisualStudio)' == 'true'">true</DeployExtension>
 	</PropertyGroup>
 
 	<PropertyGroup>

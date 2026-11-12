@@ -4,4 +4,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+
+  <!-- Locally warnings stay warnings. With CI=true (the check run before every push, and any
+       CI service) every warning is an error, so nothing is pushed with one. -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors Condition="'$(CI)' == 'true'">true</TreatWarningsAsErrors>
+  </PropertyGroup>
 </Project>

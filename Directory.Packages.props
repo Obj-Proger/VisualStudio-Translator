@@ -1,6 +1,9 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Lets a PackageVersion entry below raise the version of a package that is only pulled in
+         by another package, without referencing it directly. Used for MessagePack. -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <!-- VisualStudioTranslator.Core -->
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Core'">
@@ -12,7 +15,10 @@
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
     <PackageVersion Include="StreamJsonRpc" Version="2.25.29" />
     <PackageVersion Include="BergamotTranslatorSharp" Version="0.7.0" />
-	<PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.11" />
+    <!-- Not referenced directly: comes in through StreamJsonRpc, which asks for a version with a
+         known advisory (GHSA-qhrr-8q5h-9q3h). Pinned to the fixed release of the same 2.5 line. -->
+    <PackageVersion Include="MessagePack" Version="2.5.303" />
   </ItemGroup>
   <!-- VisualStudioTranslator.Vsix -->
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Vsix'">
@@ -35,6 +41,8 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
+    <!-- Same pin as the Engine's; here it arrives through the project under test. -->
+    <PackageVersion Include="MessagePack" Version="2.5.303" />
   </ItemGroup>
   <!-- VisualStudioTranslator.Engine.Tests -->
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Engine.Tests'">
@@ -42,5 +50,7 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
+    <!-- Same pin as the Engine's; here it arrives through the project under test. -->
+    <PackageVersion Include="MessagePack" Version="2.5.303" />
   </ItemGroup>
 </Project>
