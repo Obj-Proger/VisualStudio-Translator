@@ -17,6 +17,9 @@ internal static partial class LlamaLog
     [LoggerMessage(Level = LogLevel.Warning, Message = "The model server did not become ready and was stopped.")]
     public static partial void ServerNotReady(this ILogger logger);
 
+    [LoggerMessage(Level = LogLevel.Information, Message = "No translation for {Minutes:F0} min; stopping the model server.")]
+    public static partial void ServerIdle(this ILogger logger, double minutes);
+
     [LoggerMessage(Level = LogLevel.Information, Message = "Stopped the model server.")]
     public static partial void ServerStopped(this ILogger logger);
 }

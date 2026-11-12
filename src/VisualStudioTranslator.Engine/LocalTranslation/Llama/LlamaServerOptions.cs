@@ -35,4 +35,10 @@ internal sealed record LlamaServerOptions
     /// processor takes a while, and giving up early would only throw the work away.
     /// </summary>
     public TimeSpan RequestTimeout { get; init; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// How long the server is kept after the last request before it is stopped to give its memory back.
+    /// Long enough to span a pause in reading code, short enough not to hold gigabytes for an afternoon.
+    /// </summary>
+    public TimeSpan IdleTimeout { get; init; } = TimeSpan.FromMinutes(10);
 }
