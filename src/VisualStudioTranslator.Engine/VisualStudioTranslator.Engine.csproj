@@ -3,6 +3,9 @@
 	<PropertyGroup>
 		<TargetFramework>net10.0-windows</TargetFramework>
 		<OutputType>Exe</OutputType>
+		<!-- Needed by the generator behind [LibraryImport], which writes the Windows calls (job objects)
+		     as code that passes pointers. No unsafe code is written by hand. -->
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<!-- Development convenience: the Vsix starts the Engine from this project's own output folder
