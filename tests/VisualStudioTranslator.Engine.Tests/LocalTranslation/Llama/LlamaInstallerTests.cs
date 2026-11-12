@@ -97,7 +97,7 @@ public sealed class LlamaInstallerTests : IDisposable
         return status;
     }
 
-    private void InstallRuntimeByHand(LlamaInstallation installation)
+    private static void InstallRuntimeByHand(LlamaInstallation installation)
     {
         Directory.CreateDirectory(installation.RuntimeDirectory);
         File.WriteAllText(installation.ServerPath, "server");
