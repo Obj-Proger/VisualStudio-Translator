@@ -6,7 +6,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="PolySharp" PrivateAssets="all" />
-		<PackageReference Include="StreamJsonRpc" />
 	</ItemGroup>
 
 </Project>

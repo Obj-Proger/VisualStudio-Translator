@@ -5,32 +5,32 @@
          by another package, without referencing it directly. Used for MessagePack. -->
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
+  <!-- Every project -->
+  <ItemGroup>
+    <!-- Not referenced directly: comes in through StreamJsonRpc, which asks for a version with a
+         known advisory (GHSA-qhrr-8q5h-9q3h). Pinned to the fixed release of the same 2.5 line,
+         which is also the line Visual Studio itself ships. -->
+    <PackageVersion Include="MessagePack" Version="2.5.303" />
+  </ItemGroup>
   <!-- VisualStudioTranslator.Core -->
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Core'">
     <PackageVersion Include="PolySharp" Version="1.16.0" />
-    <PackageVersion Include="StreamJsonRpc" Version="2.25.29" />
   </ItemGroup>
   <!-- VisualStudioTranslator.Engine -->
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Engine'">
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
-    <PackageVersion Include="StreamJsonRpc" Version="2.25.29" />
+    <!-- The 2.22 line is what Visual Studio 2022 17.14, the oldest supported version, ships and
+         what the extension therefore runs on (it takes StreamJsonRpc from the Visual Studio SDK,
+         not from here). The Engine stays on the same line so both ends behave alike. -->
+    <PackageVersion Include="StreamJsonRpc" Version="2.22.23" />
     <PackageVersion Include="BergamotTranslatorSharp" Version="0.7.0" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.11" />
-    <!-- Not referenced directly: comes in through StreamJsonRpc, which asks for a version with a
-         known advisory (GHSA-qhrr-8q5h-9q3h). Pinned to the fixed release of the same 2.5 line. -->
-    <PackageVersion Include="MessagePack" Version="2.5.303" />
   </ItemGroup>
   <!-- VisualStudioTranslator.Vsix -->
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Vsix'">
     <PackageVersion Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" />
     <PackageVersion Include="Microsoft.VSSDK.BuildTools" Version="18.5.40034" />
     <PackageVersion Include="VSIX-SdkProjectAdapter" Version="4.0.0" />
-    <!-- MessagePack is not referenced directly; it comes in transitively via
-         Microsoft.VisualStudio.SDK. GlobalPackageReference both adds the reference and
-         carries its own version - it must NOT be paired with a separate PackageVersion
-         entry for the same package, or NuGet reports NU1506 (duplicate). Pinned to
-         clear known advisories in the version the SDK would otherwise pull in. -->
-    <GlobalPackageReference Include="MessagePack" Version="3.1.10" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="4.14.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.14.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="4.14.0" />
@@ -41,8 +41,6 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
-    <!-- Same pin as the Engine's; here it arrives through the project under test. -->
-    <PackageVersion Include="MessagePack" Version="2.5.303" />
   </ItemGroup>
   <!-- VisualStudioTranslator.Engine.Tests -->
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'VisualStudioTranslator.Engine.Tests'">
@@ -50,7 +48,5 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
-    <!-- Same pin as the Engine's; here it arrives through the project under test. -->
-    <PackageVersion Include="MessagePack" Version="2.5.303" />
   </ItemGroup>
 </Project>

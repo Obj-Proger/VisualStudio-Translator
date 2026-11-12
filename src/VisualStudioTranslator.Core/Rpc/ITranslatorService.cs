@@ -1,17 +1,19 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using PolyType;
-using StreamJsonRpc;
 
 namespace VisualStudioTranslator.Core.Rpc;
 
 /// <summary>
 /// The RPC contract exposed by the Engine process over the named pipe. Implemented by
 /// the Engine and consumed by the Vsix client through a StreamJsonRpc proxy.
+/// <para>
+/// A plain interface on purpose, with no reference to StreamJsonRpc and none of the attributes
+/// its newer versions use to generate the proxy at compile time. Inside Visual Studio the
+/// extension runs on Visual Studio's own copy of that library, and a contract compiled against
+/// a newer one than the oldest supported Visual Studio ships would fail to load there.
+/// </para>
 /// </summary>
-[JsonRpcContract]
-[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
-public partial interface ITranslatorService
+public interface ITranslatorService
 {
     /// <summary>
     /// The first call a client makes after connecting. Lets both sides confirm they
