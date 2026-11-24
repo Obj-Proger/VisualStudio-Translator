@@ -41,6 +41,11 @@ internal sealed class TranslatedQuickInfoSource(ITextBuffer buffer, IViewElement
     // takes, shorter than anyone would wait for a tooltip.
     private static readonly TimeSpan Budget = TimeSpan.FromMilliseconds(800);
 
+    // What the tooltip shows of a comment (see DocumentationElements); only these are sent to be translated.
+    // Parameters belong to signature help and exception descriptions are not shown at all, so translating
+    // them would only make the tooltip wait.
+    private static readonly string[] ShownSections = ["summary", "remarks", "returns", "value"];
+
     public async Task<QuickInfoItem?> GetQuickInfoItemAsync(IAsyncQuickInfoSession session, CancellationToken cancellationToken)
     {
         try
@@ -61,7 +66,8 @@ internal sealed class TranslatedQuickInfoSource(ITextBuffer buffer, IViewElement
                 return null;
             }
 
-            Task<DocumentModel?> work = DocumentationTranslator.Shared.TranslateAsync(documentation.Xml);
+            Task<DocumentModel?> work = DocumentationTranslator.Shared.TranslateAsync(
+                DocumentationXmlSections.Keep(documentation.Xml, ShownSections));
             ITrackingSpan applicableTo = snapshot.CreateTrackingSpan(
                 documentation.SpanStart, documentation.SpanLength, SpanTrackingMode.EdgeInclusive);
 
