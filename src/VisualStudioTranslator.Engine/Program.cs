@@ -42,6 +42,7 @@ builder.Services.AddSingleton(new EngineLifetimeOptions());
 builder.Services.AddSingleton<ClientTracker>();
 builder.Services.AddHostedService<IdleShutdownService>();
 
+builder.Services.AddSingleton<RejectedTranslations>();
 builder.Services.AddSingleton<TranslationOrchestrator>();
 builder.Services.AddSingleton<ITranslatorService, TranslatorService>();
 builder.Services.AddHostedService<NamedPipeRpcServer>();

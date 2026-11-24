@@ -19,7 +19,7 @@ internal static partial class TranslationLog
     [LoggerMessage(Level = LogLevel.Warning, Message = "Provider '{ProviderId}' returned {Actual} results for {Expected} segments; the remaining segments keep their original text.")]
     public static partial void ProviderReturnedWrongCount(this ILogger logger, string providerId, int expected, int actual);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "The translation of segment {SegmentId} was rejected and its original text is kept: {Issues}.")]
+    [LoggerMessage(Level = LogLevel.Warning, Message = "The translation of segment {SegmentId} was rejected and its original text is kept: {Issues}. It is not asked for again for a while.")]
     public static partial void TranslationRejected(this ILogger logger, int segmentId, string issues);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Segment {SegmentId} has {Length} characters, over the request limit of {Limit}; it is left untranslated.")]

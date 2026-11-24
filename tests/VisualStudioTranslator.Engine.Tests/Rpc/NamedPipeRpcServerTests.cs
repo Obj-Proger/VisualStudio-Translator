@@ -106,7 +106,10 @@ public sealed class NamedPipeRpcServerTests
     {
         TranslatorService service = new(
             NullLogger<TranslatorService>.Instance,
-            new TranslationOrchestrator(new MemoryTranslationCache(), NullLogger<TranslationOrchestrator>.Instance),
+            new TranslationOrchestrator(
+                new MemoryTranslationCache(),
+                new RejectedTranslations(TimeProvider.System),
+                NullLogger<TranslationOrchestrator>.Instance),
             providers,
             installer ?? new FakeModelInstaller());
         NamedPipeRpcServer server = new(

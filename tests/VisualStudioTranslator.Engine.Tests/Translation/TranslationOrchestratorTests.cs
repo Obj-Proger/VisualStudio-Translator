@@ -1,5 +1,6 @@
 ﻿using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using VisualStudioTranslator.Core.Caching;
 using VisualStudioTranslator.Core.Documentation;
 using VisualStudioTranslator.Core.Languages;
@@ -34,10 +35,13 @@ public sealed class TranslationOrchestratorTests
         ["Removes the ⟦0⟧ item from the list."] = "Удаляет элемент ⟦0⟧ ] из списка.",
     };
 
+    // Left in English, which the validator turns down for a Russian target.
+    private static readonly Dictionary<string, string> Rejected = new() { [Returns] = "Returns the number of items." };
+
     private static readonly LanguagePair EnglishToRussian = LanguagePair.Create("en", "ru")!;
 
-    private static TranslationOrchestrator Orchestrator(ITranslationCache cache) =>
-        new(cache, NullLogger<TranslationOrchestrator>.Instance);
+    private static TranslationOrchestrator Orchestrator(ITranslationCache cache, RejectedTranslations? rejections = null) =>
+        new(cache, rejections ?? new RejectedTranslations(new FakeTimeProvider()), NullLogger<TranslationOrchestrator>.Instance);
 
     private static TranslationRequest Request(DocumentModel document) =>
         new() { Document = document, Languages = EnglishToRussian };
@@ -333,6 +337,76 @@ public sealed class TranslationOrchestratorTests
     }
 
     [Fact]
+    public async Task TranslateAsync_RejectedSegment_IsNotSentToTheSameProviderAgain()
+    {
+        FakeProvider provider = new(Rejected);
+        TranslationOrchestrator orchestrator = Orchestrator(new MemoryTranslationCache());
+
+        await orchestrator.TranslateAsync(Request(Doc(Returns)), provider, Token);
+        TranslationResult second = await orchestrator.TranslateAsync(Request(Doc(Returns)), provider, Token);
+
+        provider.Calls.Should().ContainSingle();
+        second.UnchangedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task TranslateAsync_RejectedSegment_DoesNotHoldBackTheOthers()
+    {
+        FakeProvider provider = new(new Dictionary<string, string>(Translations) { [Returns] = "Returns." });
+        TranslationOrchestrator orchestrator = Orchestrator(new MemoryTranslationCache());
+
+        await orchestrator.TranslateAsync(Request(Doc(Returns)), provider, Token);
+        TranslationResult second = await orchestrator.TranslateAsync(Request(Doc(Returns, Gets)), provider, Token);
+
+        provider.Calls[^1].Should().Equal(Gets);
+        second.TranslatedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task TranslateAsync_RejectedSegment_IsAskedForAgainOnceTheRejectionHasExpired()
+    {
+        FakeTimeProvider time = new();
+        FakeProvider provider = new(Rejected);
+        TranslationOrchestrator orchestrator = Orchestrator(new MemoryTranslationCache(), new RejectedTranslations(time));
+
+        await orchestrator.TranslateAsync(Request(Doc(Returns)), provider, Token);
+        time.Advance(RejectedTranslations.Retention);
+        await orchestrator.TranslateAsync(Request(Doc(Returns)), provider, Token);
+
+        provider.Calls.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task TranslateAsync_RejectedSegment_IsAskedForAgainFromANewRevisionOfTheProvider()
+    {
+        TranslationOrchestrator orchestrator = Orchestrator(new MemoryTranslationCache());
+        FakeProvider updated = new(Translations) { Revision = "2" };
+
+        await orchestrator.TranslateAsync(Request(Doc(Returns)), new FakeProvider(Rejected), Token);
+        TranslationResult result = await orchestrator.TranslateAsync(Request(Doc(Returns)), updated, Token);
+
+        updated.Calls.Should().ContainSingle();
+        result.TranslatedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task TranslateAsync_ProviderFailure_IsNotRememberedAsARejection()
+    {
+        TranslationOrchestrator orchestrator = Orchestrator(new MemoryTranslationCache());
+        FakeProvider failing = new(Translations)
+        {
+            Throws = new TranslationProviderException(ProviderFailureKind.Unavailable, "down"),
+        };
+        FakeProvider working = new(Translations);
+
+        await orchestrator.TranslateAsync(Request(Doc(Returns)), failing, Token);
+        TranslationResult result = await orchestrator.TranslateAsync(Request(Doc(Returns)), working, Token);
+
+        working.Calls.Should().ContainSingle();
+        result.TranslatedCount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task TranslateAsync_CacheThatThrows_DoesNotBreakTheTranslation()
     {
         TranslationResult result = await Orchestrator(new ThrowingCache())
@@ -497,11 +571,13 @@ public sealed class TranslationOrchestratorTests
 
         public string Id { get; init; } = "fake";
 
+        public string Revision { get; init; } = "1";
+
         public ProviderInfo Info => new()
         {
             Id = Id,
             DisplayName = Id,
-            Revision = "1",
+            Revision = Revision,
             Kind = Kind,
             QualityTier = Kind == ProviderKind.Cloud ? QualityTiers.Cloud : QualityTiers.Compact,
         };

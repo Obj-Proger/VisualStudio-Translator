@@ -23,12 +23,17 @@ namespace VisualStudioTranslator.Engine.Translation;
 /// the better one is switched off.
 /// </para>
 /// <para>
+/// A segment whose translation this provider got rejected is not sent to it again for a while (see
+/// <see cref="RejectedTranslations"/>): the same text would come back the same and be rejected the same.
+/// </para>
+/// <para>
 /// Deliberately not here: choosing a provider, retrying, falling back to another one, and
 /// deciding whether the user consented to a cloud provider. The orchestrator is handed a
 /// provider and a consent flag, and only refuses to send text where consent is missing.
 /// </para>
 /// </summary>
-internal sealed class TranslationOrchestrator(ITranslationCache cache, ILogger<TranslationOrchestrator> logger)
+internal sealed class TranslationOrchestrator(
+    ITranslationCache cache, RejectedTranslations rejections, ILogger<TranslationOrchestrator> logger)
 {
     public async Task<TranslationResult> TranslateAsync(
         TranslationRequest request, ITranslationProvider provider, CancellationToken cancellationToken)
@@ -69,7 +74,7 @@ internal sealed class TranslationOrchestrator(ITranslationCache cache, ILogger<T
                 group.Translation = cached.Text;
                 group.FromCache = true;
             }
-            else
+            else if (!rejections.IsRejected(group.Key, provider.Info))
             {
                 misses.Add(group);
             }
@@ -219,6 +224,7 @@ internal sealed class TranslationOrchestrator(ITranslationCache cache, ILogger<T
                             group.Members[0].Segment.Id, string.Join(", ", validation.Issues.Select(issue => issue.Kind)));
                     }
 
+                    rejections.Remember(group.Key, provider.Info);
                     continue;
                 }
 
