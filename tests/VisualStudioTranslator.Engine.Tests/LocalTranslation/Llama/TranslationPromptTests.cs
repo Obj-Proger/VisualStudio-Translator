@@ -45,6 +45,20 @@ public sealed class TranslationPromptTests
     }
 
     [Fact]
+    public void Build_TextWithTags_ExplainsTheTags()
+    {
+        Build("en", "ru", "Returns <x0/>.").Should().Contain("Copy every tag into the translation unchanged");
+    }
+
+    [Fact]
+    public void Build_TextWithoutTags_DoesNotMentionTags()
+    {
+        // Told about tags with none in the text, the model put some of its own around quoted phrases.
+        Build("en", "ru", "Tells \"nobody needs me\" from \"nobody has asked\".").Should().NotContain("<x0/>")
+            .And.NotContain("tag");
+    }
+
+    [Fact]
     public void Build_SameInput_GivesTheSamePrompt()
     {
         Build("en", "ru").Should().Be(Build("en", "ru"));

@@ -102,6 +102,16 @@ public sealed class ChatCompletionTranslatorTests : IDisposable
     }
 
     [Fact]
+    public async Task TranslateAsync_TagsTheModelMadeUp_AreDroppedAndTheTranslationKept()
+    {
+        _server.Answer("Отличает <g0>«я никому не нужен»</g0> от простоя.");
+
+        string result = await TranslateAsync("Tells \"nobody needs me\" from idleness.");
+
+        result.Should().Be("Отличает «я никому не нужен» от простоя.");
+    }
+
+    [Fact]
     public async Task TranslateAsync_TextThatAlreadyLooksLikeTags_GoesOutAndComesBackAsItIs()
     {
         _server.Answer("Запишите <x1/> в ⟦0⟧.");

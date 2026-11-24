@@ -38,13 +38,59 @@ public sealed class MarkupTagsTests
     [InlineData("No tokens at all.")]
     public void ToTokens_UndoesToTags(string text)
     {
-        MarkupTags.ToTokens(MarkupTags.ToTags(text)).Should().Be(text);
+        string sent = MarkupTags.ToTags(text);
+
+        MarkupTags.ToTokens(sent, sent).Should().Be(text);
     }
 
     [Fact]
     public void ToTokens_AcceptsASpaceBeforeTheClosingSlash()
     {
-        MarkupTags.ToTokens("Возвращает <x0 />.").Should().Be("Возвращает ⟦0⟧.");
+        MarkupTags.ToTokens("Возвращает <x0 />.", "Returns <x0/>.").Should().Be("Возвращает ⟦0⟧.");
+    }
+
+    [Fact]
+    public void ToTokens_PairTheTextDidNotHave_IsDroppedAndItsWordsKept()
+    {
+        // What Gemma 4 did with a quoted phrase in a summary that had no markup at all.
+        string answer = "Позволяет отличить <g0>«я больше никому не нужен»</g0> от <g1>«давно ничего не просили»</g1>.";
+
+        MarkupTags.ToTokens(answer, "Tells \"nobody needs me\" from \"nobody has asked lately\".")
+            .Should().Be("Позволяет отличить «я больше никому не нужен» от «давно ничего не просили».");
+    }
+
+    [Fact]
+    public void ToTokens_PairWithAnotherNumberThanTheOneSent_IsDropped()
+    {
+        MarkupTags.ToTokens("Используйте <g0>кэш</g0> и <g1>пул</g1>.", "Use <g0>the cache</g0> and the pool.")
+            .Should().Be("Используйте ⟦0:o⟧кэш⟦0:c⟧ и пул.");
+    }
+
+    [Theory]
+    [InlineData("Возвращает <x3/> имя.", "Возвращает имя.")]
+    [InlineData("Возвращает имя <x3/>.", "Возвращает имя.")]
+    [InlineData("<x3/> Возвращает имя.", " Возвращает имя.")]
+    [InlineData("Возвращает<x3/>имя.", "Возвращаетимя.")]
+    public void ToTokens_StandAloneTagTheTextDidNotHave_IsDroppedWithTheSpaceBeforeIt(string answer, string expected)
+    {
+        MarkupTags.ToTokens(answer, "Returns the name.").Should().Be(expected);
+    }
+
+    [Fact]
+    public void ToTokens_KnownAndInventedTagsTogether_KeepsOnlyTheKnown()
+    {
+        MarkupTags.ToTokens("Записывает <x0/> в <g5>поток</g5>.", "Writes <x0/> to the stream.")
+            .Should().Be("Записывает ⟦0⟧ в поток.");
+    }
+
+    [Theory]
+    [InlineData("Returns the name.", false)]
+    [InlineData("Gets the name of a List<T>.", false)]
+    [InlineData("Returns <x0/>.", true)]
+    [InlineData("Use <g1>the cache</g1>.", true)]
+    public void HasTags_TellsWhetherTheTextHoldsTags(string text, bool expected)
+    {
+        MarkupTags.HasTags(text).Should().Be(expected);
     }
 
     [Theory]
@@ -57,7 +103,7 @@ public sealed class MarkupTagsTests
     [InlineData("<X0/>")]
     public void ToTokens_LeavesATagInAnyOtherShapeAsText(string text)
     {
-        MarkupTags.ToTokens(text).Should().Be(text);
+        MarkupTags.ToTokens(text, "<x0/> and <g0>a phrase</g0>").Should().Be(text);
     }
 
     [Theory]

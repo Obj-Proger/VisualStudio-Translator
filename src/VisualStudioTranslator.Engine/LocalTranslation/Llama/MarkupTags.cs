@@ -17,8 +17,9 @@ internal static partial class MarkupTags
     [GeneratedRegex("⟦([0-9]+)(:[oc])?⟧")]
     private static partial Regex TokenPattern();
 
-    // Exactly the three shapes ToTags writes, plus the one space some models put before "/>".
-    [GeneratedRegex("<x([0-9]+) ?/>|<g([0-9]+)>|</g([0-9]+)>")]
+    // Exactly the three shapes ToTags writes, plus the one space some models put before "/>". The space before a
+    // stand-alone tag is captured so that it can go with the tag when the tag is dropped.
+    [GeneratedRegex("( ?)<x([0-9]+) ?/>|<g([0-9]+)>|</g([0-9]+)>")]
     private static partial Regex TagPattern();
 
     // Anything that could be taken for one of the tags, whatever its spacing.
@@ -44,24 +45,62 @@ internal static partial class MarkupTags
             };
         });
 
-    /// <summary>
-    /// Turns the tags in a model's answer back into tokens. A tag in any other shape than the ones
-    /// <see cref="ToTags"/> writes is left as text: the token it should have been is then missing, which the
-    /// validator notices, and that is safer than guessing what the model meant.
-    /// </summary>
-    public static string ToTokens(string text) =>
-        TagPattern().Replace(text, static match =>
-        {
-            if (match.Groups[1].Success)
-            {
-                return "⟦" + match.Groups[1].Value + "⟧";
-            }
+    /// <summary>Whether <paramref name="text"/> holds any of the tags <see cref="ToTags"/> writes.</summary>
+    public static bool HasTags(string text) => TagPattern().IsMatch(text);
 
+    /// <summary>
+    /// Turns the tags in a model's answer back into tokens.
+    /// <list type="bullet">
+    /// <item>A tag in any other shape than the ones <see cref="ToTags"/> writes is left as text: the token it
+    /// should have been is then missing, which the validator notices, and that is safer than guessing what the
+    /// model meant.</item>
+    /// <item>A tag the text that was sent did not have is dropped. Models put tags of their own around a quoted
+    /// phrase or a term, having been told what tags look like; such a tag stands for nothing, so the words it
+    /// wraps are the translation, and keeping it would only get a good translation rejected.</item>
+    /// </list>
+    /// </summary>
+    /// <param name="answer">The model's answer.</param>
+    /// <param name="sent">The text as it was sent, with its tags.</param>
+    public static string ToTokens(string answer, string sent)
+    {
+        HashSet<string> known = new(StringComparer.Ordinal);
+
+        foreach (Match tag in TagPattern().Matches(sent))
+        {
+            known.Add(KeyOf(tag));
+        }
+
+        return TagPattern().Replace(answer, match =>
+        {
             if (match.Groups[2].Success)
             {
-                return "⟦" + match.Groups[2].Value + ":o⟧";
+                string space = match.Groups[1].Value;
+
+                if (known.Contains(KeyOf(match)))
+                {
+                    return space + "⟦" + match.Groups[2].Value + "⟧";
+                }
+
+                // Dropped between two words, it takes one of the two spaces around it with it.
+                int next = match.Index + match.Length;
+                bool spaceFollows =
+                    next >= answer.Length || char.IsWhiteSpace(answer[next]) || char.IsPunctuation(answer[next]);
+
+                return spaceFollows ? string.Empty : space;
             }
 
-            return "⟦" + match.Groups[3].Value + ":c⟧";
+            if (!known.Contains(KeyOf(match)))
+            {
+                return string.Empty;
+            }
+
+            string id = (match.Groups[3].Success ? match.Groups[3] : match.Groups[4]).Value;
+
+            return match.Groups[3].Success ? "⟦" + id + ":o⟧" : "⟦" + id + ":c⟧";
         });
+    }
+
+    // "x0" for a stand-alone tag, "g1" for either tag of a pair: what has to match between what was sent and what came back.
+    private static string KeyOf(Match tag) =>
+        tag.Groups[2].Success ? "x" + tag.Groups[2].Value : "g" + (tag.Groups[3].Success ? tag.Groups[3] : tag.Groups[4]).Value;
 }

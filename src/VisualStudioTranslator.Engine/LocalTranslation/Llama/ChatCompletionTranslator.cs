@@ -41,7 +41,7 @@ internal sealed class ChatCompletionTranslator(HttpClient client)
         string answer = await AskAsync(TranslationPrompt.Build(pair, wireText), wireText.Length, cancellationToken)
             .ConfigureAwait(false);
 
-        return tagged ? MarkupTags.ToTokens(answer) : answer;
+        return tagged ? MarkupTags.ToTokens(answer, wireText) : answer;
     }
 
     private async Task<string> AskAsync(string prompt, int sourceLength, CancellationToken cancellationToken)

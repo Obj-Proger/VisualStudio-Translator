@@ -17,13 +17,21 @@ internal static class TranslationPrompt
     /// Goes into the provider's revision. Change it with any change to the wording: the same text can then
     /// translate differently, and what was cached under the old wording must not be served as current.
     /// </summary>
-    public const string Version = "1";
+    public const string Version = "2";
 
     /// <param name="text">The segment, with its markup already written as tags (see <see cref="MarkupTags"/>).</param>
     public static string Build(LanguagePair pair, string text)
     {
         string source = LanguageName(pair.Source);
         string target = LanguageName(pair.Target);
+
+        // The rule about tags only goes with text that has tags. Told about tags with none in sight, the model
+        // made some up, around quoted phrases.
+        string tagRule = MarkupTags.HasTags(text)
+            ? "- Tags such as <x0/>, <g1> and </g1> stand for code and formatting taken out of the text. Copy every tag into " +
+              "the translation unchanged, exactly once. <gN> and </gN> are an opening and a closing tag around a phrase: " +
+              "translate the phrase and keep both tags around its translation.\n"
+            : string.Empty;
 
         return
             $"You are a professional {source} ({pair.Source}) to {target} ({pair.Target}) translator of software documentation. " +
@@ -32,9 +40,7 @@ internal static class TranslationPrompt
             "- Translate faithfully and completely. Do not omit, add or explain anything.\n" +
             "- Do not translate code: identifiers, names of types, members and parameters, and keywords such as true, false " +
             "and null stay exactly as written.\n" +
-            "- Tags such as <x0/>, <g1> and </g1> stand for code and formatting taken out of the text. Copy every tag into " +
-            "the translation unchanged, exactly once. <gN> and </gN> are an opening and a closing tag around a phrase: " +
-            "translate the phrase and keep both tags around its translation.\n" +
+            tagRule +
             $"- Output only the {target} translation, with no notes and no added quotes or formatting.\n\n" +
             "Text:\n" + text;
     }
