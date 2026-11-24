@@ -22,12 +22,7 @@ internal static class DocumentationElements
             return null;
         }
 
-        List<object> elements =
-        [
-            // The colour of control keywords ("if", "return"), so the label is clearly not
-            // part of the original documentation.
-            new ClassifiedTextElement(new ClassifiedTextRun(ClassificationTypeNames.ControlKeyword, "Translation")),
-        ];
+        List<object> elements = [Label()];
 
         foreach (IReadOnlyList<RenderedRun> paragraph in paragraphs)
         {
@@ -36,6 +31,19 @@ internal static class DocumentationElements
 
         return new ContainerElement(ContainerElementStyle.Stacked | ContainerElementStyle.VerticalPadding, elements);
     }
+
+    /// <summary>The section of a tooltip whose translation is still on its way.</summary>
+    public static ContainerElement Pending() => new(
+        ContainerElementStyle.Stacked | ContainerElementStyle.VerticalPadding,
+        Label(),
+
+        // The grey of code the compiler leaves out: present, but not yet the thing itself.
+        new ClassifiedTextElement(
+            new ClassifiedTextRun(ClassificationTypeNames.ExcludedCode, "Translating\u2026", ClassifiedTextRunStyle.Italic)));
+
+    // The colour of control keywords ("if", "return"), so the label is clearly not part of the original documentation.
+    private static ClassifiedTextElement Label() =>
+        new(new ClassifiedTextRun(ClassificationTypeNames.ControlKeyword, "Translation"));
 
     // Emphasis has no counterpart among the run styles the tooltip offers, so it reads as plain text for now.
     private static ClassifiedTextRun ToRun(RenderedRun run) => run.Style switch

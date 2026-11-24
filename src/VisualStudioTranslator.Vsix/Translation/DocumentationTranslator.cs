@@ -10,11 +10,10 @@ using VisualStudioTranslator.Vsix.Setup;
 namespace VisualStudioTranslator.Vsix.Translation;
 
 /// <summary>
-/// Asks the Engine to translate a documentation comment, waiting only as long as the caller can
-/// afford. A tooltip cannot appear until every source has answered, so a slow first translation
-/// (the Engine starting, a model loading) must not hold it up. When the time runs out the caller
-/// gets nothing, but the request is not abandoned: it carries on and fills the Engine's cache,
-/// so the next hover over the same symbol is answered at once.
+/// Asks the Engine to translate a documentation comment. The caller decides how long to wait: a tooltip
+/// waits a moment and then shows the translation when it arrives. Hovers over the same comment while it
+/// is being translated share one request, and a finished one fills the Engine's cache, so the next hover
+/// over the same symbol is answered at once.
 /// </summary>
 internal sealed class DocumentationTranslator(EngineConnection connection)
 {
@@ -23,7 +22,9 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
     // Documentation is written in English until the user can say otherwise.
     private const string SourceLanguage = "en";
 
-    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(60);
+    // A local model takes a few seconds a segment and a long comment has many, after a few seconds of loading
+    // the first time. A request that has not finished by then has something wrong with it.
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromMinutes(5);
 
     private readonly InFlightRequests<DocumentModel?> _inFlight = new();
     private readonly object _reportedSync = new();
@@ -40,11 +41,15 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
 
     public static DocumentationTranslator Shared { get; } = new(EngineConnection.Shared);
 
+    /// <summary>
+    /// Starts translating a documentation comment, or joins a translation of the same comment already under
+    /// way, without waiting for it.
+    /// </summary>
     /// <returns>
-    /// The translated document, or <see langword="null"/> when there is nothing to show: no target
-    /// language, the Engine could not translate it, or it did not finish within <paramref name="budget"/>.
+    /// The work, which gives the translated document, or <see langword="null"/> when there is nothing to show:
+    /// no language to translate into (then at once), or the Engine could not translate it.
     /// </returns>
-    public async Task<DocumentModel?> TryTranslateAsync(string documentationXml, TimeSpan budget, CancellationToken cancellationToken)
+    public Task<DocumentModel?> TranslateAsync(string documentationXml)
     {
         string? targetLanguage = GetTargetLanguage();
         if (targetLanguage is null)
@@ -55,19 +60,12 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
                 DiagnosticLog.Info(Source, $"Nothing to translate into: the display language is '{CultureInfo.CurrentUICulture.Name}'.");
             }
 
-            return null;
+            return Task.FromResult<DocumentModel?>(null);
         }
 
-        Task<DocumentModel?> work = _inFlight.GetOrStart(
+        return _inFlight.GetOrStart(
             targetLanguage + "\n" + documentationXml,
-            () => TranslateAsync(documentationXml, targetLanguage));
-
-        if (!await work.CompletesWithinAsync(budget, cancellationToken).ConfigureAwait(false))
-        {
-            return null;
-        }
-
-        return await work.ConfigureAwait(false);
+            () => RequestAsync(documentationXml, targetLanguage));
     }
 
     // For now the language of Windows' display decides. A setting replaces this once there is a
@@ -84,7 +82,7 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
         return tag;
     }
 
-    private async Task<DocumentModel?> TranslateAsync(string documentationXml, string targetLanguage)
+    private async Task<DocumentModel?> RequestAsync(string documentationXml, string targetLanguage)
     {
         ITranslatorService? service = null;
         using CancellationTokenSource timeout = new(RequestTimeout);

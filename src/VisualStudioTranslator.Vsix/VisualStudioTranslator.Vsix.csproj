@@ -32,6 +32,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- WPF's controls, from the .NET Framework itself (nothing is shipped in the .vsix): the
+         translation section of a tooltip that is filled in when its translation arrives is a
+         WPF element. The Visual Studio packages bring WPF's core assemblies, not this one. -->
+		<Reference Include="PresentationFramework" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<!-- Contracts and the pure pipe-naming logic shared with the Engine. This is the
          only cross-project reference allowed here: net48 cannot reference a
          net10.0-windows assembly (Engine) under any circumstances, not even with
