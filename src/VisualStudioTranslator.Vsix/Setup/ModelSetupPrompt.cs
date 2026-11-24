@@ -195,10 +195,13 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
         return $"Downloading the language model: {ToMegabytes(status.DoneBytes)} of {ToMegabytes(status.TotalBytes)} MB";
     }
 
-    private static string DescribeSize(long bytes) =>
-        bytes > 0
-            ? "about " + (bytes / 1073741824.0).ToString("0.0", CultureInfo.InvariantCulture) + " GB"
-            : "several gigabytes";
+    // Gigabytes for the model, megabytes when only the server is missing: "about 0.0 GB" said nothing.
+    private static string DescribeSize(long bytes) => bytes switch
+    {
+        <= 0 => "several gigabytes",
+        < 1073741824 => "about " + Math.Max(1, Math.Round(bytes / 1048576.0)).ToString("0", CultureInfo.InvariantCulture) + " MB",
+        _ => "about " + (bytes / 1073741824.0).ToString("0.0", CultureInfo.InvariantCulture) + " GB",
+    };
 
     private static string ToMegabytes(long bytes) =>
         (bytes / 1048576.0).ToString("0.0", CultureInfo.InvariantCulture);
