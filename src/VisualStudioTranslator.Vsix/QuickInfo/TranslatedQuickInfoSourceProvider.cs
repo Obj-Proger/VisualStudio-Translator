@@ -41,10 +41,6 @@ internal sealed class TranslatedQuickInfoSource(ITextBuffer buffer, IViewElement
     // takes, shorter than anyone would wait for a tooltip.
     private static readonly TimeSpan Budget = TimeSpan.FromMilliseconds(800);
 
-    // What the tooltip shows of a comment (see DocumentationElements); only these are sent to be translated.
-    // Parameters belong to signature help and exception descriptions are not shown at all, so translating
-    // them would only make the tooltip wait.
-    private static readonly string[] ShownSections = ["summary", "remarks", "returns", "value"];
 
     public async Task<QuickInfoItem?> GetQuickInfoItemAsync(IAsyncQuickInfoSession session, CancellationToken cancellationToken)
     {
@@ -67,7 +63,7 @@ internal sealed class TranslatedQuickInfoSource(ITextBuffer buffer, IViewElement
             }
 
             Task<DocumentModel?> work = DocumentationTranslator.Shared.TranslateAsync(
-                DocumentationXmlSections.Keep(documentation.Xml, ShownSections));
+                DocumentationXmlSections.Keep(documentation.Xml, DocumentationElements.ShownSections));
             ITrackingSpan applicableTo = snapshot.CreateTrackingSpan(
                 documentation.SpanStart, documentation.SpanLength, SpanTrackingMode.EdgeInclusive);
 
@@ -141,7 +137,7 @@ internal sealed class TranslatedQuickInfoSource(ITextBuffer buffer, IViewElement
     {
         // The documentation ids carry less than the author wrote (a generic's type parameters
         // are gone), so the compilation is asked what each reference really is.
-        IReadOnlyList<string> targets = DocumentRenderer.CollectReferenceTargets(translated.Summary, translated.Remarks);
+        IReadOnlyList<string> targets = DocumentRenderer.CollectReferenceTargets(DocumentationElements.SectionsOf(translated));
         IReadOnlyDictionary<string, ResolvedReference> references = await SymbolReferenceResolver
             .ResolveAsync(snapshot, targets, cancellationToken)
             .ConfigureAwait(false);
