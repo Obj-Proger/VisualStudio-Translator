@@ -3,13 +3,13 @@
 namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
 
 /// <summary>
-/// Remembers, across runs of the Engine, that the graphics card failed to run the model, so that the starts
-/// that follow go straight to the processor instead of failing first and costing the user a minute each.
+/// Remembers, across runs of the Engine, which graphics cards failed to run the model, so that the starts that
+/// follow go straight to the next card, or the processor, instead of failing first and costing the user a minute.
 /// <para>
 /// A failure is not taken as final. A card can fail for a reason that passes: a game holding its memory, a
-/// driver being updated. So the card is left alone for a day after a first failure, and for twice as long
-/// after each failure that follows, up to a month; one start that works on it forgets them all. A new build
-/// of the server, known by its path, starts with a clean slate as well.
+/// driver being updated. So a card is left alone for a day after a first failure, and for twice as long after
+/// each failure that follows, up to a month; one start that works on it forgets them all. Each card is judged
+/// on its own, and a new build of the server, known by its path, starts with a clean slate.
 /// </para>
 /// <para>
 /// Losing the file costs one failed start, so nothing about reading or writing it may fail a translation.
@@ -20,72 +20,108 @@ internal sealed class GpuVerdict(string path, TimeProvider time)
     private static readonly TimeSpan FirstPause = TimeSpan.FromDays(1);
     private static readonly TimeSpan LongestPause = TimeSpan.FromDays(30);
 
-    /// <summary>Whether the card is to be left alone for now with the server at <paramref name="serverPath"/>.</summary>
-    public bool IsUnusable(string serverPath) =>
-        Read() is { } record
-        && record.ServerPath.Equals(serverPath, StringComparison.OrdinalIgnoreCase)
-        && time.GetUtcNow() < record.Until;
+    private readonly Lock _sync = new();
 
-    /// <summary>Records one more failure, which leaves the card alone for longer than the one before.</summary>
-    public void MarkUnusable(string serverPath)
+    /// <summary>
+    /// Whether <paramref name="device"/> is to be left alone for now with the server at <paramref name="serverPath"/>.
+    /// </summary>
+    /// <param name="device">The card's name; empty for "whichever card the server picks".</param>
+    public bool IsUnusable(string serverPath, string device = "")
     {
-        int failures = Read() is { } record && record.ServerPath.Equals(serverPath, StringComparison.OrdinalIgnoreCase)
-            ? record.Failures + 1
-            : 1;
-
-        TimeSpan pause = TimeSpan.FromTicks(Math.Min(LongestPause.Ticks, FirstPause.Ticks << Math.Min(failures - 1, 10)));
-
-        Write(string.Join(
-            "\n",
-            serverPath,
-            failures.ToString(CultureInfo.InvariantCulture),
-            (time.GetUtcNow() + pause).ToString("O", CultureInfo.InvariantCulture)));
-    }
-
-    /// <summary>Forgets every failure: the card has just worked.</summary>
-    public void MarkUsable()
-    {
-        try
+        lock (_sync)
         {
-            File.Delete(path);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            // Left behind, it runs out by itself.
+            return Find(Read(), serverPath, device) is { } record && time.GetUtcNow() < record.Until;
         }
     }
 
-    private Record? Read()
+    /// <summary>Records one more failure of the card, which leaves it alone for longer than the one before.</summary>
+    public void MarkUnusable(string serverPath, string device = "")
     {
+        lock (_sync)
+        {
+            List<Record> records = Read();
+            Record? previous = Find(records, serverPath, device);
+            int failures = previous is null ? 1 : previous.Failures + 1;
+            TimeSpan pause = TimeSpan.FromTicks(Math.Min(LongestPause.Ticks, FirstPause.Ticks << Math.Min(failures - 1, 10)));
+
+            // Records of other builds are of no further use.
+            records.RemoveAll(record =>
+                record == previous || !record.ServerPath.Equals(serverPath, StringComparison.OrdinalIgnoreCase));
+            records.Add(new Record(serverPath, device, failures, time.GetUtcNow() + pause));
+            Write(records);
+        }
+    }
+
+    /// <summary>Forgets every failure of the card: it has just worked.</summary>
+    public void MarkUsable(string serverPath, string device = "")
+    {
+        lock (_sync)
+        {
+            List<Record> records = Read();
+
+            if (records.RemoveAll(record => Matches(record, serverPath, device)) > 0)
+            {
+                Write(records);
+            }
+        }
+    }
+
+    private static Record? Find(List<Record> records, string serverPath, string device) =>
+        records.FirstOrDefault(record => Matches(record, serverPath, device));
+
+    private static bool Matches(Record record, string serverPath, string device) =>
+        record.ServerPath.Equals(serverPath, StringComparison.OrdinalIgnoreCase) && record.Device == device;
+
+    // One card a line: server, card, failures, until. Anything not in that shape counts for nothing.
+    private List<Record> Read()
+    {
+        List<Record> records = [];
+
         try
         {
             if (!File.Exists(path))
             {
-                return null;
+                return records;
             }
 
-            string[] lines = File.ReadAllText(path).Split('\n');
+            foreach (string line in File.ReadAllText(path).Split('\n'))
+            {
+                string[] fields = line.Split('\t');
 
-            // Anything not in the shape written below is a file from elsewhere or half a file: it counts for nothing.
-            return lines.Length == 3
-                && int.TryParse(lines[1], NumberStyles.None, CultureInfo.InvariantCulture, out int failures)
-                && DateTimeOffset.TryParseExact(
-                    lines[2], "O", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTimeOffset until)
-                ? new Record(lines[0], failures, until)
-                : null;
+                if (fields.Length == 4
+                    && int.TryParse(fields[2], NumberStyles.None, CultureInfo.InvariantCulture, out int failures)
+                    && DateTimeOffset.TryParseExact(
+                        fields[3], "O", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTimeOffset until))
+                {
+                    records.Add(new Record(fields[0], fields[1], failures, until));
+                }
+            }
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            return null;
+            // Unreadable: as if nothing had failed.
         }
+
+        return records;
     }
 
-    private void Write(string content)
+    private void Write(List<Record> records)
     {
         try
         {
+            if (records.Count == 0)
+            {
+                File.Delete(path);
+                return;
+            }
+
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.WriteAllText(path, content);
+            File.WriteAllText(path, string.Join("\n", records.Select(record => string.Join(
+                "\t",
+                record.ServerPath,
+                record.Device,
+                record.Failures.ToString(CultureInfo.InvariantCulture),
+                record.Until.ToString("O", CultureInfo.InvariantCulture)))));
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -93,5 +129,5 @@ internal sealed class GpuVerdict(string path, TimeProvider time)
         }
     }
 
-    private sealed record Record(string ServerPath, int Failures, DateTimeOffset Until);
+    private sealed record Record(string ServerPath, string Device, int Failures, DateTimeOffset Until);
 }

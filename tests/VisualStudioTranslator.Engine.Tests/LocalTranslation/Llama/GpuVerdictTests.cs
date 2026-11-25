@@ -75,7 +75,7 @@ public sealed class GpuVerdictTests : IDisposable
     {
         Fail(3);
 
-        _verdict.MarkUsable();
+        _verdict.MarkUsable(Server);
         _verdict.IsUnusable(Server).Should().BeFalse();
 
         Fail(1);
@@ -99,6 +99,28 @@ public sealed class GpuVerdictTests : IDisposable
         _time.Advance(TimeSpan.FromDays(1));
 
         _verdict.IsUnusable(@"C:\llama\runtime\b13000-vulkan\llama-server.exe").Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsUnusable_EachCardIsJudgedOnItsOwn()
+    {
+        _verdict.MarkUnusable(Server, "NVIDIA GeForce RTX 4070 Laptop GPU");
+
+        _verdict.IsUnusable(Server, "NVIDIA GeForce RTX 4070 Laptop GPU").Should().BeTrue();
+        _verdict.IsUnusable(Server, "AMD Radeon 780M Graphics").Should().BeFalse();
+        _verdict.IsUnusable(Server).Should().BeFalse();
+    }
+
+    [Fact]
+    public void MarkUsable_OneCard_LeavesTheOthersFailures()
+    {
+        _verdict.MarkUnusable(Server, "NVIDIA GeForce RTX 4070 Laptop GPU");
+        _verdict.MarkUnusable(Server, "AMD Radeon 780M Graphics");
+
+        _verdict.MarkUsable(Server, "AMD Radeon 780M Graphics");
+
+        _verdict.IsUnusable(Server, "NVIDIA GeForce RTX 4070 Laptop GPU").Should().BeTrue();
+        _verdict.IsUnusable(Server, "AMD Radeon 780M Graphics").Should().BeFalse();
     }
 
     [Fact]

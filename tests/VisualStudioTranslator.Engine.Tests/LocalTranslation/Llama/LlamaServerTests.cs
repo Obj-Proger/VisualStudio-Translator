@@ -37,7 +37,12 @@ public sealed class LlamaServerTests : IDisposable
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    private LlamaServer Server(TimeSpan? startupTimeout = null, int gpuLayers = 0, GpuVerdict? verdict = null) => new(
+    private LlamaServer Server(
+        TimeSpan? startupTimeout = null,
+        int gpuLayers = 0,
+        GpuVerdict? verdict = null,
+        IDeviceLister? devices = null,
+        GpuRanking? ranking = null) => new(
         _launcher,
         new LlamaServerOptions
         {
@@ -49,7 +54,32 @@ public sealed class LlamaServerTests : IDisposable
         },
         _transport,
         NullLogger<LlamaServer>.Instance,
-        verdict);
+        verdict,
+        devices,
+        ranking);
+
+    private static readonly GpuDevice Nvidia = new("Vulkan0", "NVIDIA GeForce RTX 4070 Laptop GPU", 7963);
+    private static readonly GpuDevice Radeon = new("Vulkan1", "AMD Radeon 780M Graphics", 48899);
+
+    private string RankingPath => Path.Combine(Path.GetDirectoryName(_verdictPath)!, "gpu-ranking.txt");
+
+    // Which card the server on this port was started on, or null for the processor or "any card".
+    private string? DeviceAt(int port)
+    {
+        ServerStartInfo info = _launcher.Started.Last(started => Port(started) == port);
+        List<string> arguments = [.. info.Arguments];
+        int index = arguments.IndexOf("--device");
+
+        return index < 0 ? null : arguments[index + 1];
+    }
+
+    private static string? Device(ServerStartInfo info)
+    {
+        List<string> arguments = [.. info.Arguments];
+        int index = arguments.IndexOf("--device");
+
+        return index < 0 ? null : arguments[index + 1];
+    }
 
     private static int GpuLayers(ServerStartInfo info) => int.Parse(Argument(info, "-ngl"), CultureInfo.InvariantCulture);
 
@@ -347,6 +377,127 @@ public sealed class LlamaServerTests : IDisposable
     }
 
     [Fact]
+    public async Task EnsureStartedAsync_OneCard_GoesToItWithoutTiming()
+    {
+        using LlamaServer server = Server(gpuLayers: AllLayers, devices: new FakeDevices(Radeon));
+
+        await server.EnsureStartedAsync(Token);
+
+        Device(_launcher.Started.Single()).Should().Be("Vulkan1");
+        _transport.Timings.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_NoCards_GoesToTheProcessor()
+    {
+        using LlamaServer server = Server(gpuLayers: AllLayers, devices: new FakeDevices());
+
+        await server.EnsureStartedAsync(Token);
+
+        ServerStartInfo info = _launcher.Started.Single();
+        Device(info).Should().Be("none");
+        GpuLayers(info).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_CardsThatCannotBeListed_LeavesTheChoiceToTheServer()
+    {
+        using LlamaServer server = Server(gpuLayers: AllLayers, devices: new FakeDevices(null));
+
+        await server.EnsureStartedAsync(Token);
+
+        ServerStartInfo info = _launcher.Started.Single();
+        Device(info).Should().BeNull();
+        GpuLayers(info).Should().Be(AllLayers);
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_SeveralCards_TimesEachAndGoesToTheFastest()
+    {
+        _transport.TimingDelayAt = port => TimeSpan.FromMilliseconds(DeviceAt(port) == "Vulkan0" ? 10 : 300);
+        using LlamaServer server = Server(gpuLayers: AllLayers, devices: new FakeDevices(Radeon, Nvidia));
+
+        await server.EnsureStartedAsync(Token);
+
+        _launcher.Started.Select(Device).Should().Equal("Vulkan1", "Vulkan0", "Vulkan0");
+        _launcher.Processes.Take(2).Should().OnlyContain(process => process.Killed);
+        _launcher.Processes[2].Killed.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_CardsTimedBefore_GoesToTheFastestWithoutTimingAgain()
+    {
+        GpuRanking ranking = new(RankingPath);
+        ranking.Save(Executable, [Nvidia, Radeon]);
+        using LlamaServer server = Server(gpuLayers: AllLayers, devices: new FakeDevices(Radeon, Nvidia), ranking: ranking);
+
+        await server.EnsureStartedAsync(Token);
+
+        Device(_launcher.Started.Single()).Should().Be("Vulkan0");
+        _transport.Timings.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_TimingIsRememberedForTheNextRun()
+    {
+        _transport.TimingDelayAt = port => TimeSpan.FromMilliseconds(DeviceAt(port) == "Vulkan0" ? 10 : 300);
+
+        using (LlamaServer first = Server(gpuLayers: AllLayers, devices: new FakeDevices(Radeon, Nvidia), ranking: new(RankingPath)))
+        {
+            await first.EnsureStartedAsync(Token);
+        }
+
+        using LlamaServer second = Server(gpuLayers: AllLayers, devices: new FakeDevices(Radeon, Nvidia), ranking: new(RankingPath));
+        await second.EnsureStartedAsync(Token);
+
+        _transport.Timings.Should().Be(2);
+        Device(_launcher.Started[^1]).Should().Be("Vulkan0");
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_FastestCardFailing_GoesToTheNextThenTheProcessor()
+    {
+        GpuRanking ranking = new(RankingPath);
+        ranking.Save(Executable, [Nvidia, Radeon]);
+        _transport.CheckAnswerAt = port => DeviceAt(port) is "Vulkan0" or "Vulkan1" ? "nonsense" : "OK";
+        using LlamaServer server = Server(gpuLayers: AllLayers, devices: new FakeDevices(Radeon, Nvidia), ranking: ranking);
+
+        await server.EnsureStartedAsync(Token);
+
+        _launcher.Started.Select(Device).Should().Equal("Vulkan0", "Vulkan1", "none");
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_CardThatFailedEarlier_IsPassedOver()
+    {
+        GpuVerdict verdict = new(_verdictPath, TimeProvider.System);
+        verdict.MarkUnusable(Executable, Nvidia.Name);
+        GpuRanking ranking = new(RankingPath);
+        ranking.Save(Executable, [Nvidia, Radeon]);
+        using LlamaServer server = Server(
+            gpuLayers: AllLayers, verdict: verdict, devices: new FakeDevices(Radeon, Nvidia), ranking: ranking);
+
+        await server.EnsureStartedAsync(Token);
+
+        Device(_launcher.Started.Single()).Should().Be("Vulkan1");
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_CardFailingWhileTimed_GoesLastAndIsRemembered()
+    {
+        _transport.CheckAnswerAt = port => DeviceAt(port) == "Vulkan0" ? "nonsense" : "OK";
+        GpuVerdict verdict = new(_verdictPath, TimeProvider.System);
+        using LlamaServer server = Server(
+            gpuLayers: AllLayers, verdict: verdict, devices: new FakeDevices(Nvidia, Radeon), ranking: new(RankingPath));
+
+        await server.EnsureStartedAsync(Token);
+
+        Device(_launcher.Started[^1]).Should().Be("Vulkan1");
+        verdict.IsUnusable(Executable, Nvidia.Name).Should().BeTrue();
+        verdict.IsUnusable(Executable, Radeon.Name).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Client_SendsRequestsToTheRunningServersPortWithItsKey()
     {
         using LlamaServer server = Server();
@@ -471,6 +622,7 @@ public sealed class LlamaServerTests : IDisposable
         private volatile bool _healthy = true;
         private int _healthProbes;
         private int _checks;
+        private int _timings;
 
         /// <summary>Whether the health check succeeds, once the probes below are used up.</summary>
         public bool Healthy
@@ -492,6 +644,14 @@ public sealed class LlamaServerTests : IDisposable
 
         public int Checks => Volatile.Read(ref _checks);
 
+        public int Timings => Volatile.Read(ref _timings);
+
+        /// <summary>The check's answer from the server on this port, in place of <see cref="CheckAnswer"/>.</summary>
+        public Func<int, string?>? CheckAnswerAt { get; set; }
+
+        /// <summary>How long the server on this port takes over the answer cards are timed on.</summary>
+        public Func<int, TimeSpan>? TimingDelayAt { get; set; }
+
         public IReadOnlyList<(Uri Address, string? Authorization)> Requests
         {
             get
@@ -503,7 +663,7 @@ public sealed class LlamaServerTests : IDisposable
             }
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -512,27 +672,35 @@ public sealed class LlamaServerTests : IDisposable
                 _requests.Add((request.RequestUri!, request.Headers.Authorization?.ToString()));
             }
 
+            int port = request.RequestUri!.Port;
+
             if (request.RequestUri!.AbsolutePath == "/v1/chat/completions")
             {
-                Interlocked.Increment(ref _checks);
+                string question = await request.Content!.ReadAsStringAsync(cancellationToken);
 
-                if (CheckAnswer is null)
+                if (question.Contains("Count from one", StringComparison.Ordinal))
                 {
-                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+                    await Task.Delay(TimingDelayAt?.Invoke(port) ?? TimeSpan.Zero, cancellationToken);
+                    Interlocked.Increment(ref _timings);
+
+                    return Json(new JsonObject { ["usage"] = new JsonObject { ["completion_tokens"] = 20 } });
                 }
 
-                JsonObject choice = new() { ["message"] = new JsonObject { ["content"] = CheckAnswer } };
-                string body = new JsonObject { ["choices"] = new JsonArray(choice) }.ToJsonString();
+                Interlocked.Increment(ref _checks);
+                string? answer = CheckAnswerAt is null ? CheckAnswer : CheckAnswerAt(port);
 
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                if (answer is null)
                 {
-                    Content = new StringContent(body, Encoding.UTF8, "application/json"),
-                });
+                    return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+                }
+
+                JsonObject choice = new() { ["message"] = new JsonObject { ["content"] = answer } };
+                return Json(new JsonObject { ["choices"] = new JsonArray(choice) });
             }
 
             if (request.RequestUri!.AbsolutePath != "/health")
             {
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+                return new HttpResponseMessage(HttpStatusCode.OK);
             }
 
             int probe = Interlocked.Increment(ref _healthProbes);
@@ -544,7 +712,18 @@ public sealed class LlamaServerTests : IDisposable
 
             bool ready = Healthy && probe > LoadingProbes;
 
-            return Task.FromResult(new HttpResponseMessage(ready ? HttpStatusCode.OK : HttpStatusCode.ServiceUnavailable));
+            return new HttpResponseMessage(ready ? HttpStatusCode.OK : HttpStatusCode.ServiceUnavailable);
         }
+
+        private static HttpResponseMessage Json(JsonObject body) => new(HttpStatusCode.OK)
+        {
+            Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"),
+        };
+    }
+
+    private sealed class FakeDevices(params GpuDevice[]? devices) : IDeviceLister
+    {
+        public Task<IReadOnlyList<GpuDevice>?> ListAsync(string serverPath, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<GpuDevice>?>(devices);
     }
 }

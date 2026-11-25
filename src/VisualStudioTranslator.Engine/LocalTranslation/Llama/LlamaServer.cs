@@ -29,12 +29,20 @@ namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
 /// now. A request made while none is fails as an ordinary network error would.
 /// </para>
 /// <para>
-/// With <see cref="LlamaServerOptions.GpuLayers"/> above zero the model goes to the graphics card, which is
-/// several times faster when it works. It does not always: a driver can crash the server while it loads the
-/// model, or let it run and compute nonsense. So a server started that way is asked one question with a known
-/// answer before it is used, and if it fails either way it is replaced by one on the processor, which the rest
-/// of this run of the Engine keeps to, and later runs for a while (see <see cref="GpuVerdict"/>). A machine without a usable card at all needs
-/// none of this: the server finds no device and stays on the processor by itself.
+/// With <see cref="LlamaServerOptions.GpuLayers"/> above zero the model goes to a graphics card, which is several
+/// times faster when it works. Where it goes is a list of places to try, best first, ending with the processor:
+/// <list type="number">
+/// <item>The machine's cards are listed (<see cref="IDeviceLister"/>). With more than one, each is tried once
+/// and timed on a short answer, and the order is remembered (<see cref="GpuRanking"/>): the memory a card reports
+/// cannot tell, since a card built into the processor reports a share of the machine's own.</item>
+/// <item>The model goes to one card only, the fastest. Split across a fast card and a slow one it would run at
+/// the pace of the slow one, plus the copying between them.</item>
+/// <item>A card can fail: its driver can crash the server while it loads the model, or let it run and compute
+/// nonsense. So a server on a card is asked one question with a known answer before it is used, and if it fails
+/// either way the next place on the list is tried, down to the processor. The rest of this run keeps away from
+/// the card, and later runs for a while (see <see cref="GpuVerdict"/>).</item>
+/// </list>
+/// When the cards cannot be listed, the server is left to pick, as it would on its own.
 /// </para>
 /// </summary>
 internal sealed class LlamaServer : IDisposable
@@ -46,17 +54,16 @@ internal sealed class LlamaServer : IDisposable
     private static readonly Uri ChatEndpoint = new("v1/chat/completions", UriKind.Relative);
 
     // A question any working model answers the same way, in a few tokens.
-    private static readonly string CheckRequest = JsonSerializer.Serialize(new
-    {
-        messages = new[] { new { role = "user", content = "Reply with exactly the word OK and nothing else." } },
-        max_tokens = 8,
-        temperature = 0,
-        chat_template_kwargs = new { enable_thinking = false },
-    });
+    private static readonly string CheckRequest = Ask("Reply with exactly the word OK and nothing else.", 8);
+
+    // A longer answer, also the same every time, to time a card by.
+    private static readonly string TimingRequest = Ask("Count from one to twenty in English words, separated by commas.", 64);
 
     private readonly IServerProcessLauncher _launcher;
     private readonly LlamaServerOptions _options;
     private readonly GpuVerdict? _gpuVerdict;
+    private readonly IDeviceLister? _devices;
+    private readonly GpuRanking? _ranking;
     private readonly ILogger<LlamaServer> _logger;
 
     // Held by whoever is starting the server, so that callers arriving together start one, not several.
@@ -67,27 +74,34 @@ internal sealed class LlamaServer : IDisposable
     private Running? _running;
     private bool _disposed;
 
-    // Whether the next start puts the model on the graphics card. Turned off for good once that fails.
-    private bool _useGpu;
+    // Where the server may run, best first, worked out at the first start; and which of them the next start uses.
+    // A place that fails is passed over for the rest of the run. Only touched by whoever holds the start gate.
+    private List<ComputePlace>? _places;
+    private int _placeIndex;
 
     /// <param name="transport">
     /// What carries the requests: the real network in the Engine, a stand-in in tests. Disposed with this object.
     /// </param>
     /// <param name="gpuVerdict">
-    /// Where a failure of the graphics card is remembered between runs; without one, only for this run.
+    /// Where a failure of a graphics card is remembered between runs; without one, only for this run.
     /// </param>
+    /// <param name="devices">How the machine's graphics cards are found; without it, the server picks.</param>
+    /// <param name="ranking">Where the order of the cards is remembered between runs; without it, they are timed each run.</param>
     public LlamaServer(
         IServerProcessLauncher launcher,
         LlamaServerOptions options,
         HttpMessageHandler transport,
         ILogger<LlamaServer> logger,
-        GpuVerdict? gpuVerdict = null)
+        GpuVerdict? gpuVerdict = null,
+        IDeviceLister? devices = null,
+        GpuRanking? ranking = null)
     {
         _launcher = launcher;
         _options = options;
         _logger = logger;
         _gpuVerdict = gpuVerdict;
-        _useGpu = options.GpuLayers > 0 && gpuVerdict?.IsUnusable(options.ExecutablePath) != true;
+        _devices = devices;
+        _ranking = ranking;
 
         Client = new HttpClient(new EndpointHandler(this, transport))
         {
@@ -112,44 +126,47 @@ internal sealed class LlamaServer : IDisposable
 
         try
         {
-            Running running = GetOrLaunch();
-
-            if (running.Ready)
+            if (Current() is { Ready: true } ready && !ready.Process.HasExited)
             {
                 return;
             }
 
-            try
-            {
-                await WaitUntilReadyAsync(running, cancellationToken).ConfigureAwait(false);
+            _places ??= await PlanAsync(cancellationToken).ConfigureAwait(false);
 
-                if (running.GpuLayers > 0)
+            Running running = GetOrLaunch(_places[_placeIndex]);
+
+            while (!running.Ready)
+            {
+                try
                 {
-                    await CheckAnswersAsync(cancellationToken).ConfigureAwait(false);
-                    _gpuVerdict?.MarkUsable();
+                    await WaitUntilReadyAsync(running, cancellationToken).ConfigureAwait(false);
+
+                    if (running.Place.UsesGpu)
+                    {
+                        await CheckAnswersAsync(cancellationToken).ConfigureAwait(false);
+                        _gpuVerdict?.MarkUsable(_options.ExecutablePath, running.Place.Device);
+                    }
+
+                    running.Ready = true;
+                }
+                catch (TranslationProviderException exception) when (running.Place.UsesGpu)
+                {
+                    // The processor ends the list, so there is always a next place to go to.
+                    GiveUp(running, exception);
+                    _placeIndex++;
+                    running = GetOrLaunch(_places[_placeIndex]);
+                }
+                catch (TranslationProviderException)
+                {
+                    _logger.ServerNotReady();
+                    Discard(running);
+                    throw;
                 }
             }
-            catch (TranslationProviderException exception) when (running.GpuLayers > 0)
-            {
-                _logger.GpuUnusable(exception);
-                Discard(running);
-                GiveUpGpu();
-
-                running = GetOrLaunch();
-                await WaitOrDiscardAsync(running, cancellationToken).ConfigureAwait(false);
-            }
-            catch (TranslationProviderException)
-            {
-                _logger.ServerNotReady();
-                Discard(running);
-                throw;
-            }
-
-            running.Ready = true;
 
             if (_logger.IsEnabled(LogLevel.Information))
             {
-                _logger.ServerReady(Stopwatch.GetElapsedTime(running.StartedAt).TotalSeconds, running.GpuLayers);
+                _logger.ServerReady(Stopwatch.GetElapsedTime(running.StartedAt).TotalSeconds, running.Place.Description);
             }
         }
         finally
@@ -194,17 +211,142 @@ internal sealed class LlamaServer : IDisposable
         // The start gate is left alone: someone may still be waiting on it, and it holds nothing to release.
     }
 
-    private async Task WaitOrDiscardAsync(Running running, CancellationToken cancellationToken)
+    private static string Ask(string question, int maxTokens) => JsonSerializer.Serialize(new
+    {
+        messages = new[] { new { role = "user", content = question } },
+        max_tokens = maxTokens,
+        temperature = 0,
+        chat_template_kwargs = new { enable_thinking = false },
+    });
+
+    // Where the server may run this run, best first, the processor last.
+    private async Task<List<ComputePlace>> PlanAsync(CancellationToken cancellationToken)
+    {
+        string server = _options.ExecutablePath;
+
+        if (_options.GpuLayers <= 0)
+        {
+            return [ComputePlace.Processor];
+        }
+
+        IReadOnlyList<GpuDevice>? devices = _devices is null
+            ? null
+            : await _devices.ListAsync(server, cancellationToken).ConfigureAwait(false);
+
+        if (devices is null)
+        {
+            // Not known which cards there are: the server picks, as it does when left to itself.
+            return _gpuVerdict?.IsUnusable(server) == true
+                ? [ComputePlace.Processor]
+                : [ComputePlace.AnyCard(_options.GpuLayers), ComputePlace.Processor];
+        }
+
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.CardsFound(devices.Count, string.Join(", ", devices.Select(device => device.Name)));
+        }
+
+        IReadOnlyList<GpuDevice> ranked = devices.Count <= 1
+            ? devices
+            : _ranking?.Get(server, devices) ?? await RankAsync(devices, cancellationToken).ConfigureAwait(false);
+
+        return
+        [
+            .. ranked
+                .Where(device => _gpuVerdict?.IsUnusable(server, device.Name) != true)
+                .Select(device => ComputePlace.Card(device, _options.GpuLayers)),
+            ComputePlace.Processor,
+        ];
+    }
+
+    // Tries each card in turn and times it on the same short answer. A card that fails is remembered as such and
+    // goes last; the others go fastest first.
+    private async Task<IReadOnlyList<GpuDevice>> RankAsync(IReadOnlyList<GpuDevice> devices, CancellationToken cancellationToken)
+    {
+        Dictionary<GpuDevice, double> speeds = [];
+
+        foreach (GpuDevice device in devices)
+        {
+            Running running = GetOrLaunch(ComputePlace.Card(device, _options.GpuLayers));
+
+            try
+            {
+                await WaitUntilReadyAsync(running, cancellationToken).ConfigureAwait(false);
+                await CheckAnswersAsync(cancellationToken).ConfigureAwait(false);
+                speeds[device] = await TimeAnswerAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (TranslationProviderException exception)
+            {
+                GiveUp(running, exception);
+                continue;
+            }
+            catch (OperationCanceledException)
+            {
+                // A half-timed card must not be left running as if it were the chosen one.
+                Discard(running);
+                throw;
+            }
+
+            Discard(running);
+        }
+
+        List<GpuDevice> ranked = [.. devices.OrderByDescending(device => speeds.GetValueOrDefault(device, -1))];
+
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.CardsRanked(string.Join(", ", ranked.Select(device =>
+                speeds.TryGetValue(device, out double speed)
+                    ? $"{device.Name} ({speed.ToString("F1", CultureInfo.InvariantCulture)} tokens/s)"
+                    : $"{device.Name} (failed)")));
+        }
+
+        _ranking?.Save(_options.ExecutablePath, ranked);
+        return ranked;
+    }
+
+    // Tokens of answer a second, waiting included: what the user would feel.
+    private async Task<double> TimeAnswerAsync(CancellationToken cancellationToken)
+    {
+        long started = Stopwatch.GetTimestamp();
+        string text = await AskAsync(TimingRequest, cancellationToken).ConfigureAwait(false);
+        double seconds = Math.Max(Stopwatch.GetElapsedTime(started).TotalSeconds, 0.001);
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(text);
+            int tokens = document.RootElement.GetProperty("usage").GetProperty("completion_tokens").GetInt32();
+
+            return tokens / seconds;
+        }
+        catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException)
+        {
+            // An answer without a count still came back; how fast is then a guess from its length alone.
+            return text.Length / seconds;
+        }
+    }
+
+    private void GiveUp(Running running, TranslationProviderException exception)
+    {
+        _logger.GpuUnusable(running.Place.Description, exception);
+        Discard(running);
+        _gpuVerdict?.MarkUnusable(_options.ExecutablePath, running.Place.Device);
+    }
+
+    private async Task<string> AskAsync(string request, CancellationToken cancellationToken)
     {
         try
         {
-            await WaitUntilReadyAsync(running, cancellationToken).ConfigureAwait(false);
+            using StringContent body = new(request, Encoding.UTF8, "application/json");
+            using HttpResponseMessage response = await Client.PostAsync(ChatEndpoint, body, cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch (TranslationProviderException)
+        catch (Exception exception) when (exception is HttpRequestException
+            || (exception is OperationCanceledException && !cancellationToken.IsCancellationRequested))
         {
-            _logger.ServerNotReady();
-            Discard(running);
-            throw;
+            throw new TranslationProviderException(
+                ProviderFailureKind.InvalidResponse, "The model server did not answer its check.", exception);
         }
     }
 
@@ -212,22 +354,17 @@ internal sealed class LlamaServer : IDisposable
     // nonsense passes the health check and fails here, before any translation is spoilt by it.
     private async Task CheckAnswersAsync(CancellationToken cancellationToken)
     {
+        string text = await AskAsync(CheckRequest, cancellationToken).ConfigureAwait(false);
         string answer;
 
         try
         {
-            using StringContent body = new(CheckRequest, Encoding.UTF8, "application/json");
-            using HttpResponseMessage response = await Client.PostAsync(ChatEndpoint, body, cancellationToken).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-
-            string text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             using JsonDocument document = JsonDocument.Parse(text);
             answer = document.RootElement
                 .GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? string.Empty;
         }
-        catch (Exception exception) when (exception is HttpRequestException or JsonException or KeyNotFoundException
-            or IndexOutOfRangeException or InvalidOperationException
-            || (exception is OperationCanceledException && !cancellationToken.IsCancellationRequested))
+        catch (Exception exception) when (exception is JsonException or KeyNotFoundException
+            or IndexOutOfRangeException or InvalidOperationException)
         {
             throw new TranslationProviderException(
                 ProviderFailureKind.InvalidResponse, "The model server did not answer its check.", exception);
@@ -238,16 +375,6 @@ internal sealed class LlamaServer : IDisposable
             throw new TranslationProviderException(
                 ProviderFailureKind.InvalidResponse, "The model server answered its check with something else.");
         }
-    }
-
-    private void GiveUpGpu()
-    {
-        lock (_sync)
-        {
-            _useGpu = false;
-        }
-
-        _gpuVerdict?.MarkUnusable(_options.ExecutablePath);
     }
 
     private static int FreePort()
@@ -266,7 +393,7 @@ internal sealed class LlamaServer : IDisposable
         running.Process.Dispose();
     }
 
-    private Running GetOrLaunch()
+    private Running GetOrLaunch(ComputePlace place)
     {
         lock (_sync)
         {
@@ -286,14 +413,13 @@ internal sealed class LlamaServer : IDisposable
 
             int port = FreePort();
             string apiKey = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(32));
-            int gpuLayers = _useGpu ? _options.GpuLayers : 0;
             IServerProcess process;
 
             try
             {
                 process = _launcher.Start(new ServerStartInfo(
                     _options.ExecutablePath,
-                    Arguments(port, gpuLayers),
+                    Arguments(port, place),
                     new Dictionary<string, string> { [ApiKeyVariable] = apiKey }));
             }
             catch (Exception exception)
@@ -303,12 +429,12 @@ internal sealed class LlamaServer : IDisposable
                     ProviderFailureKind.Unavailable, "The model server could not be started.", exception);
             }
 
-            _running = new Running(process, port, apiKey, Stopwatch.GetTimestamp(), gpuLayers);
+            _running = new Running(process, port, apiKey, Stopwatch.GetTimestamp(), place);
             return _running;
         }
     }
 
-    private string[] Arguments(int port, int gpuLayers) =>
+    private string[] Arguments(int port, ComputePlace place) =>
     [
         "-m", _options.ModelPath,
         "--host", Loopback,
@@ -318,7 +444,8 @@ internal sealed class LlamaServer : IDisposable
         // One request at a time: translation is bound by the processor, and a second request
         // running alongside would only make both slower.
         "-np", "1",
-        "-ngl", gpuLayers.ToString(CultureInfo.InvariantCulture),
+        .. place.DeviceArgument is { } device ? new[] { "--device", device } : [],
+        "-ngl", place.GpuLayers.ToString(CultureInfo.InvariantCulture),
     ];
 
     private async Task WaitUntilReadyAsync(Running running, CancellationToken cancellationToken)
@@ -390,7 +517,7 @@ internal sealed class LlamaServer : IDisposable
         }
     }
 
-    private sealed class Running(IServerProcess process, int port, string apiKey, long startedAt, int gpuLayers)
+    private sealed class Running(IServerProcess process, int port, string apiKey, long startedAt, ComputePlace place)
     {
         public IServerProcess Process { get; } = process;
 
@@ -400,7 +527,7 @@ internal sealed class LlamaServer : IDisposable
 
         public long StartedAt { get; } = startedAt;
 
-        public int GpuLayers { get; } = gpuLayers;
+        public ComputePlace Place { get; } = place;
 
         /// <summary>Set once the server has answered. Read and written only by whoever holds the start gate.</summary>
         public bool Ready { get; set; }

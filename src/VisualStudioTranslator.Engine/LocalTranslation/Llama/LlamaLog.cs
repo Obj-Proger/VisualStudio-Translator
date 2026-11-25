@@ -6,14 +6,17 @@ namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
 internal static partial class LlamaLog
 {
     [LoggerMessage(
-        Level = LogLevel.Information,
-        Message = "The model server is ready, {Seconds:F1} s after it was started, with {GpuLayers} layers for the graphics card.")]
-    public static partial void ServerReady(this ILogger logger, double seconds, int gpuLayers);
+        Level = LogLevel.Information, Message = "The model server is ready on {Place}, {Seconds:F1} s after it was started.")]
+    public static partial void ServerReady(this ILogger logger, double seconds, string place);
 
-    [LoggerMessage(
-        Level = LogLevel.Warning,
-        Message = "The model server failed on the graphics card; it runs on the processor from now on.")]
-    public static partial void GpuUnusable(this ILogger logger, Exception exception);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "The model server failed on {Place}; trying the next place.")]
+    public static partial void GpuUnusable(this ILogger logger, string place, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Graphics cards found: {Count} ({Names}).")]
+    public static partial void CardsFound(this ILogger logger, int count, string names);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Graphics cards timed, fastest first: {Order}.")]
+    public static partial void CardsRanked(this ILogger logger, string order);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "The model server had stopped by itself; starting it again.")]
     public static partial void ServerExited(this ILogger logger);

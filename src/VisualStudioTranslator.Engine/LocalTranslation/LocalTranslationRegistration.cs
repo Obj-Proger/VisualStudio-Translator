@@ -35,7 +35,9 @@ internal static class LocalTranslationRegistration
             CreateServerTransport(),
             provider.GetRequiredService<ILogger<LlamaServer>>(),
             new GpuVerdict(
-                provider.GetRequiredService<LlamaInstallation>().GpuVerdictPath, provider.GetRequiredService<TimeProvider>())));
+                provider.GetRequiredService<LlamaInstallation>().GpuVerdictPath, provider.GetRequiredService<TimeProvider>()),
+            new ProcessDeviceLister(),
+            new GpuRanking(provider.GetRequiredService<LlamaInstallation>().GpuRankingPath)));
         services.AddSingleton<ITranslationProvider, LlamaTranslationProvider>();
 
         services.AddSingleton(_ => new FileDownloader(CreateDownloadClient()));

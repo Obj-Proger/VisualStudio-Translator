@@ -38,6 +38,9 @@ internal sealed class LlamaInstallation(string root, RuntimePackage runtime, Mod
     /// <summary>Where a graphics card that failed with the installed server is remembered (see <see cref="GpuVerdict"/>).</summary>
     public string GpuVerdictPath => Path.Combine(root, "gpu-unusable.txt");
 
+    /// <summary>Where the order of the machine's graphics cards is remembered (see <see cref="GpuRanking"/>).</summary>
+    public string GpuRankingPath => Path.Combine(root, "gpu-ranking.txt");
+
     // The server is unpacked into a folder of its own and moved into place whole, and the model gets its final
     // name only once verified, so either file being there means its whole package is.
     public bool IsRuntimeInstalled => File.Exists(ServerPath);
