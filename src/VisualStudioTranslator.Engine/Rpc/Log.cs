@@ -35,7 +35,8 @@ internal static partial class Log
     [LoggerMessage(Level = LogLevel.Debug, Message = "Translated documentation: {Segments} segments, {Cached} cached, {Translated} translated, {Unchanged} unchanged.")]
     public static partial void DocumentationTranslated(this ILogger logger, int segments, int cached, int translated, int unchanged);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Model status asked for {LanguagePair}: {State}.")]
+    // Debug: the extension asks every second while a model downloads, which can take hours.
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Model status asked for {LanguagePair}: {State}.")]
     public static partial void ModelStatusAnswered(this ILogger logger, LanguagePair languagePair, ModelInstallState state);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Installing the model for {LanguagePair} was requested: {State}.")]

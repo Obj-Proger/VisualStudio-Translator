@@ -115,6 +115,7 @@ internal sealed class LlamaInstaller(
 
             if (!installation.IsRuntimeInstalled)
             {
+                logger.RuntimeInstallStarted(installation.Runtime.Folder);
                 await InstallRuntimeAsync(job, token).ConfigureAwait(false);
                 logger.RuntimeInstalled(installation.Runtime.Folder);
             }
