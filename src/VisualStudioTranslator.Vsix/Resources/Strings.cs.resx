@@ -1,0 +1,146 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="TranslationLabel" xml:space="preserve">
+    <value>Překlad</value>
+  </data>
+  <data name="ReturnsCaption" xml:space="preserve">
+    <value>Vrací:</value>
+  </data>
+  <data name="ValueCaption" xml:space="preserve">
+    <value>Hodnota:</value>
+  </data>
+  <data name="Translating" xml:space="preserve">
+    <value>Překládá se…</value>
+  </data>
+  <data name="WindowCaption" xml:space="preserve">
+    <value>Překladač</value>
+  </data>
+  <data name="TranslateIntoLabel" xml:space="preserve">
+    <value>_Přeložit do:</value>
+  </data>
+  <data name="TranslateIntoName" xml:space="preserve">
+    <value>Přeložit do</value>
+  </data>
+  <data name="SourceTextName" xml:space="preserve">
+    <value>Text k překladu</value>
+  </data>
+  <data name="TranslateButton" xml:space="preserve">
+    <value>Přeložit</value>
+  </data>
+  <data name="TranslateButtonTip" xml:space="preserve">
+    <value>Přeložit text (Ctrl+Enter)</value>
+  </data>
+  <data name="CopyButton" xml:space="preserve">
+    <value>Kopírovat</value>
+  </data>
+  <data name="CopyButtonTip" xml:space="preserve">
+    <value>Kopírovat překlad</value>
+  </data>
+  <data name="ServiceUpdating" xml:space="preserve">
+    <value>Služba překladu se aktualizuje. Zkuste to znovu za několik minut.</value>
+  </data>
+  <data name="TookTooLong" xml:space="preserve">
+    <value>Překlad trval příliš dlouho a byl zastaven.</value>
+  </data>
+  <data name="ServiceUnavailable" xml:space="preserve">
+    <value>Služba překladu není k dispozici. Zkuste to znovu.</value>
+  </data>
+  <data name="TextTooLong" xml:space="preserve">
+    <value>Text je příliš dlouhý. Najednou lze přeložit nejvýše {0} znaků.</value>
+  </data>
+  <data name="NoModel" xml:space="preserve">
+    <value>Zatím není nainstalovaný žádný jazykový model. Stáhněte ho pomocí panelu v horní části sady Visual Studio.</value>
+  </data>
+  <data name="InvalidLanguage" xml:space="preserve">
+    <value>Do zvoleného jazyka nelze překládat.</value>
+  </data>
+  <data name="CloudConsent" xml:space="preserve">
+    <value>Tento text může přeložit jen online služba a ta není povolená.</value>
+  </data>
+  <data name="TranslationFailed" xml:space="preserve">
+    <value>Překlad se nezdařil. Zkuste to znovu.</value>
+  </data>
+  <data name="NothingTranslated" xml:space="preserve">
+    <value>Nic nebylo přeloženo. Text už možná je v tomto jazyce.</value>
+  </data>
+  <data name="PartlyTranslated" xml:space="preserve">
+    <value>Některé části nebylo možné přeložit a zůstaly beze změny.</value>
+  </data>
+  <data name="ModelOffer" xml:space="preserve">
+    <value>Visual Studio Translator může překládat dokumentaci do jazyka {0} zcela na tomto počítači. Je k tomu potřeba jednou stáhnout jazykový model ({1}) z {2}, který pak slouží pro všechny jazyky. Z vašeho kódu se nic neodesílá.</value>
+  </data>
+  <data name="DownloadButton" xml:space="preserve">
+    <value>Stáhnout</value>
+  </data>
+  <data name="NotNowButton" xml:space="preserve">
+    <value>Teď ne</value>
+  </data>
+  <data name="NeverButton" xml:space="preserve">
+    <value>Už se neptat</value>
+  </data>
+  <data name="TryAgainButton" xml:space="preserve">
+    <value>Zkusit znovu</value>
+  </data>
+  <data name="ModelInstalled" xml:space="preserve">
+    <value>Jazykový model je nainstalovaný. Dokumentace se překládá při najetí myší.</value>
+  </data>
+  <data name="ModelInstallFailed" xml:space="preserve">
+    <value>Jazykový model se nepodařilo nainstalovat.</value>
+  </data>
+  <data name="Downloading" xml:space="preserve">
+    <value>Stahuje se jazykový model…</value>
+  </data>
+  <data name="DownloadingProgress" xml:space="preserve">
+    <value>Stahuje se jazykový model: {0} z {1} MB</value>
+  </data>
+  <data name="SizeUnknown" xml:space="preserve">
+    <value>několik gigabajtů</value>
+  </data>
+  <data name="SizeMegabytes" xml:space="preserve">
+    <value>přibližně {0} MB</value>
+  </data>
+  <data name="SizeGigabytes" xml:space="preserve">
+    <value>přibližně {0} GB</value>
+  </data>
+</root>

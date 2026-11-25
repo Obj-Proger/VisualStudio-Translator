@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Threading;
 using VisualStudioTranslator.Core.Languages;
 using VisualStudioTranslator.Core.Presentation;
 using VisualStudioTranslator.Vsix.Options;
+using VisualStudioTranslator.Vsix.Resources;
 using VisualStudioTranslator.Vsix.Translation;
 
 namespace VisualStudioTranslator.Vsix.TranslatorWindow;
@@ -57,7 +58,7 @@ internal sealed class TranslatorView : UserControl
 
         Label languageLabel = new()
         {
-            Content = "_Translate into:",
+            Content = UiText.TranslateIntoLabel,
             VerticalAlignment = VerticalAlignment.Center,
             Padding = new Thickness(0),
             Margin = new Thickness(0, 0, 6, Gap / 2),
@@ -66,7 +67,7 @@ internal sealed class TranslatorView : UserControl
 
         _language = new ComboBox { MinWidth = 160, VerticalAlignment = VerticalAlignment.Center, Margin = BarItemMargin };
         _language.SetResourceReference(StyleProperty, VsResourceKeys.ComboBoxStyleKey);
-        AutomationName(_language, "Translate into");
+        AutomationName(_language, UiText.TranslateIntoName);
         languageLabel.Target = _language;
 
         foreach (string tag in TargetLanguages.Choices)
@@ -76,13 +77,13 @@ internal sealed class TranslatorView : UserControl
 
         _language.SelectionChanged += (_, _) => RememberLanguage();
 
-        _source = TextArea("Text to translate", readOnly: false);
-        _translation = TextArea("Translation", readOnly: true);
+        _source = TextArea(UiText.SourceTextName, readOnly: false);
+        _translation = TextArea(UiText.TranslationLabel, readOnly: true);
 
-        _translate = CreateButton("Translate", "Translate the text (Ctrl+Enter)");
+        _translate = CreateButton(UiText.TranslateButton, UiText.TranslateButtonTip);
         _translate.Click += (_, _) => StartTranslation();
 
-        _copy = CreateButton("Copy", "Copy the translation");
+        _copy = CreateButton(UiText.CopyButton, UiText.CopyButtonTip);
         _copy.IsEnabled = false;
         _copy.Click += (_, _) => Clipboard.SetText(_translation.Text);
 
@@ -385,7 +386,7 @@ internal sealed class TranslatorView : UserControl
         string text = _source.Text;
         _translation.Text = string.Empty;
         _copy.IsEnabled = false;
-        _status.Text = "Translating…";
+        _status.Text = UiText.Translating;
 
         _ = tasks.RunAsync(async () =>
         {

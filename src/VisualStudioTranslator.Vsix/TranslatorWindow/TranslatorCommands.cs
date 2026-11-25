@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.Design;
+using System.Globalization;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TextManager.Interop;
 using VisualStudioTranslator.Core.Documentation;
 using VisualStudioTranslator.Vsix.Options;
+using VisualStudioTranslator.Vsix.Resources;
 using VisualStudioTranslator.Vsix.Service;
 
 namespace VisualStudioTranslator.Vsix.TranslatorWindow;
@@ -28,6 +30,9 @@ internal static class TranslatorCommands
         object? service = await package.GetServiceAsync(typeof(IMenuCommandService)).ConfigureAwait(false);
 
         await package.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        // Visual Studio's language, from the one thread whose culture is that language, before any window shows a word.
+        UiText.Culture = CultureInfo.CurrentUICulture;
 
         if (service is not OleMenuCommandService commands)
         {

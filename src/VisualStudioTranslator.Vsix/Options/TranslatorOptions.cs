@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Utilities.UnifiedSettings;
 using VisualStudioTranslator.Core.Languages;
 using VisualStudioTranslator.Core.Rpc;
+using VisualStudioTranslator.Vsix.Resources;
 using VisualStudioTranslator.Vsix.Service;
 using UnifiedSettingsManager = Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsManager;
 
@@ -88,6 +89,9 @@ internal sealed class TranslatorOptions
         ThreadHelper.ThrowIfNotOnUIThread();
 
         string displayLanguage = CultureInfo.CurrentUICulture.Name;
+
+        // The one thread whose culture is Visual Studio's language; the extension's own words follow it.
+        UiText.Culture = CultureInfo.CurrentUICulture;
 
         if (TryReadUnified(displayLanguage) is { } unified)
         {

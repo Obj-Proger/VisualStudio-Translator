@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
+using VisualStudioTranslator.Vsix.Resources;
 
 namespace VisualStudioTranslator.Vsix.TranslatorWindow;
 
@@ -16,7 +17,7 @@ public sealed class TranslatorToolWindow : ToolWindowPane
     public TranslatorToolWindow()
         : base(null)
     {
-        Caption = "Translator";
+        Caption = UiText.WindowCaption;
         View = new TranslatorView();
         Content = View;
     }

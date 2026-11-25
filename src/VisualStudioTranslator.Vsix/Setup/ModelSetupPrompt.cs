@@ -1,8 +1,8 @@
-﻿using System.Globalization;
-using Microsoft.VisualStudio.Shell;
+﻿using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VisualStudioTranslator.Core.Languages;
 using VisualStudioTranslator.Core.Rpc;
+using VisualStudioTranslator.Vsix.Resources;
 using VisualStudioTranslator.Vsix.Service;
 
 namespace VisualStudioTranslator.Vsix.Setup;
@@ -24,10 +24,14 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
     private const string Source = nameof(ModelSetupPrompt);
     // One model serves every direction; the documentation's own language is told apart by it.
     private const string SourceLanguage = LanguageTag.Undetermined;
-    private const string DownloadLabel = "Download";
-    private const string NotNowLabel = "Not now";
-    private const string NeverLabel = "Don't ask again";
-    private const string TryAgainLabel = "Try again";
+    // The bar tells which button was pressed by its text, so each label is read once and compared as it was shown.
+    private static string DownloadLabel => UiText.DownloadButton;
+
+    private static string NotNowLabel => UiText.NotNowButton;
+
+    private static string NeverLabel => UiText.NeverButton;
+
+    private static string TryAgainLabel => UiText.TryAgainButton;
 
     private static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(30);
 
@@ -97,11 +101,8 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
                 return;
             }
 
-            string message =
-                $"Visual Studio Translator can translate documentation into {DisplayName(targetLanguage)} entirely on this computer. " +
-                $"That needs a one-time download of a language model ({DescribeSize(status.TotalBytes)}) from {status.SourceHost}, " +
-                "which then serves every language. " +
-                "Nothing from your code is sent.";
+            string message = UiText.Format(
+                UiText.ModelOffer, DisplayName(targetLanguage), DescribeSize(status.TotalBytes), status.SourceHost ?? string.Empty);
 
             InfoBarHandle? bar = null;
             bar = await InfoBars.ShowAsync(
@@ -176,18 +177,18 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
 
             if (status.State == ModelInstallState.Installed)
             {
-                await ShowStatusAsync("Language model installed. Documentation is translated as you hover.").ConfigureAwait(false);
+                await ShowStatusAsync(UiText.ModelInstalled).ConfigureAwait(false);
                 return;
             }
 
             await ShowStatusAsync(string.Empty).ConfigureAwait(false);
             await OfferRetryAsync(
-                targetLanguage, localModel, status.Detail ?? "The language model could not be installed.").ConfigureAwait(false);
+                targetLanguage, localModel, status.Detail ?? UiText.ModelInstallFailed).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             DiagnosticLog.Error(Source, $"Installing a language model failed: {ex}");
-            await OfferRetryAsync(targetLanguage, localModel, "The language model could not be installed.").ConfigureAwait(false);
+            await OfferRetryAsync(targetLanguage, localModel, UiText.ModelInstallFailed).ConfigureAwait(false);
         }
     }
 
@@ -212,34 +213,27 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
     {
         if (status.TotalBytes <= 0)
         {
-            return "Downloading the language model...";
+            return UiText.Downloading;
         }
 
-        return $"Downloading the language model: {ToMegabytes(status.DoneBytes)} of {ToMegabytes(status.TotalBytes)} MB";
+        return UiText.Format(UiText.DownloadingProgress, ToMegabytes(status.DoneBytes), ToMegabytes(status.TotalBytes));
     }
 
     // Gigabytes for the model, megabytes when only the server is missing: "about 0.0 GB" said nothing.
     private static string DescribeSize(long bytes) => bytes switch
     {
-        <= 0 => "several gigabytes",
-        < 1073741824 => "about " + Math.Max(1, Math.Round(bytes / 1048576.0)).ToString("0", CultureInfo.InvariantCulture) + " MB",
-        _ => "about " + (bytes / 1073741824.0).ToString("0.0", CultureInfo.InvariantCulture) + " GB",
+        <= 0 => UiText.SizeUnknown,
+        < 1073741824 => UiText.Format(
+            UiText.SizeMegabytes, Math.Max(1, Math.Round(bytes / 1048576.0)).ToString("0", UiText.Culture)),
+        _ => UiText.Format(UiText.SizeGigabytes, (bytes / 1073741824.0).ToString("0.0", UiText.Culture)),
     };
 
     private static string ToMegabytes(long bytes) =>
-        (bytes / 1048576.0).ToString("0.0", CultureInfo.InvariantCulture);
+        (bytes / 1048576.0).ToString("0.0", UiText.Culture);
 
-    private static string DisplayName(string language)
-    {
-        try
-        {
-            return CultureInfo.GetCultureInfo(language).DisplayName;
-        }
-        catch (CultureNotFoundException)
-        {
-            return language;
-        }
-    }
+    // The language by its own name and without a region, as the language list shows it: "русский", not "русский (Россия)".
+    private static string DisplayName(string language) => TargetLanguages.NativeName(
+        TargetLanguages.Choices.FirstOrDefault(choice => TargetLanguages.IsSameLanguage(choice, language)) ?? language);
 
     // The status bar is the quiet place for progress; a bar over the editor for every percent would be a nuisance.
     // The service is fetched before the main thread is entered, for the reason given in InfoBars.ShowAsync.

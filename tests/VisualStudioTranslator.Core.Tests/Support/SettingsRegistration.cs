@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using System.Text.Json;
-using AwesomeAssertions;
+﻿using System.Text.Json;
 
 namespace VisualStudioTranslator.Core.Tests.Support;
 
@@ -10,21 +8,8 @@ namespace VisualStudioTranslator.Core.Tests.Support;
 /// </summary>
 internal static class SettingsRegistration
 {
-    public static JsonDocument Read([CallerFilePath] string thisFile = "")
-    {
-        DirectoryInfo? directory = new FileInfo(thisFile).Directory;
-
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "VisualStudio-Translator.slnx")))
-        {
-            directory = directory.Parent;
-        }
-
-        directory.Should().NotBeNull("the test runs from within the repository");
-
-        string path = Path.Combine(directory!.FullName, "src", "VisualStudioTranslator.Vsix", "Options", "registration.json");
-
-        return JsonDocument.Parse(File.ReadAllText(path));
-    }
+    public static JsonDocument Read() => JsonDocument.Parse(
+        File.ReadAllText(Repository.PathOf(["src", "VisualStudioTranslator.Vsix", "Options", "registration.json"])));
 
     /// <summary>The declaration of one setting.</summary>
     public static JsonElement Property(this JsonDocument registration, string moniker) =>

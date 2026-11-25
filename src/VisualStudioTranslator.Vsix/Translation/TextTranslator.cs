@@ -2,6 +2,7 @@
 using VisualStudioTranslator.Core.Languages;
 using VisualStudioTranslator.Core.Rpc;
 using VisualStudioTranslator.Vsix.Options;
+using VisualStudioTranslator.Vsix.Resources;
 using VisualStudioTranslator.Vsix.Service;
 using VisualStudioTranslator.Vsix.Setup;
 
@@ -76,7 +77,7 @@ internal sealed class TextTranslator(EngineConnection connection)
         catch (RemoteMethodNotFoundException)
         {
             // An Engine from before the window existed, still running after the extension was updated.
-            return new TextTranslation(null, "The translation service is being updated. Try again in a few minutes.");
+            return new TextTranslation(null, UiText.ServiceUpdating);
         }
         catch (Exception ex)
         {
@@ -90,13 +91,13 @@ internal sealed class TextTranslator(EngineConnection connection)
             return new TextTranslation(
                 null,
                 ex is OperationCanceledException
-                    ? "The translation took too long and was stopped."
-                    : "The translation service is not available. Try again.");
+                    ? UiText.TookTooLong
+                    : UiText.ServiceUnavailable);
         }
     }
 
     private static string TooLong =>
-        $"The text is too long. Up to {TranslateTextRequest.MaxLength:N0} characters can be translated at a time.";
+        UiText.Format(UiText.TextTooLong, TranslateTextRequest.MaxLength.ToString("N0", UiText.Culture));
 
     private static TextTranslation Describe(TranslateTextResult result)
     {
@@ -104,14 +105,13 @@ internal sealed class TextTranslator(EngineConnection connection)
 
         return result.Outcome switch
         {
-            TranslationOutcome.NoProviderAvailable => new(
-                null, "No language model is installed yet. Download it from the bar at the top of Visual Studio."),
+            TranslationOutcome.NoProviderAvailable => new(null, UiText.NoModel),
             TranslationOutcome.TextTooLong => new(null, TooLong),
-            TranslationOutcome.InvalidLanguage => new(null, "The language chosen is not one that can be translated into."),
-            TranslationOutcome.CloudConsentRequired => new(null, "Only an online service can translate this, and it is not allowed."),
-            TranslationOutcome.ProviderFailed when !translatedAny => new(null, "The translation failed. Try again."),
-            _ when !translatedAny => new(null, "Nothing was translated. The text may already be in this language."),
-            _ when result.UnchangedCount > 0 => new(result.Text, "Some parts could not be translated and are left as they were."),
+            TranslationOutcome.InvalidLanguage => new(null, UiText.InvalidLanguage),
+            TranslationOutcome.CloudConsentRequired => new(null, UiText.CloudConsent),
+            TranslationOutcome.ProviderFailed when !translatedAny => new(null, UiText.TranslationFailed),
+            _ when !translatedAny => new(null, UiText.NothingTranslated),
+            _ when result.UnchangedCount > 0 => new(result.Text, UiText.PartlyTranslated),
             _ => new(result.Text, null),
         };
     }

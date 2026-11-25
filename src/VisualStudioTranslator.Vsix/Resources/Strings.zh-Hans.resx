@@ -1,0 +1,146 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="TranslationLabel" xml:space="preserve">
+    <value>翻译</value>
+  </data>
+  <data name="ReturnsCaption" xml:space="preserve">
+    <value>返回结果:</value>
+  </data>
+  <data name="ValueCaption" xml:space="preserve">
+    <value>值:</value>
+  </data>
+  <data name="Translating" xml:space="preserve">
+    <value>正在翻译…</value>
+  </data>
+  <data name="WindowCaption" xml:space="preserve">
+    <value>翻译器</value>
+  </data>
+  <data name="TranslateIntoLabel" xml:space="preserve">
+    <value>翻译为(_T):</value>
+  </data>
+  <data name="TranslateIntoName" xml:space="preserve">
+    <value>翻译为</value>
+  </data>
+  <data name="SourceTextName" xml:space="preserve">
+    <value>要翻译的文本</value>
+  </data>
+  <data name="TranslateButton" xml:space="preserve">
+    <value>翻译</value>
+  </data>
+  <data name="TranslateButtonTip" xml:space="preserve">
+    <value>翻译文本 (Ctrl+Enter)</value>
+  </data>
+  <data name="CopyButton" xml:space="preserve">
+    <value>复制</value>
+  </data>
+  <data name="CopyButtonTip" xml:space="preserve">
+    <value>复制译文</value>
+  </data>
+  <data name="ServiceUpdating" xml:space="preserve">
+    <value>翻译服务正在更新。请过几分钟再试。</value>
+  </data>
+  <data name="TookTooLong" xml:space="preserve">
+    <value>翻译耗时过长，已停止。</value>
+  </data>
+  <data name="ServiceUnavailable" xml:space="preserve">
+    <value>翻译服务不可用。请重试。</value>
+  </data>
+  <data name="TextTooLong" xml:space="preserve">
+    <value>文本过长。一次最多可翻译 {0} 个字符。</value>
+  </data>
+  <data name="NoModel" xml:space="preserve">
+    <value>尚未安装语言模型。请通过 Visual Studio 顶部的栏下载。</value>
+  </data>
+  <data name="InvalidLanguage" xml:space="preserve">
+    <value>无法翻译为所选语言。</value>
+  </data>
+  <data name="CloudConsent" xml:space="preserve">
+    <value>只有在线服务可以翻译此内容，但不允许使用在线服务。</value>
+  </data>
+  <data name="TranslationFailed" xml:space="preserve">
+    <value>翻译失败。请重试。</value>
+  </data>
+  <data name="NothingTranslated" xml:space="preserve">
+    <value>未翻译任何内容。文本可能已经是此语言。</value>
+  </data>
+  <data name="PartlyTranslated" xml:space="preserve">
+    <value>部分内容无法翻译，已保持原样。</value>
+  </data>
+  <data name="ModelOffer" xml:space="preserve">
+    <value>Visual Studio Translator 可以完全在此计算机上将文档翻译为{0}。为此需要从 {2} 一次性下载语言模型 ({1})，之后可用于所有语言。不会发送你的任何代码。</value>
+  </data>
+  <data name="DownloadButton" xml:space="preserve">
+    <value>下载</value>
+  </data>
+  <data name="NotNowButton" xml:space="preserve">
+    <value>以后再说</value>
+  </data>
+  <data name="NeverButton" xml:space="preserve">
+    <value>不再询问</value>
+  </data>
+  <data name="TryAgainButton" xml:space="preserve">
+    <value>重试</value>
+  </data>
+  <data name="ModelInstalled" xml:space="preserve">
+    <value>语言模型已安装。悬停时即会翻译文档。</value>
+  </data>
+  <data name="ModelInstallFailed" xml:space="preserve">
+    <value>无法安装语言模型。</value>
+  </data>
+  <data name="Downloading" xml:space="preserve">
+    <value>正在下载语言模型…</value>
+  </data>
+  <data name="DownloadingProgress" xml:space="preserve">
+    <value>正在下载语言模型: {0} / {1} MB</value>
+  </data>
+  <data name="SizeUnknown" xml:space="preserve">
+    <value>数 GB</value>
+  </data>
+  <data name="SizeMegabytes" xml:space="preserve">
+    <value>约 {0} MB</value>
+  </data>
+  <data name="SizeGigabytes" xml:space="preserve">
+    <value>约 {0} GB</value>
+  </data>
+</root>

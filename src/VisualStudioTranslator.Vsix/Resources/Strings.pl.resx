@@ -1,0 +1,146 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="TranslationLabel" xml:space="preserve">
+    <value>Tłumaczenie</value>
+  </data>
+  <data name="ReturnsCaption" xml:space="preserve">
+    <value>Zwraca:</value>
+  </data>
+  <data name="ValueCaption" xml:space="preserve">
+    <value>Wartość:</value>
+  </data>
+  <data name="Translating" xml:space="preserve">
+    <value>Tłumaczenie…</value>
+  </data>
+  <data name="WindowCaption" xml:space="preserve">
+    <value>Tłumacz</value>
+  </data>
+  <data name="TranslateIntoLabel" xml:space="preserve">
+    <value>_Tłumacz na:</value>
+  </data>
+  <data name="TranslateIntoName" xml:space="preserve">
+    <value>Tłumacz na</value>
+  </data>
+  <data name="SourceTextName" xml:space="preserve">
+    <value>Tekst do przetłumaczenia</value>
+  </data>
+  <data name="TranslateButton" xml:space="preserve">
+    <value>Tłumacz</value>
+  </data>
+  <data name="TranslateButtonTip" xml:space="preserve">
+    <value>Przetłumacz tekst (Ctrl+Enter)</value>
+  </data>
+  <data name="CopyButton" xml:space="preserve">
+    <value>Kopiuj</value>
+  </data>
+  <data name="CopyButtonTip" xml:space="preserve">
+    <value>Kopiuj tłumaczenie</value>
+  </data>
+  <data name="ServiceUpdating" xml:space="preserve">
+    <value>Usługa tłumaczenia jest aktualizowana. Spróbuj ponownie za kilka minut.</value>
+  </data>
+  <data name="TookTooLong" xml:space="preserve">
+    <value>Tłumaczenie trwało zbyt długo i zostało zatrzymane.</value>
+  </data>
+  <data name="ServiceUnavailable" xml:space="preserve">
+    <value>Usługa tłumaczenia jest niedostępna. Spróbuj ponownie.</value>
+  </data>
+  <data name="TextTooLong" xml:space="preserve">
+    <value>Tekst jest za długi. Jednorazowo można przetłumaczyć maksymalnie {0} znaków.</value>
+  </data>
+  <data name="NoModel" xml:space="preserve">
+    <value>Model językowy nie jest jeszcze zainstalowany. Pobierz go z paska u góry programu Visual Studio.</value>
+  </data>
+  <data name="InvalidLanguage" xml:space="preserve">
+    <value>Na wybrany język nie można tłumaczyć.</value>
+  </data>
+  <data name="CloudConsent" xml:space="preserve">
+    <value>Tylko usługa online może to przetłumaczyć, a nie jest ona dozwolona.</value>
+  </data>
+  <data name="TranslationFailed" xml:space="preserve">
+    <value>Tłumaczenie nie powiodło się. Spróbuj ponownie.</value>
+  </data>
+  <data name="NothingTranslated" xml:space="preserve">
+    <value>Nic nie zostało przetłumaczone. Tekst może już być w tym języku.</value>
+  </data>
+  <data name="PartlyTranslated" xml:space="preserve">
+    <value>Niektórych części nie udało się przetłumaczyć i pozostawiono je bez zmian.</value>
+  </data>
+  <data name="ModelOffer" xml:space="preserve">
+    <value>Visual Studio Translator może tłumaczyć dokumentację na język: {0} w całości na tym komputerze. Wymaga to jednorazowego pobrania modelu językowego ({1}) z {2}, który obsługuje potem wszystkie języki. Nic z Twojego kodu nie jest wysyłane.</value>
+  </data>
+  <data name="DownloadButton" xml:space="preserve">
+    <value>Pobierz</value>
+  </data>
+  <data name="NotNowButton" xml:space="preserve">
+    <value>Nie teraz</value>
+  </data>
+  <data name="NeverButton" xml:space="preserve">
+    <value>Nie pytaj ponownie</value>
+  </data>
+  <data name="TryAgainButton" xml:space="preserve">
+    <value>Spróbuj ponownie</value>
+  </data>
+  <data name="ModelInstalled" xml:space="preserve">
+    <value>Zainstalowano model językowy. Dokumentacja jest tłumaczona po wskazaniu kursorem.</value>
+  </data>
+  <data name="ModelInstallFailed" xml:space="preserve">
+    <value>Nie można zainstalować modelu językowego.</value>
+  </data>
+  <data name="Downloading" xml:space="preserve">
+    <value>Pobieranie modelu językowego…</value>
+  </data>
+  <data name="DownloadingProgress" xml:space="preserve">
+    <value>Pobieranie modelu językowego: {0} z {1} MB</value>
+  </data>
+  <data name="SizeUnknown" xml:space="preserve">
+    <value>kilka gigabajtów</value>
+  </data>
+  <data name="SizeMegabytes" xml:space="preserve">
+    <value>około {0} MB</value>
+  </data>
+  <data name="SizeGigabytes" xml:space="preserve">
+    <value>około {0} GB</value>
+  </data>
+</root>

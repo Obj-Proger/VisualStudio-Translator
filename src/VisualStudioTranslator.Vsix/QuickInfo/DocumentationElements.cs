@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.Language.StandardClassification;
 using Microsoft.VisualStudio.Text.Adornments;
 using VisualStudioTranslator.Core.Documentation;
+using VisualStudioTranslator.Vsix.Resources;
 
 namespace VisualStudioTranslator.Vsix.QuickInfo;
 
@@ -26,10 +27,10 @@ internal static class DocumentationElements
         AddParagraphs(elements, DocumentRenderer.RenderParagraphs(document.Summary, references));
         AddParagraphs(elements, DocumentRenderer.RenderParagraphs(document.Remarks, references));
 
-        // The captions are in English for now, like every other word of the extension's own. They are translated
-        // with the rest of its interface, not by the model: a caption is the product's text, not the author's.
-        AddCaptioned(elements, "Returns:", DocumentRenderer.RenderParagraphs(document.Returns, references));
-        AddCaptioned(elements, "Value:", DocumentRenderer.RenderParagraphs(document.Value, references));
+        // The captions are in the language of Visual Studio, in its own words, not translated by the model: a caption
+        // is the product's text, not the author's.
+        AddCaptioned(elements, UiText.ReturnsCaption, DocumentRenderer.RenderParagraphs(document.Returns, references));
+        AddCaptioned(elements, UiText.ValueCaption, DocumentRenderer.RenderParagraphs(document.Value, references));
 
         if (elements.Count == 0)
         {
@@ -52,7 +53,7 @@ internal static class DocumentationElements
 
         // The grey of code the compiler leaves out: present, but not yet the thing itself.
         new ClassifiedTextElement(
-            new ClassifiedTextRun(ClassificationTypeNames.ExcludedCode, "Translating\u2026", ClassifiedTextRunStyle.Italic)));
+            new ClassifiedTextRun(ClassificationTypeNames.ExcludedCode, UiText.Translating, ClassifiedTextRunStyle.Italic)));
 
     private static void AddParagraphs(List<object> elements, IReadOnlyList<IReadOnlyList<RenderedRun>> paragraphs)
     {
@@ -78,7 +79,7 @@ internal static class DocumentationElements
 
     // The colour of control keywords ("if", "return"), so the label is clearly not part of the original documentation.
     private static ClassifiedTextElement Label() =>
-        new(new ClassifiedTextRun(ClassificationTypeNames.ControlKeyword, "Translation"));
+        new(new ClassifiedTextRun(ClassificationTypeNames.ControlKeyword, UiText.TranslationLabel));
 
     // Emphasis has no counterpart among the run styles the tooltip offers, so it reads as plain text for now.
     private static ClassifiedTextRun ToRun(RenderedRun run) => run.Style switch
