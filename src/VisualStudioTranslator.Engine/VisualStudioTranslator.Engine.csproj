@@ -6,6 +6,9 @@
 		<!-- Needed by the generator behind [LibraryImport], which writes the Windows calls (job objects)
 		     as code that passes pointers. No unsafe code is written by hand. -->
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<!-- Only English resources from the packages: the Engine's messages are logs, and each further language is
+		     another folder in the .vsix. -->
+		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 	</PropertyGroup>
 
 	<!-- Development convenience: the Vsix starts the Engine from this project's own output folder

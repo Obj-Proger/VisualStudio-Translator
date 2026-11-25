@@ -52,6 +52,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- Assemblies the Visual Studio packages bring along that Visual Studio itself already has (17.14 and
+         later): two copies of an assembly Visual Studio loads invite type-identity trouble. Only whole
+         assemblies are named here: a file of an assembly the extension needs, such as Core's symbols, takes
+         the assembly itself out with it. -->
+		<SuppressFromVsix Include="Microsoft.VisualStudio.Extensibility.Editor.Contracts.dll" />
+		<SuppressFromVsix Include="Microsoft.VisualStudio.Linux.ConnectionManager.Store.dll" />
+		<SuppressFromVsix Include="System.Text.Encodings.Web.dll" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<!-- The settings Visual Studio 2026 shows in Tools > Options, read by Visual Studio from the .vsix. -->
 		<Content Include="Options\registration.json">
 			<IncludeInVSIX>true</IncludeInVSIX>
@@ -82,16 +92,45 @@
 		<PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" ExcludeAssets="runtime" />
 	</ItemGroup>
 	
-	<ItemGroup>
-		<!-- Baked into the assembly so ServiceLauncher can find the Engine's build output
-         computed here, at build time, when $(MSBuildThisFileDirectory) is still the real
-         path on disk - even once this DLL is later running from the experimental hive's
-         deployed extension folder, nowhere near that path. Development-time only: this
-         whole discovery mechanism goes away once the real ServiceLauncher (a later
-         commit) copies the Engine into %LOCALAPPDATA% itself instead of running it in
-         place from the repository. -->
+	<PropertyGroup>
+		<!-- Whether the .vsix carries the Engine. A Release build does: that is the one handed to users. A Debug
+         build runs the Engine project's own output instead (below), which keeps F5 quick. Either can be
+         overridden with -p:PackEngine=true or false. -->
+		<PackEngine Condition="'$(PackEngine)' == '' And '$(Configuration)' == 'Release'">true</PackEngine>
+		<PackEngine Condition="'$(PackEngine)' == ''">false</PackEngine>
+		<EngineProject>$(MSBuildThisFileDirectory)..\VisualStudioTranslator.Engine\VisualStudioTranslator.Engine.csproj</EngineProject>
+		<!-- Absolute: the publish runs in the Engine's project, where a relative path would mean its own folder. -->
+		<EnginePublishDir>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(BaseIntermediateOutputPath)', 'EnginePublish', '$(Configuration)'))</EnginePublishDir>
+		<!-- Self-contained: the Engine brings its own .NET runtime, so it runs where .NET 10 is not installed, as
+         with Visual Studio 2022. Not trimmed: StreamJsonRpc and Newtonsoft.Json find members by reflection,
+         which trimming can silently break. -->
+		<EnginePublishProperties>Configuration=$(Configuration);RuntimeIdentifier=win-x64;SelfContained=true;PublishDir=$(EnginePublishDir)</EnginePublishProperties>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(PackEngine)' != 'true'">
+		<!-- For a build without the Engine: the absolute path of the Engine project's output, written into the
+         assembly while $(MSBuildThisFileDirectory) is still the real path on disk, since this DLL later runs
+         from the experimental instance's extension folder. Left out of a packed build, which would otherwise
+         carry the developer's own folders to every user. -->
 		<AssemblyMetadata Include="DevelopmentEnginePath" Value="$(MSBuildThisFileDirectory)..\VisualStudioTranslator.Engine\bin\$(Configuration)\net10.0-windows\VisualStudioTranslator.Engine.exe" />
 	</ItemGroup>
+
+	<!-- Publishes the Engine and puts it in the .vsix under Engine\, where ServiceLauncher looks for it. The
+	     restore comes first, on its own, because a self-contained publish needs the runtime for win-x64,
+	     which the solution's ordinary restore does not fetch. The solution builds the Engine before this
+	     project (BuildDependency in the .slnx), so the restore never runs alongside the Engine's own build.
+	     Symbols are left out of the package. -->
+	<Target Name="PackEngineIntoVsix" BeforeTargets="GetVsixSourceItems" Condition="'$(PackEngine)' == 'true'">
+		<RemoveDir Directories="$(EnginePublishDir)" />
+		<MSBuild Projects="$(EngineProject)" Targets="Restore" Properties="$(EnginePublishProperties);MSBuildRestoreSessionId=$([System.Guid]::NewGuid())" />
+		<MSBuild Projects="$(EngineProject)" Targets="Publish" Properties="$(EnginePublishProperties)" />
+		<ItemGroup>
+			<EnginePublishedFile Include="$(EnginePublishDir)**\*" Exclude="$(EnginePublishDir)**\*.pdb" />
+			<VSIXSourceItem Include="@(EnginePublishedFile)">
+				<VSIXSubPath>Engine\%(EnginePublishedFile.RecursiveDir)</VSIXSubPath>
+			</VSIXSourceItem>
+		</ItemGroup>
+	</Target>
 
 	<!-- Lets source.extension.vsixmanifest read a build-time version, like a NuGet package would. -->
 	<Target Name="GetVersion" Returns="$(Version)" />

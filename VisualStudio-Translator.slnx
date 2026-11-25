@@ -3,6 +3,7 @@
     <Project Path="src/VisualStudioTranslator.Core/VisualStudioTranslator.Core.csproj" />
     <Project Path="src/VisualStudioTranslator.Engine/VisualStudioTranslator.Engine.csproj" />
     <Project Path="src/VisualStudioTranslator.Vsix/VisualStudioTranslator.Vsix.csproj">
+      <BuildDependency Project="src/VisualStudioTranslator.Engine/VisualStudioTranslator.Engine.csproj" />
       <Deploy Solution="Debug|*" />
     </Project>
   </Folder>
