@@ -181,6 +181,62 @@ public sealed class DocumentationXmlParserTests
     }
 
     [Fact]
+    public void Parse_ListItemsOfPlainText_ReadTheTextAsTheDescription()
+    {
+        const string xml = """
+            <member>
+                <remarks>
+                    <list type="bullet">
+                        <item>Not run from the <see cref="T:Ns.Extension"/> folder.</item>
+                        <item>
+                        Copied in one step.
+                        </item>
+                    </list>
+                </remarks>
+            </member>
+            """;
+
+        DocumentModel result = DocumentationXmlParser.Parse(xml);
+
+        result.Remarks.Should().BeEquivalentTo(new Section
+        {
+            Blocks =
+            [
+                new ListBlock
+                {
+                    Kind = ListKind.Bullet,
+                    Items =
+                    [
+                        new ListItem
+                        {
+                            Term = [],
+                            Description =
+                            [
+                                new TextRun { Text = "Not run from the " },
+                                new Ref { Kind = RefKind.Cref, Target = "T:Ns.Extension" },
+                                new TextRun { Text = " folder." },
+                            ],
+                        },
+                        new ListItem { Term = [], Description = [new TextRun { Text = "Copied in one step." }] },
+                    ],
+                },
+            ],
+        });
+    }
+
+    [Fact]
+    public void Parse_ListItemsOfPlainText_SurviveAWriteAndAReadUnchanged()
+    {
+        const string xml = """
+            <member><summary><list type="bullet"><item>First.</item><item>Second.</item></list></summary></member>
+            """;
+
+        DocumentModel parsed = DocumentationXmlParser.Parse(xml);
+
+        DocumentationXmlParser.Parse(DocumentationXmlWriter.Write(parsed)).Should().BeEquivalentTo(parsed);
+    }
+
+    [Fact]
     public void Parse_TableList_PopulatesTermAndDescription()
     {
         const string xml = """

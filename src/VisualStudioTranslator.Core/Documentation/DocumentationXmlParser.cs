@@ -253,6 +253,14 @@ public static class DocumentationXmlParser
             XElement? term = item.Element("term");
             XElement? description = item.Element("description");
 
+            // An item written as plain text, <item>Text.</item>, is as common as one with a description and means
+            // the same; Visual Studio shows both. Read as nothing, it came out as an empty bullet.
+            if (term is null && description is null)
+            {
+                items.Add(new ListItem { Description = ParseInlines(item.Nodes()) });
+                continue;
+            }
+
             items.Add(new ListItem
             {
                 Term = term is not null ? ParseInlines(term.Nodes()) : [],
