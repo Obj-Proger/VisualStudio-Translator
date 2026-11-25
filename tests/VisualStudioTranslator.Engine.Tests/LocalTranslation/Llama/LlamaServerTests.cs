@@ -1,5 +1,7 @@
 ﻿using System.Globalization;
 using System.Net;
+using System.Text;
+using System.Text.Json.Nodes;
 using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using VisualStudioTranslator.Core.Providers.Abstractions;
@@ -13,14 +15,28 @@ public sealed class LlamaServerTests : IDisposable
     private const string Executable = @"C:\engine\llama-server.exe";
     private const string Model = @"C:\models\model.gguf";
 
+    private const int AllLayers = 999;
+
     private readonly FakeLauncher _launcher = new();
     private readonly FakeTransport _transport = new();
+    private readonly string _verdictPath =
+        Path.Combine(Path.GetTempPath(), "vst-gpu-" + Path.GetRandomFileName(), "gpu-unusable.txt");
 
-    public void Dispose() => _transport.Dispose();
+    public void Dispose()
+    {
+        _transport.Dispose();
+
+        string directory = Path.GetDirectoryName(_verdictPath)!;
+
+        if (Directory.Exists(directory))
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    private LlamaServer Server(TimeSpan? startupTimeout = null) => new(
+    private LlamaServer Server(TimeSpan? startupTimeout = null, int gpuLayers = 0, GpuVerdict? verdict = null) => new(
         _launcher,
         new LlamaServerOptions
         {
@@ -28,9 +44,13 @@ public sealed class LlamaServerTests : IDisposable
             ModelPath = Model,
             HealthPollInterval = TimeSpan.FromMilliseconds(5),
             StartupTimeout = startupTimeout ?? TimeSpan.FromSeconds(30),
+            GpuLayers = gpuLayers,
         },
         _transport,
-        NullLogger<LlamaServer>.Instance);
+        NullLogger<LlamaServer>.Instance,
+        verdict);
+
+    private static int GpuLayers(ServerStartInfo info) => int.Parse(Argument(info, "-ngl"), CultureInfo.InvariantCulture);
 
     private static string Argument(ServerStartInfo info, string name)
     {
@@ -198,6 +218,124 @@ public sealed class LlamaServerTests : IDisposable
     }
 
     [Fact]
+    public async Task EnsureStartedAsync_ProcessorOnly_StartsWithNoLayersOnTheCardAndAsksNoCheck()
+    {
+        using LlamaServer server = Server();
+
+        await server.EnsureStartedAsync(Token);
+
+        GpuLayers(_launcher.Started.Single()).Should().Be(0);
+        _transport.Checks.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_CardThatAnswersRight_IsUsed()
+    {
+        using LlamaServer server = Server(gpuLayers: AllLayers);
+
+        await server.EnsureStartedAsync(Token);
+
+        GpuLayers(_launcher.Started.Single()).Should().Be(AllLayers);
+        _transport.Checks.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_CardThatAnswersNonsense_IsReplacedByTheProcessor()
+    {
+        _transport.CheckAnswer = "<unused42><unused42><unused42>";
+        using LlamaServer server = Server(gpuLayers: AllLayers);
+
+        await server.EnsureStartedAsync(Token);
+
+        _launcher.Started.Select(GpuLayers).Should().Equal(AllLayers, 0);
+        _launcher.Processes[0].Killed.Should().BeTrue();
+        _launcher.Processes[1].Killed.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_CardThatCrashesTheServer_IsReplacedByTheProcessor()
+    {
+        _launcher.ExitingStarts = 1;
+        using LlamaServer server = Server(gpuLayers: AllLayers);
+
+        await server.EnsureStartedAsync(Token);
+
+        _launcher.Started.Select(GpuLayers).Should().Equal(AllLayers, 0);
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_CheckFailingWithAnError_IsReplacedByTheProcessor()
+    {
+        _transport.CheckAnswer = null;
+        using LlamaServer server = Server(gpuLayers: AllLayers);
+
+        await server.EnsureStartedAsync(Token);
+
+        _launcher.Started.Select(GpuLayers).Should().Equal(AllLayers, 0);
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_AfterTheCardFailed_LaterStartsGoStraightToTheProcessor()
+    {
+        _transport.CheckAnswer = "nonsense";
+        using LlamaServer server = Server(gpuLayers: AllLayers);
+        await server.EnsureStartedAsync(Token);
+
+        server.Stop();
+        await server.EnsureStartedAsync(Token);
+
+        _launcher.Started.Select(GpuLayers).Should().Equal(AllLayers, 0, 0);
+        _transport.Checks.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_CardFailure_IsRememberedForTheNextRunOfTheEngine()
+    {
+        _transport.CheckAnswer = "nonsense";
+
+        using (LlamaServer first = Server(gpuLayers: AllLayers, verdict: new GpuVerdict(_verdictPath)))
+        {
+            await first.EnsureStartedAsync(Token);
+        }
+
+        using LlamaServer second = Server(gpuLayers: AllLayers, verdict: new GpuVerdict(_verdictPath));
+        await second.EnsureStartedAsync(Token);
+
+        _launcher.Started.Select(GpuLayers).Should().Equal(AllLayers, 0, 0);
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_CardThatFailedWithAnotherBuild_GetsANewChance()
+    {
+        GpuVerdict verdict = new(_verdictPath);
+        verdict.MarkUnusable(@"C:\engine\older\llama-server.exe");
+        using LlamaServer server = Server(gpuLayers: AllLayers, verdict: verdict);
+
+        await server.EnsureStartedAsync(Token);
+
+        GpuLayers(_launcher.Started.Single()).Should().Be(AllLayers);
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_ProcessorFailingToo_ThrowsUnavailable()
+    {
+        _transport.CheckAnswer = "nonsense";
+        _launcher.ExitingStarts = 2;
+        using LlamaServer server = Server(gpuLayers: AllLayers);
+
+        Func<Task> act = () => server.EnsureStartedAsync(Token);
+
+        (await act.Should().ThrowAsync<TranslationProviderException>()).Which.Kind.Should().Be(ProviderFailureKind.Unavailable);
+        _launcher.Started.Select(GpuLayers).Should().Equal(AllLayers, 0);
+    }
+
+    [Fact]
+    public void GpuVerdict_NothingRemembered_IsNotUnusable()
+    {
+        new GpuVerdict(_verdictPath).IsUnusable(Executable).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Client_SendsRequestsToTheRunningServersPortWithItsKey()
     {
         using LlamaServer server = Server();
@@ -296,6 +434,9 @@ public sealed class LlamaServerTests : IDisposable
         /// <summary>Whether a started program has already ended by the time anyone looks.</summary>
         public bool ExitAtOnce { get; set; }
 
+        /// <summary>How many of the first programs started end at once, as one would that a driver crashes.</summary>
+        public int ExitingStarts { get; set; }
+
         public IServerProcess Start(ServerStartInfo info)
         {
             if (Failure is not null)
@@ -303,7 +444,7 @@ public sealed class LlamaServerTests : IDisposable
                 throw Failure;
             }
 
-            FakeProcess process = new() { HasExited = ExitAtOnce };
+            FakeProcess process = new() { HasExited = ExitAtOnce || Started.Count < ExitingStarts };
             Started.Add(info);
             Processes.Add(process);
 
@@ -318,6 +459,7 @@ public sealed class LlamaServerTests : IDisposable
         private readonly List<(Uri Address, string? Authorization)> _requests = [];
         private volatile bool _healthy = true;
         private int _healthProbes;
+        private int _checks;
 
         /// <summary>Whether the health check succeeds, once the probes below are used up.</summary>
         public bool Healthy
@@ -333,6 +475,11 @@ public sealed class LlamaServerTests : IDisposable
         public int RefusedProbes { get; set; }
 
         public int HealthProbes => Volatile.Read(ref _healthProbes);
+
+        /// <summary>What the model answers the check a server on the graphics card is given; null fails the request.</summary>
+        public string? CheckAnswer { get; set; } = "OK";
+
+        public int Checks => Volatile.Read(ref _checks);
 
         public IReadOnlyList<(Uri Address, string? Authorization)> Requests
         {
@@ -352,6 +499,24 @@ public sealed class LlamaServerTests : IDisposable
             lock (_gate)
             {
                 _requests.Add((request.RequestUri!, request.Headers.Authorization?.ToString()));
+            }
+
+            if (request.RequestUri!.AbsolutePath == "/v1/chat/completions")
+            {
+                Interlocked.Increment(ref _checks);
+
+                if (CheckAnswer is null)
+                {
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+                }
+
+                JsonObject choice = new() { ["message"] = new JsonObject { ["content"] = CheckAnswer } };
+                string body = new JsonObject { ["choices"] = new JsonArray(choice) }.ToJsonString();
+
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(body, Encoding.UTF8, "application/json"),
+                });
             }
 
             if (request.RequestUri!.AbsolutePath != "/health")

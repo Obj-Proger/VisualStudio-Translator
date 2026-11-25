@@ -4,7 +4,7 @@
 /// Where the server and the model live on this machine, and whether they are there. Everything is under one
 /// folder of the user's local application data:
 /// <code>
-/// llama\runtime\&lt;build&gt;\llama-server.exe   the server and its libraries, one folder per build
+/// llama\runtime\&lt;build&gt;\llama-server.exe   the server and its libraries, one folder per build and backend
 /// llama\models\&lt;model&gt;.gguf               the model
 /// llama\downloads\                         archives while they download
 /// </code>
@@ -27,13 +27,16 @@ internal sealed class LlamaInstallation(string root, RuntimePackage runtime, Mod
 
     public string RuntimesDirectory => Path.Combine(root, "runtime");
 
-    public string RuntimeDirectory => Path.Combine(RuntimesDirectory, runtime.Version);
+    public string RuntimeDirectory => Path.Combine(RuntimesDirectory, runtime.Folder);
 
     public string ServerPath => Path.Combine(RuntimeDirectory, LlamaCatalog.ServerFileName);
 
     public string ModelPath => Path.Combine(root, "models", model.FileName);
 
     public string DownloadsDirectory => Path.Combine(root, "downloads");
+
+    /// <summary>Where a graphics card that failed with the installed server is remembered (see <see cref="GpuVerdict"/>).</summary>
+    public string GpuVerdictPath => Path.Combine(root, "gpu-unusable.txt");
 
     // The server is unpacked into a folder of its own and moved into place whole, and the model gets its final
     // name only once verified, so either file being there means its whole package is.

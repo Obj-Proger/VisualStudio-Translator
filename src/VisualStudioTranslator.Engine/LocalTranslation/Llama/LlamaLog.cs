@@ -5,8 +5,15 @@ namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
 /// <summary>Source-generated log messages for the model server. None carries translated text.</summary>
 internal static partial class LlamaLog
 {
-    [LoggerMessage(Level = LogLevel.Information, Message = "The model server is ready, {Seconds:F1} s after it was started.")]
-    public static partial void ServerReady(this ILogger logger, double seconds);
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "The model server is ready, {Seconds:F1} s after it was started, with {GpuLayers} layers for the graphics card.")]
+    public static partial void ServerReady(this ILogger logger, double seconds, int gpuLayers);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "The model server failed on the graphics card; it runs on the processor from now on.")]
+    public static partial void GpuUnusable(this ILogger logger, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "The model server had stopped by itself; starting it again.")]
     public static partial void ServerExited(this ILogger logger);

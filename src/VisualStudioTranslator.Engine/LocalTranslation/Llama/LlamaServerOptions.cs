@@ -15,7 +15,11 @@ internal sealed record LlamaServerOptions
     /// </summary>
     public int ContextSize { get; init; } = 4096;
 
-    /// <summary>How many of the model's layers go to the graphics card. Zero keeps everything on the processor.</summary>
+    /// <summary>
+    /// How many of the model's layers go to the graphics card; a number above the model's count puts all of it
+    /// there. Zero keeps everything on the processor. See <see cref="LlamaServer"/> for what happens when the
+    /// card cannot do it.
+    /// </summary>
     public int GpuLayers { get; init; }
 
     /// <summary>

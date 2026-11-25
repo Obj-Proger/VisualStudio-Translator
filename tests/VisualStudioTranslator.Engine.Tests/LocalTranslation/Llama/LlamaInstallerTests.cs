@@ -74,7 +74,7 @@ public sealed class LlamaInstallerTests : IDisposable
 
         return new LlamaInstallation(
             _root,
-            new RuntimePackage("b1", "llama-b1-bin-win-cpu-x64.zip", SourceOf(RuntimeAddress, _archive)),
+            new RuntimePackage("b1", "cpu", "llama-b1-bin-win-cpu-x64.zip", SourceOf(RuntimeAddress, _archive)),
             new ModelPackage("Test model", "model.gguf", modelChecksum is null ? model : model with { Sha256 = modelChecksum }));
     }
 

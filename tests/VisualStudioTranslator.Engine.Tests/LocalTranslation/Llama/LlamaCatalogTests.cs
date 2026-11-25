@@ -49,7 +49,8 @@ public sealed class LlamaCatalogTests
     [Fact]
     public void Runtime_IsPinnedToItsBuild()
     {
-        LlamaCatalog.Runtime.Source.Url.AbsolutePath.Should().Contain("/download/" + LlamaCatalog.Runtime.Version + "/");
+        LlamaCatalog.Runtime.Source.Url.AbsolutePath.Should().Contain("/download/" + LlamaCatalog.Runtime.Build + "/")
+            .And.Contain(LlamaCatalog.Runtime.Backend);
     }
 
     [Theory]

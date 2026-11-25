@@ -3,8 +3,13 @@
 namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
 
 /// <summary>A build of llama.cpp for Windows, as one zip archive of programs and libraries side by side.</summary>
-/// <param name="Version">The build's name, which is also the name of its folder once installed.</param>
-internal sealed record RuntimePackage(string Version, string ArchiveName, DownloadSource Source);
+/// <param name="Build">The build's name in llama.cpp's releases, such as "b12317".</param>
+/// <param name="Backend">What it was built to compute on, such as "vulkan".</param>
+internal sealed record RuntimePackage(string Build, string Backend, string ArchiveName, DownloadSource Source)
+{
+    /// <summary>The name of its folder once installed: another build or backend is another folder.</summary>
+    public string Folder => Build + "-" + Backend;
+}
 
 /// <summary>A model file the server loads.</summary>
 /// <param name="Name">What the user is told it is.</param>
@@ -24,19 +29,30 @@ internal static class LlamaCatalog
     public const string ServerFileName = "llama-server.exe";
 
     /// <summary>
+    /// How many of the model's layers go to the graphics card: more than any model here has, so all of them.
+    /// Gemma 4 E4B at 4 bits fits in the memory a built-in card shares with the processor.
+    /// </summary>
+    public const int AllLayers = 999;
+
+    /// <summary>
     /// Below this much memory the light model is chosen. A machine sold with 16 GB reports a little less than
     /// that, so the line sits under it: such a machine still gets the better model, one with 8 or 12 GB does not.
     /// </summary>
     public const long LightModelMemoryLimit = 14L * 1024 * 1024 * 1024;
 
-    /// <summary>The build for the processor alone, which runs on every x64 machine.</summary>
+    /// <summary>
+    /// The build that computes on the graphics card through Vulkan, which every current card from AMD, Intel and
+    /// NVIDIA speaks, built-in ones included. It carries the processor's code as well and uses it when there is no
+    /// card it can use, so one build serves every x64 machine.
+    /// </summary>
     public static RuntimePackage Runtime { get; } = new(
         "b12317",
-        "llama-b12317-bin-win-cpu-x64.zip",
+        "vulkan",
+        "llama-b12317-bin-win-vulkan-x64.zip",
         new DownloadSource(
-            new Uri("https://github.com/ggml-org/llama.cpp/releases/download/b12317/llama-b12317-bin-win-cpu-x64.zip"),
-            25_084_543,
-            "96e5008bde3367ef049a0f327e0674b149a4e3385af90b3f046cc7fe0301d322"));
+            new Uri("https://github.com/ggml-org/llama.cpp/releases/download/b12317/llama-b12317-bin-win-vulkan-x64.zip"),
+            38_051_900,
+            "968a487604622f4194d0451d77a92b6a7cff1c29338e88841dd38472c81013ca"));
 
     /// <summary>The better translations, at about 5 GB on disk and in memory.</summary>
     public static ModelPackage Quality { get; } = new(

@@ -18,7 +18,12 @@ internal static class LocalTranslationRegistration
         services.AddSingleton(provider =>
         {
             LlamaInstallation installation = provider.GetRequiredService<LlamaInstallation>();
-            return new LlamaServerOptions { ExecutablePath = installation.ServerPath, ModelPath = installation.ModelPath };
+            return new LlamaServerOptions
+            {
+                ExecutablePath = installation.ServerPath,
+                ModelPath = installation.ModelPath,
+                GpuLayers = LlamaCatalog.AllLayers,
+            };
         });
 
         // Disposed by the container when the Engine stops, which ends the server with it. The job object it
@@ -28,7 +33,8 @@ internal static class LocalTranslationRegistration
             provider.GetRequiredService<IServerProcessLauncher>(),
             provider.GetRequiredService<LlamaServerOptions>(),
             CreateServerTransport(),
-            provider.GetRequiredService<ILogger<LlamaServer>>()));
+            provider.GetRequiredService<ILogger<LlamaServer>>(),
+            new GpuVerdict(provider.GetRequiredService<LlamaInstallation>().GpuVerdictPath)));
         services.AddSingleton<ITranslationProvider, LlamaTranslationProvider>();
 
         services.AddSingleton(_ => new FileDownloader(CreateDownloadClient()));
