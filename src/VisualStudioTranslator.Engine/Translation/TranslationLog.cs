@@ -33,4 +33,7 @@ internal static partial class TranslationLog
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "The translation cache failed during a {Operation}; continuing without it.")]
     public static partial void CacheFailed(this ILogger logger, string operation, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Segment {SegmentId} is already in the language asked for and is kept as written.")]
+    public static partial void AlreadyInTargetLanguage(this ILogger logger, int segmentId);
 }

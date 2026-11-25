@@ -9,6 +9,12 @@
 /// </summary>
 public static class LanguageTag
 {
+    /// <summary>
+    /// BCP 47's tag for a language that has not been determined. As the source of a <see cref="LanguagePair"/> it
+    /// means the documentation may be in any language and the translator is to tell which.
+    /// </summary>
+    public const string Undetermined = "und";
+
     /// <returns>The canonical form, or <see langword="null"/> when <paramref name="tag"/> is not a valid tag.</returns>
     public static string? Normalize(string? tag)
     {

@@ -20,8 +20,9 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
 {
     private const string Source = nameof(DocumentationTranslator);
 
-    // Documentation is written in English until the user can say otherwise.
-    private const string SourceLanguage = "en";
+    // Documentation can be written in any language; the Engine's translator tells which, and leaves alone what is
+    // already in the language asked for.
+    private const string SourceLanguage = LanguageTag.Undetermined;
 
     // A local model takes a few seconds a segment and a long comment has many, after a few seconds of loading
     // the first time. A request that has not finished by then has something wrong with it.
@@ -55,9 +56,7 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
         TranslatorSettings settings = await TranslatorOptions.Shared.ReadAsync(CancellationToken.None).ConfigureAwait(false);
         string? targetLanguage = settings.ResolvedTargetLanguage;
 
-        // Documentation is taken to be English for now, so English as the target leaves nothing to do until the
-        // language a comment is written in is told apart.
-        if (targetLanguage is null || TargetLanguages.IsSameLanguage(targetLanguage, SourceLanguage))
+        if (targetLanguage is null)
         {
             if (!_loggedNoTarget)
             {

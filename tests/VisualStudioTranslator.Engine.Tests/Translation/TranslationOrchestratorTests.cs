@@ -43,8 +43,10 @@ public sealed class TranslationOrchestratorTests
     private static TranslationOrchestrator Orchestrator(ITranslationCache cache, RejectedTranslations? rejections = null) =>
         new(cache, rejections ?? new RejectedTranslations(new FakeTimeProvider()), NullLogger<TranslationOrchestrator>.Instance);
 
-    private static TranslationRequest Request(DocumentModel document) =>
-        new() { Document = document, Languages = EnglishToRussian };
+    private static readonly LanguagePair AnyToRussian = LanguagePair.Create(LanguageTag.Undetermined, "ru")!;
+
+    private static TranslationRequest Request(DocumentModel document, LanguagePair? languages = null) =>
+        new() { Document = document, Languages = languages ?? EnglishToRussian };
 
     // One summary paragraph per sentence, so every sentence is its own segment.
     private static DocumentModel Doc(params string[] sentences) => new()
@@ -334,6 +336,46 @@ public sealed class TranslationOrchestratorTests
         DocumentSegmenter.Segment(result.Document).Single().Inlines.OfType<CodeSpan>().Should().ContainSingle();
         result.UnchangedCount.Should().Be(1);
         cache.Count.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task TranslateAsync_SegmentAlreadyInTheTargetLanguage_IsKeptWithoutAskingTheProvider()
+    {
+        FakeProvider provider = new(Translations);
+
+        TranslationResult result = await Orchestrator(new MemoryTranslationCache())
+            .TranslateAsync(Request(Doc("Возвращает количество элементов.", Gets), AnyToRussian), provider, Token);
+
+        provider.Calls.Should().ContainSingle().Which.Should().Equal(Gets);
+        result.TranslatedCount.Should().Be(1);
+        result.UnchangedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task TranslateAsync_SourceUnknown_TextGivenBackUnchanged_IsKeptAndNotAskedAgain()
+    {
+        // A German comment for a German target: the writing cannot tell, so the model is asked and gives it back.
+        const string German = "Gibt die Anzahl der Elemente zurück.";
+        FakeProvider provider = new(new Dictionary<string, string> { [German] = German });
+        TranslationOrchestrator orchestrator = Orchestrator(new MemoryTranslationCache());
+        LanguagePair anyToGerman = LanguagePair.Create(LanguageTag.Undetermined, "de")!;
+
+        TranslationResult first = await orchestrator.TranslateAsync(Request(Doc(German), anyToGerman), provider, Token);
+        await orchestrator.TranslateAsync(Request(Doc(German), anyToGerman), provider, Token);
+
+        first.UnchangedCount.Should().Be(1);
+        provider.Calls.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task TranslateAsync_SourceUnknown_TranslatesFromAnyLanguage()
+    {
+        FakeProvider provider = new(Translations);
+
+        TranslationResult result = await Orchestrator(new MemoryTranslationCache())
+            .TranslateAsync(Request(Doc(Returns), AnyToRussian), provider, Token);
+
+        result.TranslatedCount.Should().Be(1);
     }
 
     [Fact]

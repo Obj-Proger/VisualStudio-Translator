@@ -6,8 +6,8 @@
 /// build pairs through it rather than with an object initializer unless the tags are
 /// already known to be canonical.
 /// <para>
-/// The source is always a concrete language, never "auto": deciding what language a
-/// comment is written in is a separate concern that happens before a pair exists.
+/// The source is a language, or <see cref="LanguageTag.Undetermined"/> when the comment may be written in any
+/// language: documentation is not always in English, and a language model can tell which language it reads.
 /// </para>
 /// </summary>
 public sealed record LanguagePair

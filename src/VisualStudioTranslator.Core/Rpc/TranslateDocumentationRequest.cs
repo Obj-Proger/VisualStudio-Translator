@@ -15,7 +15,10 @@ public sealed record TranslateDocumentationRequest
     /// </summary>
     public required string DocumentationXml { get; init; }
 
-    /// <summary>BCP 47 tag of the language the comment is written in, e.g. "en".</summary>
+    /// <summary>
+    /// BCP 47 tag of the language the comment is written in, e.g. "en", or "und" (see
+    /// <see cref="Languages.LanguageTag.Undetermined"/>) when it is not known.
+    /// </summary>
     public required string SourceLanguage { get; init; }
 
     /// <summary>BCP 47 tag of the language to translate into, e.g. "ru" or "pt-BR".</summary>

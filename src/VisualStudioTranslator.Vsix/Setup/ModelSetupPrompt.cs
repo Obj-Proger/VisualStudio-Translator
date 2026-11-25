@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using VisualStudioTranslator.Core.Languages;
 using VisualStudioTranslator.Core.Rpc;
 using VisualStudioTranslator.Vsix.Service;
 
@@ -20,7 +21,8 @@ namespace VisualStudioTranslator.Vsix.Setup;
 internal sealed class ModelSetupPrompt(EngineConnection connection)
 {
     private const string Source = nameof(ModelSetupPrompt);
-    private const string SourceLanguage = "en";
+    // One model serves every direction; the documentation's own language is told apart by it.
+    private const string SourceLanguage = LanguageTag.Undetermined;
     private const string DownloadLabel = "Download";
     private const string NotNowLabel = "Not now";
     private const string NeverLabel = "Don't ask again";

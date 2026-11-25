@@ -17,6 +17,22 @@ public sealed class TranslationPromptTests
     }
 
     [Fact]
+    public void Build_SourceUnknown_NamesOnlyTheTargetAndLeavesTextAlreadyInIt()
+    {
+        string prompt = Build(LanguageTag.Undetermined, "ru");
+
+        prompt.Should().Contain("translator of software documentation into Russian (ru)")
+            .And.Contain("If the text is already written in Russian, output it unchanged.")
+            .And.NotContain("und");
+    }
+
+    [Fact]
+    public void Build_SourceKnown_HasNoRuleForTextAlreadyInTheTarget()
+    {
+        Build("en", "ru").Should().NotContain("already written");
+    }
+
+    [Fact]
     public void Build_AsksForTheTargetLanguage()
     {
         string prompt = Build("en", "de");

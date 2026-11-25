@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using VisualStudioTranslator.Core.Caching;
 using VisualStudioTranslator.Core.Documentation;
+using VisualStudioTranslator.Core.Languages;
 using VisualStudioTranslator.Core.Providers.Abstractions;
 using VisualStudioTranslator.Core.Quality;
 
@@ -73,6 +74,11 @@ internal sealed class TranslationOrchestrator(
             {
                 group.Translation = cached.Text;
                 group.FromCache = true;
+            }
+            else if (LanguageGuess.IsAlreadyIn(group.Text, request.Languages.Target))
+            {
+                // Already in the language asked for, as its writing shows: kept as written, nothing to send.
+                logger.AlreadyInTargetLanguage(group.Members[0].Segment.Id);
             }
             else if (!rejections.IsRejected(group.Key, provider.Info))
             {
@@ -218,7 +224,16 @@ internal sealed class TranslationOrchestrator(
 
                 if (!validation.IsValid)
                 {
-                    if (logger.IsEnabled(LogLevel.Warning))
+                    // Told the text may already be in the language asked for, a translator gives it back as it is.
+                    // That is an answer, not a fault: kept as written, and not asked about again for a while.
+                    bool alreadyInTarget = request.Languages.Source == LanguageTag.Undetermined
+                        && validation.Issues.All(issue => issue.Kind == ValidationIssueKind.IdenticalToSource);
+
+                    if (alreadyInTarget)
+                    {
+                        logger.AlreadyInTargetLanguage(group.Members[0].Segment.Id);
+                    }
+                    else if (logger.IsEnabled(LogLevel.Warning))
                     {
                         logger.TranslationRejected(
                             group.Members[0].Segment.Id, string.Join(", ", validation.Issues.Select(issue => issue.Kind)));

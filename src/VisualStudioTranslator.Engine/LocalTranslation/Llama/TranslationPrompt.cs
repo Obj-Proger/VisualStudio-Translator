@@ -17,13 +17,22 @@ internal static class TranslationPrompt
     /// Goes into the provider's revision. Change it with any change to the wording: the same text can then
     /// translate differently, and what was cached under the old wording must not be served as current.
     /// </summary>
-    public const string Version = "2";
+    public const string Version = "3";
 
     /// <param name="text">The segment, with its markup already written as tags (see <see cref="MarkupTags"/>).</param>
     public static string Build(LanguagePair pair, string text)
     {
-        string source = LanguageName(pair.Source);
         string target = LanguageName(pair.Target);
+        bool sourceKnown = pair.Source != LanguageTag.Undetermined;
+
+        // With the source unknown the model is told only where to translate to, and that text already there stays.
+        string role = sourceKnown
+            ? $"You are a professional {LanguageName(pair.Source)} ({pair.Source}) to {target} ({pair.Target}) translator " +
+              "of software documentation. "
+            : $"You are a professional translator of software documentation into {target} ({pair.Target}). ";
+        string alreadyRule = sourceKnown
+            ? string.Empty
+            : $"- If the text is already written in {target}, output it unchanged.\n";
 
         // The rule about tags only goes with text that has tags. Told about tags with none in sight, the model
         // made some up, around quoted phrases.
@@ -34,13 +43,14 @@ internal static class TranslationPrompt
             : string.Empty;
 
         return
-            $"You are a professional {source} ({pair.Source}) to {target} ({pair.Target}) translator of software documentation. " +
+            role +
             $"Translate the text that follows the line \"Text:\" into {target}.\n\n" +
             "Rules:\n" +
             "- Translate faithfully and completely. Do not omit, add or explain anything.\n" +
             "- Do not translate code: identifiers, names of types, members and parameters, and keywords such as true, false " +
             "and null stay exactly as written.\n" +
             tagRule +
+            alreadyRule +
             $"- Output only the {target} translation, with no notes and no added quotes or formatting.\n\n" +
             "Text:\n" + text;
     }
