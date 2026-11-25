@@ -102,7 +102,8 @@ public sealed class NamedPipeRpcServerTests
     ITranslationProvider[] providers,
     Func<ITranslatorService, Task> test,
     ClientTracker? tracker = null,
-    FakeModelInstaller? installer = null)
+    FakeModelInstaller? installer = null,
+    FakeLocalModelConfiguration? localModel = null)
     {
         TranslatorService service = new(
             NullLogger<TranslatorService>.Instance,
@@ -111,7 +112,8 @@ public sealed class NamedPipeRpcServerTests
                 new RejectedTranslations(TimeProvider.System),
                 NullLogger<TranslationOrchestrator>.Instance),
             providers,
-            installer ?? new FakeModelInstaller());
+            installer ?? new FakeModelInstaller(),
+            localModel ?? new FakeLocalModelConfiguration());
         NamedPipeRpcServer server = new(
             service, tracker ?? new ClientTracker(TimeProvider.System), NullLogger<NamedPipeRpcServer>.Instance);
 
@@ -173,5 +175,16 @@ public sealed class NamedPipeRpcServerTests
                 status.Detail.Should().BeNull();
             },
             installer: installer);
+    }
+
+    [Fact]
+    public async Task ApplyLocalModelSettingsAsync_RoundTripsOverNamedPipe()
+    {
+        FakeLocalModelConfiguration localModel = new();
+        LocalModelSettings settings = new() { Model = LocalModelChoice.Light, UseGraphicsCard = false };
+
+        await WithProxyAsync([], proxy => proxy.ApplyLocalModelSettingsAsync(settings, Token), localModel: localModel);
+
+        localModel.Applied.Should().Equal(settings);
     }
 }

@@ -44,6 +44,10 @@ namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
 /// </list>
 /// When the cards cannot be listed, the server is left to pick, as it would on its own.
 /// </para>
+/// <para>
+/// The model and whether a card may be used are the ones in <see cref="LlamaServerOptions"/> until
+/// <see cref="ReconfigureAsync"/> changes them, which the user does from the extension's settings.
+/// </para>
 /// </summary>
 internal sealed class LlamaServer : IDisposable
 {
@@ -79,6 +83,10 @@ internal sealed class LlamaServer : IDisposable
     private List<ComputePlace>? _places;
     private int _placeIndex;
 
+    // The model loaded and the layers given to a card. Written only by whoever holds the start gate.
+    private string _modelPath;
+    private int _gpuLayers;
+
     /// <param name="transport">
     /// What carries the requests: the real network in the Engine, a stand-in in tests. Disposed with this object.
     /// </param>
@@ -98,6 +106,8 @@ internal sealed class LlamaServer : IDisposable
     {
         _launcher = launcher;
         _options = options;
+        _modelPath = options.ModelPath;
+        _gpuLayers = options.GpuLayers;
         _logger = logger;
         _gpuVerdict = gpuVerdict;
         _devices = devices;
@@ -113,6 +123,42 @@ internal sealed class LlamaServer : IDisposable
 
     /// <summary>Sends requests to the server that is running at the moment, with its key.</summary>
     public HttpClient Client { get; }
+
+    /// <summary>The model file the next server loads.</summary>
+    public string ModelPath => Volatile.Read(ref _modelPath);
+
+    /// <summary>How many of the model's layers the next server may give to a graphics card; zero for none.</summary>
+    public int GpuLayers => Volatile.Read(ref _gpuLayers);
+
+    /// <summary>
+    /// Makes the next server load another model, or compute elsewhere. A server that is running is stopped, since it
+    /// holds the old model, and where the model goes is worked out afresh at the next start; the order of the cards
+    /// is still remembered, so they are not timed again. Waits for a start under way to finish first. Changing
+    /// nothing leaves a running server alone.
+    /// </summary>
+    public async Task ReconfigureAsync(string modelPath, int gpuLayers, CancellationToken cancellationToken)
+    {
+        await _starting.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            if (string.Equals(modelPath, ModelPath, StringComparison.OrdinalIgnoreCase) && gpuLayers == GpuLayers)
+            {
+                return;
+            }
+
+            Volatile.Write(ref _modelPath, modelPath);
+            Volatile.Write(ref _gpuLayers, gpuLayers);
+            _places = null;
+            _placeIndex = 0;
+
+            Stop();
+        }
+        finally
+        {
+            _starting.Release();
+        }
+    }
 
     /// <summary>
     /// Returns once a server is running and answering, starting one if there is none or the last one
@@ -224,7 +270,7 @@ internal sealed class LlamaServer : IDisposable
     {
         string server = _options.ExecutablePath;
 
-        if (_options.GpuLayers <= 0)
+        if (_gpuLayers <= 0)
         {
             return [ComputePlace.Processor];
         }
@@ -238,7 +284,7 @@ internal sealed class LlamaServer : IDisposable
             // Not known which cards there are: the server picks, as it does when left to itself.
             return _gpuVerdict?.IsUnusable(server) == true
                 ? [ComputePlace.Processor]
-                : [ComputePlace.AnyCard(_options.GpuLayers), ComputePlace.Processor];
+                : [ComputePlace.AnyCard(_gpuLayers), ComputePlace.Processor];
         }
 
         if (_logger.IsEnabled(LogLevel.Information))
@@ -254,7 +300,7 @@ internal sealed class LlamaServer : IDisposable
         [
             .. ranked
                 .Where(device => _gpuVerdict?.IsUnusable(server, device.Name) != true)
-                .Select(device => ComputePlace.Card(device, _options.GpuLayers)),
+                .Select(device => ComputePlace.Card(device, _gpuLayers)),
             ComputePlace.Processor,
         ];
     }
@@ -267,7 +313,7 @@ internal sealed class LlamaServer : IDisposable
 
         foreach (GpuDevice device in devices)
         {
-            Running running = GetOrLaunch(ComputePlace.Card(device, _options.GpuLayers));
+            Running running = GetOrLaunch(ComputePlace.Card(device, _gpuLayers));
 
             try
             {
@@ -436,7 +482,7 @@ internal sealed class LlamaServer : IDisposable
 
     private string[] Arguments(int port, ComputePlace place) =>
     [
-        "-m", _options.ModelPath,
+        "-m", _modelPath,
         "--host", Loopback,
         "--port", port.ToString(CultureInfo.InvariantCulture),
         "-c", _options.ContextSize.ToString(CultureInfo.InvariantCulture),

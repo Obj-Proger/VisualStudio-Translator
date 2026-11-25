@@ -539,6 +539,68 @@ public sealed class LlamaServerTests : IDisposable
     }
 
     [Fact]
+    public async Task ReconfigureAsync_AnotherModel_StopsTheServerAndTheNextStartLoadsIt()
+    {
+        using LlamaServer server = Server();
+        await server.EnsureStartedAsync(Token);
+
+        await server.ReconfigureAsync(@"C:\models\light.gguf", 0, Token);
+
+        _launcher.Processes.Single().Killed.Should().BeTrue();
+        server.ModelPath.Should().Be(@"C:\models\light.gguf");
+
+        await server.EnsureStartedAsync(Token);
+        Argument(_launcher.Started.Last(), "-m").Should().Be(@"C:\models\light.gguf");
+    }
+
+    [Fact]
+    public async Task ReconfigureAsync_CardTurnedOff_GoesToTheProcessorWithoutListingTheCards()
+    {
+        FakeDevices devices = new(Nvidia, Radeon);
+        using LlamaServer server = Server(gpuLayers: AllLayers, devices: devices, ranking: new GpuRanking(RankingPath));
+        await server.EnsureStartedAsync(Token);
+        int listed = devices.Calls;
+
+        await server.ReconfigureAsync(Model, 0, Token);
+        await server.EnsureStartedAsync(Token);
+
+        Device(_launcher.Started.Last()).Should().Be("none");
+        GpuLayers(_launcher.Started.Last()).Should().Be(0);
+        devices.Calls.Should().Be(listed);
+    }
+
+    [Fact]
+    public async Task ReconfigureAsync_CardTurnedBackOn_GoesToTheFastestCardWithoutTimingAgain()
+    {
+        _transport.TimingDelayAt = port => TimeSpan.FromMilliseconds(DeviceAt(port) == "Vulkan0" ? 10 : 300);
+        FakeDevices devices = new(Radeon, Nvidia);
+        using LlamaServer server = Server(gpuLayers: AllLayers, devices: devices, ranking: new GpuRanking(RankingPath));
+        await server.EnsureStartedAsync(Token);
+        await server.ReconfigureAsync(Model, 0, Token);
+        await server.EnsureStartedAsync(Token);
+        int timings = _transport.Timings;
+
+        await server.ReconfigureAsync(Model, AllLayers, Token);
+        await server.EnsureStartedAsync(Token);
+
+        Device(_launcher.Started.Last()).Should().Be(Nvidia.Id);
+        _transport.Timings.Should().Be(timings);
+    }
+
+    [Fact]
+    public async Task ReconfigureAsync_NothingChanged_LeavesTheServerRunning()
+    {
+        using LlamaServer server = Server();
+        await server.EnsureStartedAsync(Token);
+
+        await server.ReconfigureAsync(Model, 0, Token);
+        await server.EnsureStartedAsync(Token);
+
+        _launcher.Processes.Single().Killed.Should().BeFalse();
+        _launcher.Started.Should().ContainSingle();
+    }
+
+    [Fact]
     public void Stop_NothingRunning_DoesNothing()
     {
         using LlamaServer server = Server();
@@ -723,7 +785,14 @@ public sealed class LlamaServerTests : IDisposable
 
     private sealed class FakeDevices(params GpuDevice[]? devices) : IDeviceLister
     {
-        public Task<IReadOnlyList<GpuDevice>?> ListAsync(string serverPath, CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<GpuDevice>?>(devices);
+        private int _calls;
+
+        public int Calls => Volatile.Read(ref _calls);
+
+        public Task<IReadOnlyList<GpuDevice>?> ListAsync(string serverPath, CancellationToken cancellationToken)
+        {
+            Interlocked.Increment(ref _calls);
+            return Task.FromResult<IReadOnlyList<GpuDevice>?>(devices);
+        }
     }
 }

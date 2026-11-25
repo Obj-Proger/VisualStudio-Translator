@@ -6,7 +6,9 @@ internal sealed record LlamaServerOptions
     /// <summary>Full path of <c>llama-server.exe</c>.</summary>
     public required string ExecutablePath { get; init; }
 
-    /// <summary>Full path of the model file the server loads.</summary>
+    /// <summary>
+    /// Full path of the model file the server loads, until <see cref="LlamaServer.ReconfigureAsync"/> names another.
+    /// </summary>
     public required string ModelPath { get; init; }
 
     /// <summary>
@@ -18,7 +20,7 @@ internal sealed record LlamaServerOptions
     /// <summary>
     /// How many of the model's layers go to the graphics card; a number above the model's count puts all of it
     /// there. Zero keeps everything on the processor. See <see cref="LlamaServer"/> for what happens when the
-    /// card cannot do it.
+    /// card cannot do it, and <see cref="LlamaServer.ReconfigureAsync"/> for changing it later.
     /// </summary>
     public int GpuLayers { get; init; }
 

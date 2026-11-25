@@ -36,6 +36,14 @@ public sealed class LocalTranslationRegistrationTests : IDisposable
     }
 
     [Fact]
+    public void LocalModelSettings_ApplyToTheProviderThatTranslates()
+    {
+        _services.GetRequiredService<ILocalModelConfiguration>().Should().BeOfType<LocalModelConfiguration>();
+        _services.GetRequiredService<ITranslationProvider>()
+            .Should().BeSameAs(_services.GetRequiredService<LlamaTranslationProvider>());
+    }
+
+    [Fact]
     public void Installer_InstallsTheServerAndTheModel()
     {
         _services.GetRequiredService<IModelInstaller>().Should().BeOfType<LlamaInstaller>();

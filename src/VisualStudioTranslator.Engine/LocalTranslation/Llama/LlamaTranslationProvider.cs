@@ -79,7 +79,7 @@ internal sealed class LlamaTranslationProvider : ITranslationProvider, IDisposab
     /// Whether the server and the model are installed. The model is multilingual, so the direction does not
     /// decide anything here; a translation into the wrong language or script is caught by the validator.
     /// </summary>
-    public bool Supports(LanguagePair pair) => File.Exists(_options.ExecutablePath) && File.Exists(_options.ModelPath);
+    public bool Supports(LanguagePair pair) => File.Exists(_options.ExecutablePath) && File.Exists(_server.ModelPath);
 
     public async Task<IReadOnlyList<string>> TranslateAsync(
         LanguagePair pair, IReadOnlyList<string> texts, CancellationToken cancellationToken)
@@ -121,6 +121,25 @@ internal sealed class LlamaTranslationProvider : ITranslationProvider, IDisposab
         }
     }
 
+    /// <summary>
+    /// Translates with another model, or computes elsewhere, from the next request on (see
+    /// <see cref="LlamaServer.ReconfigureAsync"/>). A request under way finishes first, on the server it started on,
+    /// so it is neither cut off nor answered by a mixture of two models.
+    /// </summary>
+    public async Task ReconfigureAsync(string modelPath, int gpuLayers, CancellationToken cancellationToken)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await _server.ReconfigureAsync(modelPath, gpuLayers, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     /// <summary>Stops the idle check. The server itself belongs to whoever created it.</summary>
     public void Dispose() => _idleTimer.Dispose();
 
@@ -157,7 +176,7 @@ internal sealed class LlamaTranslationProvider : ITranslationProvider, IDisposab
     // name, which names the model and its quantization, and its size, which tells two builds of it apart.
     private string ComputeRevision()
     {
-        FileInfo model = new(_options.ModelPath);
+        FileInfo model = new(_server.ModelPath);
         string size = model.Exists ? model.Length.ToString(CultureInfo.InvariantCulture) : "missing";
 
         return $"{model.Name}/{size}/prompt-{TranslationPrompt.Version}";

@@ -30,14 +30,19 @@ public sealed class TranslatorServiceTests
     private static TranslatorService Service(params ITranslationProvider[] providers) =>
     Service(new FakeModelInstaller(), providers);
 
-    private static TranslatorService Service(FakeModelInstaller installer, params ITranslationProvider[] providers) => new(
+    private static TranslatorService Service(FakeModelInstaller installer, params ITranslationProvider[] providers) =>
+        Service(installer, new FakeLocalModelConfiguration(), providers);
+
+    private static TranslatorService Service(
+        FakeModelInstaller installer, FakeLocalModelConfiguration localModel, params ITranslationProvider[] providers) => new(
         NullLogger<TranslatorService>.Instance,
         new TranslationOrchestrator(
             new MemoryTranslationCache(),
             new RejectedTranslations(TimeProvider.System),
             NullLogger<TranslationOrchestrator>.Instance),
         providers,
-        installer);
+        installer,
+        localModel);
 
     private static TranslateDocumentationRequest Request(string target = "ru") => new()
     {
@@ -232,6 +237,27 @@ public sealed class TranslatorServiceTests
 
         status.State.Should().Be(ModelInstallState.Installing);
         installer.StartRequests.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task ApplyLocalModelSettingsAsync_PassesTheSettingsOn()
+    {
+        FakeLocalModelConfiguration localModel = new();
+        LocalModelSettings settings = new() { Model = LocalModelChoice.Light, UseGraphicsCard = false };
+
+        await Service(new FakeModelInstaller(), localModel).ApplyLocalModelSettingsAsync(settings, Token);
+
+        localModel.Applied.Should().Equal(settings);
+    }
+
+    [Fact]
+    public async Task ApplyLocalModelSettingsAsync_NoSettings_AppliesTheDefaults()
+    {
+        FakeLocalModelConfiguration localModel = new();
+
+        await Service(new FakeModelInstaller(), localModel).ApplyLocalModelSettingsAsync(null!, Token);
+
+        localModel.Applied.Should().Equal(new LocalModelSettings());
     }
 
     [Fact]

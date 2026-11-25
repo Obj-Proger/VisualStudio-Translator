@@ -10,7 +10,7 @@ internal static class LocalTranslationRegistration
 {
     /// <summary>
     /// Registers the provider that translates on this machine, through a language model run by llama.cpp's server,
-    /// and the installer that puts the server and the model in place.
+    /// the installer that puts the server and the model in place, and what applies the user's settings for them.
     /// </summary>
     public static IServiceCollection AddLocalTranslation(this IServiceCollection services)
     {
@@ -38,7 +38,13 @@ internal static class LocalTranslationRegistration
                 provider.GetRequiredService<LlamaInstallation>().GpuVerdictPath, provider.GetRequiredService<TimeProvider>()),
             new ProcessDeviceLister(),
             new GpuRanking(provider.GetRequiredService<LlamaInstallation>().GpuRankingPath)));
-        services.AddSingleton<ITranslationProvider, LlamaTranslationProvider>();
+        services.AddSingleton<LlamaTranslationProvider>();
+        services.AddSingleton<ITranslationProvider>(provider => provider.GetRequiredService<LlamaTranslationProvider>());
+        services.AddSingleton<ILocalModelConfiguration>(provider => new LocalModelConfiguration(
+            provider.GetRequiredService<LlamaInstallation>(),
+            provider.GetRequiredService<LlamaTranslationProvider>(),
+            LlamaInstallation.MachineMemory,
+            provider.GetRequiredService<ILogger<LocalModelConfiguration>>()));
 
         services.AddSingleton(_ => new FileDownloader(CreateDownloadClient()));
         services.AddSingleton<IModelInstaller, LlamaInstaller>();

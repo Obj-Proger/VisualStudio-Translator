@@ -101,6 +101,43 @@ public sealed class LlamaTranslationProviderTests : IDisposable
     }
 
     [Fact]
+    public async Task ReconfigureAsync_ModelNotInstalled_IsNotSupportedUntilItIs()
+    {
+        string light = Path.Combine(_directory, "gemma-4-E2B-it.Q4_K_M.gguf");
+
+        await _provider.ReconfigureAsync(light, 0, Token);
+
+        _provider.Supports(EnglishToRussian).Should().BeFalse();
+        File.WriteAllText(light, "light model");
+        _provider.Supports(EnglishToRussian).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ReconfigureAsync_AnotherModel_GivesAnotherRevision()
+    {
+        string light = Path.Combine(_directory, "gemma-4-E2B-it.Q4_K_M.gguf");
+        File.WriteAllText(light, "light model");
+        string before = _provider.Info.Revision;
+
+        await _provider.ReconfigureAsync(light, 0, Token);
+
+        _provider.Info.Revision.Should().NotBe(before).And.Contain("gemma-4-E2B-it.Q4_K_M.gguf");
+    }
+
+    [Fact]
+    public async Task ReconfigureAsync_TheNextRequestStartsAServerWithTheNewModel()
+    {
+        string light = Path.Combine(_directory, "gemma-4-E2B-it.Q4_K_M.gguf");
+        File.WriteAllText(light, "light model");
+        await TranslateAsync("Gets the name.");
+
+        await _provider.ReconfigureAsync(light, 0, Token);
+        await TranslateAsync("Sets the name.");
+
+        _launcher.Started.Should().Be(2);
+    }
+
+    [Fact]
     public void Supports_ServerMissing_IsFalse()
     {
         File.Delete(_options.ExecutablePath);

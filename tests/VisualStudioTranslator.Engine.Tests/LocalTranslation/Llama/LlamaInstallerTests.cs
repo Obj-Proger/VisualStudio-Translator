@@ -19,9 +19,11 @@ public sealed class LlamaInstallerTests : IDisposable
     private static readonly LanguagePair EnglishToRussian = LanguagePair.Create("en", "ru")!;
     private static readonly Uri RuntimeAddress = new("https://github.example/llama-b1-bin-win-cpu-x64.zip");
     private static readonly Uri ModelAddress = new("https://models.example/model.gguf");
+    private static readonly Uri OtherModelAddress = new("https://models.example/other.gguf");
 
     private readonly string _root = Path.Combine(Path.GetTempPath(), "vst-llama-install-" + Path.GetRandomFileName());
     private readonly byte[] _model = Encoding.UTF8.GetBytes("a model of a few bytes");
+    private readonly byte[] _otherModel = Encoding.UTF8.GetBytes("another model, a little longer than the first");
     private readonly FakeNetwork _network = new();
     private readonly HttpClient _http;
     private long? _freeSpace;
@@ -76,6 +78,12 @@ public sealed class LlamaInstallerTests : IDisposable
             _root,
             new RuntimePackage("b1", "cpu", "llama-b1-bin-win-cpu-x64.zip", SourceOf(RuntimeAddress, _archive)),
             new ModelPackage("Test model", "model.gguf", modelChecksum is null ? model : model with { Sha256 = modelChecksum }));
+    }
+
+    private ModelPackage OtherModel()
+    {
+        _network.Files[OtherModelAddress] = _otherModel;
+        return new ModelPackage("Other model", "other.gguf", SourceOf(OtherModelAddress, _otherModel));
     }
 
     private LlamaInstaller Installer(LlamaInstallation installation) => new(
@@ -233,6 +241,57 @@ public sealed class LlamaInstallerTests : IDisposable
 
         (await FinishedAsync(installer)).State.Should().Be(ModelInstallState.Installed);
         _network.Requests.Should().Equal(RuntimeAddress, ModelAddress, ModelAddress);
+    }
+
+    [Fact]
+    public async Task GetStatusAsync_AnotherModelChosen_IsAboutThatModel()
+    {
+        LlamaInstallation installation = Installation();
+        using LlamaInstaller installer = Installer(installation);
+        await installer.StartInstallAsync(EnglishToRussian, Token);
+        await FinishedAsync(installer);
+
+        installation.UseModel(OtherModel());
+        ModelInstallStatus status = await installer.GetStatusAsync(EnglishToRussian, Token);
+
+        status.State.Should().Be(ModelInstallState.NotInstalled);
+        status.TotalBytes.Should().Be(_otherModel.Length);
+    }
+
+    [Fact]
+    public async Task GetStatusAsync_FailureOfTheModelChosenBefore_IsNotReportedForTheOneChosenNow()
+    {
+        LlamaInstallation installation = Installation(modelChecksum: new string('0', 64));
+        using LlamaInstaller installer = Installer(installation);
+        await installer.StartInstallAsync(EnglishToRussian, Token);
+        (await FinishedAsync(installer)).State.Should().Be(ModelInstallState.Failed);
+
+        installation.UseModel(OtherModel());
+
+        (await installer.GetStatusAsync(EnglishToRussian, Token)).State.Should().Be(ModelInstallState.NotInstalled);
+    }
+
+    [Fact]
+    public async Task StartInstallAsync_ModelChosenMeanwhile_FinishesTheOneItStartedWithAndKeepsBoth()
+    {
+        LlamaInstallation installation = Installation();
+        using LlamaInstaller installer = Installer(installation);
+        TaskCompletionSource release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        _network.Hold[ModelAddress] = release.Task;
+        string firstModel = installation.ModelPath;
+
+        await installer.StartInstallAsync(EnglishToRussian, Token);
+        await _network.Arrived(ModelAddress).WaitAsync(Token);
+        installation.UseModel(OtherModel());
+        release.SetResult();
+        await FinishedAsync(installer);
+        await installer.StartInstallAsync(EnglishToRussian, Token);
+        ModelInstallStatus status = await FinishedAsync(installer);
+
+        status.State.Should().Be(ModelInstallState.Installed);
+        File.ReadAllBytes(firstModel).Should().Equal(_model);
+        File.ReadAllBytes(installation.ModelPath).Should().Equal(_otherModel);
+        _network.Requests.Should().Equal(RuntimeAddress, ModelAddress, OtherModelAddress);
     }
 
     [Fact]

@@ -17,7 +17,8 @@ internal sealed class TranslatorService(
     ILogger<TranslatorService> logger,
     TranslationOrchestrator orchestrator,
     IEnumerable<ITranslationProvider> providers,
-    IModelInstaller modelInstaller) : ITranslatorService
+    IModelInstaller modelInstaller,
+    ILocalModelConfiguration localModel) : ITranslatorService
 {
     public Task<ServiceInfo> HandshakeAsync(ClientInfo client, CancellationToken cancellationToken)
     {
@@ -129,6 +130,12 @@ internal sealed class TranslatorService(
         ModelInstallStatus status = await modelInstaller.StartInstallAsync(pair, cancellationToken);
         logger.ModelInstallRequested(pair, status.State);
         return status;
+    }
+
+    public async Task ApplyLocalModelSettingsAsync(LocalModelSettings settings, CancellationToken cancellationToken)
+    {
+        // The wire is the one place a missing value can arrive from; it means the defaults.
+        await localModel.ApplyAsync(settings ?? new LocalModelSettings(), cancellationToken).ConfigureAwait(false);
     }
 
     // A direction that is not even a valid pair of languages has no model to install.

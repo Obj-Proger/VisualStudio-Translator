@@ -1,4 +1,6 @@
-﻿namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
+﻿using VisualStudioTranslator.Core.Rpc;
+
+namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
 
 /// <summary>
 /// Where the server and the model live on this machine, and whether they are there. Everything is under one
@@ -8,9 +10,14 @@
 /// llama\models\&lt;model&gt;.gguf               the model
 /// llama\downloads\                         archives while they download
 /// </code>
+/// <para>
+/// The model is the one the user chose and can change while the Engine runs (see <see cref="UseModel"/>); the
+/// server stays the same.
+/// </para>
 /// </summary>
 internal sealed class LlamaInstallation(string root, RuntimePackage runtime, ModelPackage model)
 {
+    private ModelPackage _model = model;
     /// <summary>Folders that begin like this are a build being unpacked, not a build.</summary>
     public const string InstallingPrefix = ".installing-";
 
@@ -23,7 +30,10 @@ internal sealed class LlamaInstallation(string root, RuntimePackage runtime, Mod
 
     public RuntimePackage Runtime => runtime;
 
-    public ModelPackage Model => model;
+    /// <summary>How much memory this machine has, as the choice of model goes by.</summary>
+    public static long MachineMemory => GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+
+    public ModelPackage Model => Volatile.Read(ref _model);
 
     public string RuntimesDirectory => Path.Combine(root, "runtime");
 
@@ -31,7 +41,7 @@ internal sealed class LlamaInstallation(string root, RuntimePackage runtime, Mod
 
     public string ServerPath => Path.Combine(RuntimeDirectory, LlamaCatalog.ServerFileName);
 
-    public string ModelPath => Path.Combine(root, "models", model.FileName);
+    public string ModelPath => Path.Combine(root, "models", Model.FileName);
 
     public string DownloadsDirectory => Path.Combine(root, "downloads");
 
@@ -53,5 +63,12 @@ internal sealed class LlamaInstallation(string root, RuntimePackage runtime, Mod
     public static LlamaInstallation ForThisMachine() => new(
         DefaultRoot,
         LlamaCatalog.Runtime,
-        LlamaCatalog.ChooseModel(GC.GetGCMemoryInfo().TotalAvailableMemoryBytes));
+        LlamaCatalog.ChooseModel(LocalModelChoice.Automatic, MachineMemory));
+
+    /// <summary>
+    /// Makes another of the catalogue's models the one this installation is about: what is installed, what there
+    /// is to download, and what the server loads. The file of the model before stays on disk, so going back to it
+    /// costs no download.
+    /// </summary>
+    public void UseModel(ModelPackage chosen) => Volatile.Write(ref _model, chosen);
 }

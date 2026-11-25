@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using VisualStudioTranslator.Core.Rpc;
 
 namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
 
@@ -44,4 +45,9 @@ internal static partial class LlamaLog
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Installing the model server or the model failed.")]
     public static partial void InstallFailed(this ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Translating locally with {Model} ({Choice}), graphics card {GraphicsCard}, from the next request on.")]
+    public static partial void LocalModelChanged(this ILogger logger, string model, LocalModelChoice choice, string graphicsCard);
 }

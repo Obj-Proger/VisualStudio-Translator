@@ -19,6 +19,8 @@ namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
 /// again downloads only what is missing.</item>
 /// <item>There is no limit on the time an installation takes: several gigabytes on a slow connection take
 /// hours, and a download that has stopped moving is caught by the downloader.</item>
+/// <item>The model is the one chosen when the installation started. Choosing another meanwhile does not
+/// change what is being downloaded; once it is done, the status is about the model chosen now.</item>
 /// </list>
 /// </summary>
 internal sealed class LlamaInstaller(
@@ -54,7 +56,7 @@ internal sealed class LlamaInstaller(
                 return Task.FromResult(CurrentStatus());
             }
 
-            job = new Job(BytesToDownload());
+            job = new Job(installation.Model, installation.ModelPath, BytesToDownload());
             _job = job;
         }
 
@@ -84,8 +86,14 @@ internal sealed class LlamaInstaller(
             return new ModelInstallStatus { State = ModelInstallState.Installed };
         }
 
-        // A job that ended badly is remembered, so the client can say why.
-        return _job?.Snapshot() ?? new ModelInstallStatus
+        // A job that ended badly is remembered, so the client can say why. One for a model no longer chosen
+        // says nothing about the one that is.
+        if (_job is { HasFailed: true } failed && failed.Model == installation.Model)
+        {
+            return failed.Snapshot();
+        }
+
+        return new ModelInstallStatus
         {
             State = ModelInstallState.NotInstalled,
             TotalBytes = BytesToDownload(),
@@ -103,7 +111,7 @@ internal sealed class LlamaInstaller(
         try
         {
             CancellationToken token = _shutdown.Token;
-            logger.InstallStarted(installation.Model.Name);
+            logger.InstallStarted(job.Model.Name);
 
             if (!installation.IsRuntimeInstalled)
             {
@@ -111,14 +119,14 @@ internal sealed class LlamaInstaller(
                 logger.RuntimeInstalled(installation.Runtime.Folder);
             }
 
-            if (!installation.IsModelInstalled)
+            if (!File.Exists(job.ModelPath))
             {
                 await downloader.DownloadAsync(
-                    installation.Model.Source, installation.ModelPath, job.ProgressAfterFinished(), token).ConfigureAwait(false);
+                    job.Model.Source, job.ModelPath, job.ProgressAfterFinished(), token).ConfigureAwait(false);
             }
 
             job.Finish(ModelInstallState.Installed, detail: null);
-            logger.Installed(installation.Model.Name);
+            logger.Installed(job.Model.Name);
         }
         catch (Exception exception)
         {
@@ -244,14 +252,18 @@ internal sealed class LlamaInstaller(
         _ => "The language model could not be installed.",
     };
 
-    // One installation in progress, or the last one that did not succeed.
-    private sealed class Job(long total)
+    // One installation in progress, or the last one, with the model it was for.
+    private sealed class Job(ModelPackage model, string modelPath, long total)
     {
         private readonly Lock _gate = new();
         private ModelInstallState _state = ModelInstallState.Installing;
         private long _finished;
         private long _current;
         private string? _detail;
+
+        public ModelPackage Model => model;
+
+        public string ModelPath => modelPath;
 
         public bool IsInstalling
         {
@@ -260,6 +272,17 @@ internal sealed class LlamaInstaller(
                 lock (_gate)
                 {
                     return _state == ModelInstallState.Installing;
+                }
+            }
+        }
+
+        public bool HasFailed
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return _state == ModelInstallState.Failed;
                 }
             }
         }

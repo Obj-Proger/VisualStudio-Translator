@@ -1,4 +1,5 @@
-﻿using VisualStudioTranslator.Engine.LocalTranslation.Downloads;
+﻿using VisualStudioTranslator.Core.Rpc;
+using VisualStudioTranslator.Engine.LocalTranslation.Downloads;
 
 namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
 
@@ -79,10 +80,18 @@ internal static class LlamaCatalog
     /// <summary>The hosts the files come from, as the user is told before agreeing to the download.</summary>
     public static string SourceHosts => $"{Quality.Source.Url.Host} and {Runtime.Source.Url.Host}";
 
-    /// <summary>
-    /// The model that suits a machine with this much memory, until the user can choose for themselves.
-    /// Memory that cannot be told counts as little.
-    /// </summary>
+    /// <summary>The model that suits a machine with this much memory. Memory that cannot be told counts as little.</summary>
     public static ModelPackage ChooseModel(long totalMemoryBytes) =>
         totalMemoryBytes >= LightModelMemoryLimit ? Quality : Light;
+
+    /// <summary>
+    /// The model the user chose, or for <see cref="LocalModelChoice.Automatic"/> the one this much memory suits.
+    /// A choice this version does not know counts as automatic.
+    /// </summary>
+    public static ModelPackage ChooseModel(LocalModelChoice choice, long totalMemoryBytes) => choice switch
+    {
+        LocalModelChoice.Quality => Quality,
+        LocalModelChoice.Light => Light,
+        _ => ChooseModel(totalMemoryBytes),
+    };
 }

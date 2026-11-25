@@ -1,4 +1,5 @@
 ﻿using AwesomeAssertions;
+using VisualStudioTranslator.Core.Rpc;
 using VisualStudioTranslator.Engine.LocalTranslation.Downloads;
 using VisualStudioTranslator.Engine.LocalTranslation.Llama;
 using Xunit;
@@ -72,5 +73,28 @@ public sealed class LlamaCatalogTests
     public void ChooseModel_MemoryNotKnown_IsTheLightModel()
     {
         LlamaCatalog.ChooseModel(0).Should().BeSameAs(LlamaCatalog.Light);
+    }
+
+    [Theory]
+    [InlineData(LocalModelChoice.Quality, 8)]
+    [InlineData(LocalModelChoice.Light, 64)]
+    public void ChooseModel_UsersChoice_WinsOverTheMemory(LocalModelChoice choice, int gigabytes)
+    {
+        ModelPackage expected = choice == LocalModelChoice.Quality ? LlamaCatalog.Quality : LlamaCatalog.Light;
+
+        LlamaCatalog.ChooseModel(choice, gigabytes * GiB).Should().BeSameAs(expected);
+    }
+
+    [Fact]
+    public void ChooseModel_Automatic_GoesByTheMemory()
+    {
+        LlamaCatalog.ChooseModel(LocalModelChoice.Automatic, 8 * GiB).Should().BeSameAs(LlamaCatalog.Light);
+        LlamaCatalog.ChooseModel(LocalModelChoice.Automatic, 32 * GiB).Should().BeSameAs(LlamaCatalog.Quality);
+    }
+
+    [Fact]
+    public void ChooseModel_ChoiceFromANewerExtension_GoesByTheMemory()
+    {
+        LlamaCatalog.ChooseModel((LocalModelChoice)42, 8 * GiB).Should().BeSameAs(LlamaCatalog.Light);
     }
 }

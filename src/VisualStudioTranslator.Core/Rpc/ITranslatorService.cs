@@ -44,4 +44,13 @@ public interface ITranslatorService
     /// </summary>
     Task<ModelInstallStatus> StartModelInstallAsync(
         string sourceLanguage, string targetLanguage, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Tells the Engine which language model to translate with on this machine and whether it may use a graphics
+    /// card. Returns once they apply: a translation already under way finishes first, and the next one runs the
+    /// way they say. Model status and installation then concern the model chosen here. Sends nothing over the
+    /// network, and a model chosen that is not installed is installed only through <see cref="StartModelInstallAsync"/>.
+    /// Added in protocol version 1.3.
+    /// </summary>
+    Task ApplyLocalModelSettingsAsync(LocalModelSettings settings, CancellationToken cancellationToken);
 }
