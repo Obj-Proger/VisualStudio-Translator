@@ -12,6 +12,7 @@ namespace VisualStudioTranslator.Vsix.Options;
 public sealed class GeneralOptionsPage : DialogPage
 {
     private const string Category = "General";
+    private const string LocalCategory = "Local translation";
 
     [Category(Category)]
     [DisplayName("Translate documentation in tooltips")]
@@ -25,4 +26,21 @@ public sealed class GeneralOptionsPage : DialogPage
     [DefaultValue(TargetLanguages.FollowVisualStudio)]
     [TypeConverter(typeof(LanguageChoiceConverter))]
     public string TargetLanguage { get; set; } = TargetLanguages.FollowVisualStudio;
+
+    [Category(LocalCategory)]
+    [DisplayName("Language model")]
+    [Description(
+        "The model that translates on this computer. One that is not downloaded yet is offered for download the next " +
+        "time a translation is needed; a model downloaded before stays, so switching back costs nothing.")]
+    [DefaultValue(ModelChoiceConverter.Automatic)]
+    [TypeConverter(typeof(ModelChoiceConverter))]
+    public string Model { get; set; } = ModelChoiceConverter.Automatic;
+
+    [Category(LocalCategory)]
+    [DisplayName("Use the graphics card")]
+    [Description(
+        "Runs the model on the fastest graphics card that works, several times faster than on the processor. " +
+        "Turn off to keep the card free for other work.")]
+    [DefaultValue(true)]
+    public bool UseGraphicsCard { get; set; } = true;
 }

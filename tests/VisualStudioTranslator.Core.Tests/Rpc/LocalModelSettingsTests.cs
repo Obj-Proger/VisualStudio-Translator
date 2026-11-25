@@ -1,5 +1,7 @@
-﻿using AwesomeAssertions;
+﻿using System.Text.Json;
+using AwesomeAssertions;
 using VisualStudioTranslator.Core.Rpc;
+using VisualStudioTranslator.Core.Tests.Support;
 using Xunit;
 
 namespace VisualStudioTranslator.Core.Tests.Rpc;
@@ -41,6 +43,27 @@ public sealed class LocalModelSettingsTests
     public void ParseModel_NothingOrATagFromAnotherVersion_IsAutomatic(string? tag)
     {
         LocalModelSettings.ParseModel(tag).Should().Be(LocalModelChoice.Automatic);
+    }
+
+    [Fact]
+    public void SettingsRegistration_OffersEveryModelWithTheAutomaticOneByDefault()
+    {
+        using JsonDocument registration = SettingsRegistration.Read();
+        JsonElement model = registration.Property("visualStudioTranslator.localModel.model");
+
+        model.GetProperty("default").GetString().Should().Be(LocalModelSettings.ModelTags[(int)LocalModelChoice.Automatic]);
+        model.GetProperty("enum").EnumerateArray().Select(value => value.GetString())
+            .Should().Equal(LocalModelSettings.ModelTags);
+        model.GetProperty("enumItemLabels").GetArrayLength().Should().Be(LocalModelSettings.ModelTags.Count);
+    }
+
+    [Fact]
+    public void SettingsRegistration_UsesTheGraphicsCardByDefault()
+    {
+        using JsonDocument registration = SettingsRegistration.Read();
+
+        registration.Property("visualStudioTranslator.localModel.useGraphicsCard").GetProperty("default").GetBoolean()
+            .Should().Be(new LocalModelSettings().UseGraphicsCard);
     }
 
     [Fact]

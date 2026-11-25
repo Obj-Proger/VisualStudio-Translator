@@ -1,5 +1,6 @@
 ﻿using System.Security.Principal;
 using Microsoft.VisualStudio.Shell;
+using StreamJsonRpc;
 using VisualStudioTranslator.Core.Rpc;
 
 namespace VisualStudioTranslator.Vsix.Service;
@@ -22,6 +23,11 @@ internal sealed class EngineConnection : IDisposable
     private readonly SemaphoreSlim _connecting = new(1, 1);
     private readonly object _sync = new();
     private ServiceClient? _client;
+
+    // The settings for the local model last sent, and to which connection: a new connection may be to a new
+    // Engine, which knows nothing of them.
+    private ITranslatorService? _settingsSentTo;
+    private LocalModelSettings? _settingsSent;
 
     public static EngineConnection Shared { get; } = new EngineConnection();
 
@@ -79,6 +85,43 @@ internal sealed class EngineConnection : IDisposable
         finally
         {
             _connecting.Release();
+        }
+    }
+
+    /// <summary>
+    /// Sends the user's settings for translation on this computer, unless this connection has already sent the same
+    /// ones. Called before the requests they bear on, so a changed setting takes effect at the next hover. The
+    /// Engine applies them once a translation under way has finished, which this call waits for.
+    /// <para>
+    /// One Engine serves every Visual Studio the user has open, so the settings sent last apply to all of them.
+    /// </para>
+    /// </summary>
+    public async Task SendLocalModelSettingsAsync(
+        ITranslatorService service, LocalModelSettings settings, CancellationToken cancellationToken)
+    {
+        lock (_sync)
+        {
+            if (ReferenceEquals(_settingsSentTo, service) && Equals(_settingsSent, settings))
+            {
+                return;
+            }
+        }
+
+        try
+        {
+            await service.ApplyLocalModelSettingsAsync(settings, cancellationToken).ConfigureAwait(false);
+        }
+        catch (RemoteMethodNotFoundException)
+        {
+            // An Engine from before protocol 1.3, still running after the extension was updated. It translates with
+            // its own choice until it ends when idle, and the next Engine understands.
+            DiagnosticLog.Info(nameof(EngineConnection), "The running Engine is too old to take settings for the local model.");
+        }
+
+        lock (_sync)
+        {
+            _settingsSentTo = service;
+            _settingsSent = settings;
         }
     }
 

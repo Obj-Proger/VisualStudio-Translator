@@ -71,13 +71,16 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
         }
 
 #pragma warning disable VSTHRD003 // Shared by every hover over the same comment, and started off the UI thread.
+        LocalModelSettings localModel = settings.LocalModel;
+
+        // The model is part of the key: a hover after the model was changed asks the new one, not the old one's answer.
         return await _inFlight.GetOrStart(
-            targetLanguage + "\n" + documentationXml,
-            () => RequestAsync(documentationXml, targetLanguage)).ConfigureAwait(false);
+            $"{targetLanguage}\n{localModel.Model}\n{localModel.UseGraphicsCard}\n{documentationXml}",
+            () => RequestAsync(documentationXml, targetLanguage, localModel)).ConfigureAwait(false);
 #pragma warning restore VSTHRD003
     }
 
-    private async Task<DocumentModel?> RequestAsync(string documentationXml, string targetLanguage)
+    private async Task<DocumentModel?> RequestAsync(string documentationXml, string targetLanguage, LocalModelSettings localModel)
     {
         ITranslatorService? service = null;
         using CancellationTokenSource timeout = new(RequestTimeout);
@@ -85,6 +88,7 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
         try
         {
             service = await connection.GetServiceAsync(timeout.Token).ConfigureAwait(false);
+            await connection.SendLocalModelSettingsAsync(service, localModel, timeout.Token).ConfigureAwait(false);
 
             TranslateDocumentationResult result = await service.TranslateDocumentationAsync(
                 new TranslateDocumentationRequest
@@ -101,7 +105,7 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
 
             if (result.TranslatedCount + result.CachedCount == 0)
             {
-                ReportOnce(result, targetLanguage);
+                ReportOnce(result, targetLanguage, localModel);
                 return null;
             }
 
@@ -122,14 +126,14 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
     }
 
     // Logged once per kind, not per hover: "no model installed" would otherwise fill the log.
-    private void ReportOnce(TranslateDocumentationResult result, string targetLanguage)
+    private void ReportOnce(TranslateDocumentationResult result, string targetLanguage, LocalModelSettings localModel)
     {
         if (result.Outcome == TranslationOutcome.NoProviderAvailable)
         {
             // Quite possibly just because no model is installed yet. The setup prompt works that out
             // (without touching the network) and, if so, offers to download one; it is a no-op for any
             // language it has already dealt with this session.
-            ModelSetupPrompt.Shared.Offer(targetLanguage);
+            ModelSetupPrompt.Shared.Offer(targetLanguage, localModel);
         }
 
         if (result.Outcome == TranslationOutcome.Completed)

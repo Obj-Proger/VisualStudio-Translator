@@ -12,8 +12,9 @@ namespace VisualStudioTranslator.Vsix.Setup;
 /// Nothing is downloaded, and nothing is even looked up on the network, until they press the button:
 /// what is shown first is only the Engine's own knowledge that no model is installed.
 /// <para>
-/// A direction is dealt with at most once per session: once the question has been asked, or turned out
-/// not to apply, or been declined for good. An attempt that did not get that far (the Engine was not
+/// A direction is dealt with at most once per session for each model chosen: once the question has been asked,
+/// or turned out not to apply, or been declined for good. Choosing another model in the settings makes it a new
+/// question, since that model may not be downloaded yet. An attempt that did not get that far (the Engine was not
 /// reachable yet, Visual Studio had nowhere to put the bar) is tried again after a short wait, so a hiccup does
 /// not cost the user the offer for the rest of the session.
 /// </para>
@@ -38,10 +39,13 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
 
     public static ModelSetupPrompt Shared { get; } = new(EngineConnection.Shared);
 
-    /// <summary>Called when translating into <paramref name="targetLanguage"/> found no provider that could. Returns at once.</summary>
-    public void Offer(string targetLanguage)
+    /// <summary>
+    /// Called when translating into <paramref name="targetLanguage"/> with <paramref name="localModel"/> found no
+    /// provider that could. Returns at once.
+    /// </summary>
+    public void Offer(string targetLanguage, LocalModelSettings localModel)
     {
-        string key = targetLanguage.ToLowerInvariant();
+        string key = targetLanguage.ToLowerInvariant() + "|" + localModel.Model;
 
         lock (_sync)
         {
@@ -55,7 +59,7 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
         }
 
         DiagnosticLog.Info(Source, $"No provider could translate into {targetLanguage}; checking whether a language model is missing.");
-        _ = Task.Run(() => OfferAsync(targetLanguage, key));
+        _ = Task.Run(() => OfferAsync(targetLanguage, localModel, key));
     }
 
     private void MarkHandled(string key)
@@ -66,7 +70,7 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
         }
     }
 
-    private async Task OfferAsync(string targetLanguage, string key)
+    private async Task OfferAsync(string targetLanguage, LocalModelSettings localModel, string key)
     {
         try
         {
@@ -77,7 +81,9 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
                 return;
             }
 
+            // The status is about the model the Engine was last told to use, so it is told first.
             ITranslatorService service = await connection.GetServiceAsync(CancellationToken.None).ConfigureAwait(false);
+            await connection.SendLocalModelSettingsAsync(service, localModel, CancellationToken.None).ConfigureAwait(false);
             ModelInstallStatus status = await service
                 .GetModelStatusAsync(SourceLanguage, targetLanguage, CancellationToken.None).ConfigureAwait(false);
 
@@ -110,7 +116,7 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
 
                     if (label == DownloadLabel)
                     {
-                        await InstallAsync(targetLanguage).ConfigureAwait(false);
+                        await InstallAsync(targetLanguage, localModel).ConfigureAwait(false);
                     }
                     else if (label == NeverLabel)
                     {
@@ -131,25 +137,39 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
     }
 
     // The user has agreed. The Engine does the work; this just starts it and keeps the user informed.
-    private async Task InstallAsync(string targetLanguage)
+    private async Task InstallAsync(string targetLanguage, LocalModelSettings localModel)
     {
         try
         {
             ITranslatorService service = await connection.GetServiceAsync(CancellationToken.None).ConfigureAwait(false);
+            await connection.SendLocalModelSettingsAsync(service, localModel, CancellationToken.None).ConfigureAwait(false);
             ModelInstallStatus status = await service
                 .StartModelInstallAsync(SourceLanguage, targetLanguage, CancellationToken.None).ConfigureAwait(false);
 
             DiagnosticLog.Info(Source, $"Installing the model for {targetLanguage} was started: {status.State}.");
 
-            // No time limit: gigabytes over a slow connection take hours. The Engine gives up on a download that
-            // has stopped moving, and the state then says so.
-            while (status.State == ModelInstallState.Installing)
+            for (int round = 0; ; round++)
             {
-                await ShowStatusAsync(DescribeProgress(status)).ConfigureAwait(false);
-                await Task.Delay(750).ConfigureAwait(false);
+                // No time limit: gigabytes over a slow connection take hours. The Engine gives up on a download that
+                // has stopped moving, and the state then says so.
+                while (status.State == ModelInstallState.Installing)
+                {
+                    await ShowStatusAsync(DescribeProgress(status)).ConfigureAwait(false);
+                    await Task.Delay(750).ConfigureAwait(false);
+
+                    status = await service
+                        .GetModelStatusAsync(SourceLanguage, targetLanguage, CancellationToken.None).ConfigureAwait(false);
+                }
+
+                // Not installed once an installation has ended means it was for the model chosen before; the one
+                // chosen now is installed next, once.
+                if (status.State != ModelInstallState.NotInstalled || round > 0)
+                {
+                    break;
+                }
 
                 status = await service
-                    .GetModelStatusAsync(SourceLanguage, targetLanguage, CancellationToken.None).ConfigureAwait(false);
+                    .StartModelInstallAsync(SourceLanguage, targetLanguage, CancellationToken.None).ConfigureAwait(false);
             }
 
             DiagnosticLog.Info(Source, $"Installing the model for {targetLanguage} ended: {status.State}.");
@@ -161,16 +181,17 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
             }
 
             await ShowStatusAsync(string.Empty).ConfigureAwait(false);
-            await OfferRetryAsync(targetLanguage, status.Detail ?? "The language model could not be installed.").ConfigureAwait(false);
+            await OfferRetryAsync(
+                targetLanguage, localModel, status.Detail ?? "The language model could not be installed.").ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             DiagnosticLog.Error(Source, $"Installing a language model failed: {ex}");
-            await OfferRetryAsync(targetLanguage, "The language model could not be installed.").ConfigureAwait(false);
+            await OfferRetryAsync(targetLanguage, localModel, "The language model could not be installed.").ConfigureAwait(false);
         }
     }
 
-    private async Task OfferRetryAsync(string targetLanguage, string reason)
+    private async Task OfferRetryAsync(string targetLanguage, LocalModelSettings localModel, string reason)
     {
         InfoBarHandle? bar = null;
         bar = await InfoBars.ShowAsync(
@@ -183,7 +204,7 @@ internal sealed class ModelSetupPrompt(EngineConnection connection)
                     await bar.CloseAsync().ConfigureAwait(false);
                 }
 
-                await InstallAsync(targetLanguage).ConfigureAwait(false);
+                await InstallAsync(targetLanguage, localModel).ConfigureAwait(false);
             }).ConfigureAwait(false);
     }
 

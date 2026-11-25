@@ -1,7 +1,7 @@
-﻿using System.Runtime.CompilerServices;
-using System.Text.Json;
+﻿using System.Text.Json;
 using AwesomeAssertions;
 using VisualStudioTranslator.Core.Languages;
+using VisualStudioTranslator.Core.Tests.Support;
 using Xunit;
 
 namespace VisualStudioTranslator.Core.Tests.Languages;
@@ -61,30 +61,12 @@ public sealed class TargetLanguagesTests
     [Fact]
     public void SettingsRegistration_OffersExactlyTheChoicesInTheirOrder()
     {
-        using JsonDocument registration = ReadRegistration();
-        JsonElement language = registration.RootElement.GetProperty("properties").GetProperty(LanguageMoniker);
+        using JsonDocument registration = SettingsRegistration.Read();
+        JsonElement language = registration.Property(LanguageMoniker);
 
         language.GetProperty("default").GetString().Should().Be(TargetLanguages.FollowVisualStudio);
         language.GetProperty("enum").EnumerateArray().Select(value => value.GetString())
             .Should().Equal([TargetLanguages.FollowVisualStudio, .. TargetLanguages.Choices]);
         language.GetProperty("enumItemLabels").GetArrayLength().Should().Be(TargetLanguages.Choices.Count + 1);
-    }
-
-    // The extension's settings are declared in a file Visual Studio reads; a test here keeps it in step with
-    // the code, which no build would otherwise notice.
-    private static JsonDocument ReadRegistration([CallerFilePath] string thisFile = "")
-    {
-        DirectoryInfo? directory = new FileInfo(thisFile).Directory;
-
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "VisualStudio-Translator.slnx")))
-        {
-            directory = directory.Parent;
-        }
-
-        directory.Should().NotBeNull("the test runs from within the repository");
-
-        string path = Path.Combine(directory!.FullName, "src", "VisualStudioTranslator.Vsix", "Options", "registration.json");
-
-        return JsonDocument.Parse(File.ReadAllText(path));
     }
 }

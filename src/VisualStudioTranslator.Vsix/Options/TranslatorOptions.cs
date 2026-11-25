@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Utilities.UnifiedSettings;
 using VisualStudioTranslator.Core.Languages;
+using VisualStudioTranslator.Core.Rpc;
 using VisualStudioTranslator.Vsix.Service;
 using UnifiedSettingsManager = Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsManager;
 
@@ -13,11 +14,21 @@ namespace VisualStudioTranslator.Vsix.Options;
 /// <param name="TranslateTooltips">Whether tooltips get a translation at all.</param>
 /// <param name="TargetLanguage">The language chosen, or <see cref="TargetLanguages.FollowVisualStudio"/>.</param>
 /// <param name="DisplayLanguage">The language Visual Studio is shown in, as its UI thread knows it.</param>
-internal sealed record TranslatorSettings(bool TranslateTooltips, string TargetLanguage, string DisplayLanguage)
+/// <param name="Model">The model chosen, as its tag (see <see cref="LocalModelSettings.ModelTags"/>).</param>
+/// <param name="UseGraphicsCard">Whether the model may run on a graphics card.</param>
+internal sealed record TranslatorSettings(
+    bool TranslateTooltips, string TargetLanguage, string DisplayLanguage, string Model, bool UseGraphicsCard)
 {
     /// <summary>The language to translate into, or <see langword="null"/> when there is none.</summary>
     public string? ResolvedTargetLanguage =>
         TranslateTooltips ? TargetLanguages.Resolve(TargetLanguage, DisplayLanguage) : null;
+
+    /// <summary>The settings the Engine applies to translation on this computer.</summary>
+    public LocalModelSettings LocalModel => new()
+    {
+        Model = LocalModelSettings.ParseModel(Model),
+        UseGraphicsCard = UseGraphicsCard,
+    };
 }
 
 /// <summary>
@@ -33,6 +44,8 @@ internal sealed class TranslatorOptions
 {
     public const string TranslateTooltipsMoniker = "visualStudioTranslator.general.translateTooltips";
     public const string TargetLanguageMoniker = "visualStudioTranslator.general.targetLanguage";
+    public const string ModelMoniker = "visualStudioTranslator.localModel.model";
+    public const string UseGraphicsCardMoniker = "visualStudioTranslator.localModel.useGraphicsCard";
 
     private const string Source = nameof(TranslatorOptions);
 
@@ -83,10 +96,12 @@ internal sealed class TranslatorOptions
 
         if (_package?.GeneralOptions is { } page)
         {
-            return new TranslatorSettings(page.TranslateTooltips, page.TargetLanguage, displayLanguage);
+            return new TranslatorSettings(
+                page.TranslateTooltips, page.TargetLanguage, displayLanguage, page.Model, page.UseGraphicsCard);
         }
 
-        return new TranslatorSettings(true, TargetLanguages.FollowVisualStudio, displayLanguage);
+        return new TranslatorSettings(
+            true, TargetLanguages.FollowVisualStudio, displayLanguage, ModelChoiceConverter.Automatic, true);
     }
 
     // Null when Unified Settings is off or did not answer; the classic page holds the settings then.
@@ -105,8 +120,19 @@ internal sealed class TranslatorOptions
 
             if (translate.Outcome == SettingRetrievalOutcome.Success && language.Outcome == SettingRetrievalOutcome.Success)
             {
+                // The settings added later fall back to their defaults on their own, so a Visual Studio that has not
+                // picked them up yet still reads the ones it has from here rather than from the classic page.
+                SettingRetrieval<string> model = reader.GetValue<string>(ModelMoniker);
+                SettingRetrieval<bool> useGraphicsCard = reader.GetValue<bool>(UseGraphicsCardMoniker);
+
                 return new TranslatorSettings(
-                    translate.Value, language.Value ?? TargetLanguages.FollowVisualStudio, displayLanguage);
+                    translate.Value,
+                    language.Value ?? TargetLanguages.FollowVisualStudio,
+                    displayLanguage,
+                    model.Outcome == SettingRetrievalOutcome.Success
+                        ? model.Value ?? ModelChoiceConverter.Automatic
+                        : ModelChoiceConverter.Automatic,
+                    useGraphicsCard.Outcome != SettingRetrievalOutcome.Success || useGraphicsCard.Value);
             }
 
             return null;
