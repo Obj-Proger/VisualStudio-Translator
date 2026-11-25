@@ -2,19 +2,19 @@
   "properties": {
     "visualStudioTranslator.general.translateTooltips": {
       "type": "boolean",
-      "title": "Translate documentation in tooltips",
-      "description": "Adds a translation of the documentation below the original when you hover over a symbol.",
+      "title": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsTranslateTooltips;..\\VisualStudioTranslator.Vsix.dll",
+      "description": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsTranslateTooltipsDescription;..\\VisualStudioTranslator.Vsix.dll",
       "default": true,
       "order": 0
     },
     "visualStudioTranslator.general.targetLanguage": {
       "type": "string",
-      "title": "Translate into",
-      "description": "The language documentation is translated into. By default, the language Visual Studio is shown in.",
+      "title": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsTargetLanguage;..\\VisualStudioTranslator.Vsix.dll",
+      "description": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsTargetLanguageDescription;..\\VisualStudioTranslator.Vsix.dll",
       "default": "auto",
       "enum": [ "auto", "en", "ru", "de", "fr", "es", "it", "pt-BR", "pl", "cs", "tr", "zh-Hans", "ja", "ko" ],
       "enumItemLabels": [
-        "Same as Visual Studio",
+        "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsSameAsVisualStudio;..\\VisualStudioTranslator.Vsix.dll",
         "English",
         "Русский",
         "Deutsch",
@@ -34,21 +34,21 @@
     },
     "visualStudioTranslator.localModel.model": {
       "type": "string",
-      "title": "Language model",
-      "description": "The model that translates on this computer. One that is not downloaded yet is offered for download the next time a translation is needed; a model downloaded before stays, so switching back costs nothing.",
+      "title": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsModel;..\\VisualStudioTranslator.Vsix.dll",
+      "description": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsModelDescription;..\\VisualStudioTranslator.Vsix.dll",
       "default": "auto",
       "enum": [ "auto", "quality", "light" ],
       "enumItemLabels": [
-        "Automatic, by the computer's memory",
-        "Quality: Gemma 4 E4B, about 5 GB",
-        "Light: Gemma 4 E2B, about 3.4 GB"
+        "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsModelAutomatic;..\\VisualStudioTranslator.Vsix.dll",
+        "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsModelQuality;..\\VisualStudioTranslator.Vsix.dll",
+        "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsModelLight;..\\VisualStudioTranslator.Vsix.dll"
       ],
       "order": 0
     },
     "visualStudioTranslator.localModel.useGraphicsCard": {
       "type": "boolean",
-      "title": "Use the graphics card",
-      "description": "Runs the model on the fastest graphics card that works, several times faster than on the processor. Turn off to keep the card free for other work.",
+      "title": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsUseGraphicsCard;..\\VisualStudioTranslator.Vsix.dll",
+      "description": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsUseGraphicsCardDescription;..\\VisualStudioTranslator.Vsix.dll",
       "default": true,
       "order": 1
     }
@@ -56,15 +56,15 @@
   "categories": {
     "visualStudioTranslator": {
       "title": "Visual Studio Translator",
-      "description": "Translation of code documentation into your language."
+      "description": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsDescription;..\\VisualStudioTranslator.Vsix.dll"
     },
     "visualStudioTranslator.general": {
-      "title": "General",
+      "title": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsGeneral;..\\VisualStudioTranslator.Vsix.dll",
       "order": 0
     },
     "visualStudioTranslator.localModel": {
-      "title": "Local translation",
-      "description": "The language model that translates on this computer, without sending your code anywhere.",
+      "title": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsLocalTranslation;..\\VisualStudioTranslator.Vsix.dll",
+      "description": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsLocalTranslationDescription;..\\VisualStudioTranslator.Vsix.dll",
       "order": 1
     }
   }

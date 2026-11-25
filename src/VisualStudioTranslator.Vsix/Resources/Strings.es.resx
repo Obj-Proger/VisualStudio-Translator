@@ -143,4 +143,52 @@
   <data name="SizeGigabytes" xml:space="preserve">
     <value>unos {0} GB</value>
   </data>
+  <data name="SettingsDescription" xml:space="preserve">
+    <value>Traducción de la documentación del código a su idioma.</value>
+  </data>
+  <data name="SettingsGeneral" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="SettingsLocalTranslation" xml:space="preserve">
+    <value>Traducción local</value>
+  </data>
+  <data name="SettingsLocalTranslationDescription" xml:space="preserve">
+    <value>El modelo de lenguaje que traduce en este equipo, sin enviar su código a ninguna parte.</value>
+  </data>
+  <data name="SettingsTranslateTooltips" xml:space="preserve">
+    <value>Traducir la documentación en la información sobre herramientas</value>
+  </data>
+  <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
+    <value>Agrega una traducción de la documentación debajo del original al pasar el puntero sobre un símbolo.</value>
+  </data>
+  <data name="SettingsTargetLanguage" xml:space="preserve">
+    <value>Traducir a</value>
+  </data>
+  <data name="SettingsTargetLanguageDescription" xml:space="preserve">
+    <value>El idioma al que se traduce la documentación. De forma predeterminada, el idioma en que se muestra Visual Studio.</value>
+  </data>
+  <data name="SettingsSameAsVisualStudio" xml:space="preserve">
+    <value>El mismo que Visual Studio</value>
+  </data>
+  <data name="SettingsModel" xml:space="preserve">
+    <value>Modelo de lenguaje</value>
+  </data>
+  <data name="SettingsModelDescription" xml:space="preserve">
+    <value>El modelo que traduce en este equipo. Si aún no se ha descargado, se ofrece descargarlo la próxima vez que se necesite una traducción; un modelo descargado antes se conserva, así que volver a él no cuesta nada.</value>
+  </data>
+  <data name="SettingsModelAutomatic" xml:space="preserve">
+    <value>Automático, según la memoria del equipo</value>
+  </data>
+  <data name="SettingsModelQuality" xml:space="preserve">
+    <value>Calidad: Gemma 4 E4B, unos 5 GB</value>
+  </data>
+  <data name="SettingsModelLight" xml:space="preserve">
+    <value>Ligero: Gemma 4 E2B, unos 3,4 GB</value>
+  </data>
+  <data name="SettingsUseGraphicsCard" xml:space="preserve">
+    <value>Usar la tarjeta gráfica</value>
+  </data>
+  <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
+    <value>Ejecuta el modelo en la tarjeta gráfica más rápida que funcione, varias veces más rápido que en el procesador. Desactívelo para dejar la tarjeta libre para otros trabajos.</value>
+  </data>
 </root>

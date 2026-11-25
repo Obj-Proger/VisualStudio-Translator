@@ -143,4 +143,52 @@
   <data name="SizeGigabytes" xml:space="preserve">
     <value>约 {0} GB</value>
   </data>
+  <data name="SettingsDescription" xml:space="preserve">
+    <value>将代码文档翻译为你的语言。</value>
+  </data>
+  <data name="SettingsGeneral" xml:space="preserve">
+    <value>常规</value>
+  </data>
+  <data name="SettingsLocalTranslation" xml:space="preserve">
+    <value>本地翻译</value>
+  </data>
+  <data name="SettingsLocalTranslationDescription" xml:space="preserve">
+    <value>在此计算机上进行翻译的语言模型，不会将你的代码发送到任何地方。</value>
+  </data>
+  <data name="SettingsTranslateTooltips" xml:space="preserve">
+    <value>翻译工具提示中的文档</value>
+  </data>
+  <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
+    <value>悬停在符号上时，在原文下方添加文档的译文。</value>
+  </data>
+  <data name="SettingsTargetLanguage" xml:space="preserve">
+    <value>翻译为</value>
+  </data>
+  <data name="SettingsTargetLanguageDescription" xml:space="preserve">
+    <value>文档要翻译成的语言。默认为 Visual Studio 的显示语言。</value>
+  </data>
+  <data name="SettingsSameAsVisualStudio" xml:space="preserve">
+    <value>与 Visual Studio 相同</value>
+  </data>
+  <data name="SettingsModel" xml:space="preserve">
+    <value>语言模型</value>
+  </data>
+  <data name="SettingsModelDescription" xml:space="preserve">
+    <value>在此计算机上进行翻译的模型。尚未下载的模型会在下次需要翻译时提示下载；之前下载的模型会保留，因此切换回去无需任何代价。</value>
+  </data>
+  <data name="SettingsModelAutomatic" xml:space="preserve">
+    <value>自动，根据计算机内存</value>
+  </data>
+  <data name="SettingsModelQuality" xml:space="preserve">
+    <value>高质量: Gemma 4 E4B，约 5 GB</value>
+  </data>
+  <data name="SettingsModelLight" xml:space="preserve">
+    <value>轻量: Gemma 4 E2B，约 3.4 GB</value>
+  </data>
+  <data name="SettingsUseGraphicsCard" xml:space="preserve">
+    <value>使用显卡</value>
+  </data>
+  <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
+    <value>在可用的最快显卡上运行模型，比在处理器上快数倍。关闭此选项可让显卡空闲以用于其他工作。</value>
+  </data>
 </root>

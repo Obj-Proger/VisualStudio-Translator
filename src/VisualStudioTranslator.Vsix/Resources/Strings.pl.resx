@@ -143,4 +143,52 @@
   <data name="SizeGigabytes" xml:space="preserve">
     <value>około {0} GB</value>
   </data>
+  <data name="SettingsDescription" xml:space="preserve">
+    <value>Tłumaczenie dokumentacji kodu na Twój język.</value>
+  </data>
+  <data name="SettingsGeneral" xml:space="preserve">
+    <value>Ogólne</value>
+  </data>
+  <data name="SettingsLocalTranslation" xml:space="preserve">
+    <value>Tłumaczenie lokalne</value>
+  </data>
+  <data name="SettingsLocalTranslationDescription" xml:space="preserve">
+    <value>Model językowy, który tłumaczy na tym komputerze, nie wysyłając nigdzie Twojego kodu.</value>
+  </data>
+  <data name="SettingsTranslateTooltips" xml:space="preserve">
+    <value>Tłumacz dokumentację w etykietkach narzędzi</value>
+  </data>
+  <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
+    <value>Dodaje tłumaczenie dokumentacji pod oryginałem po wskazaniu symbolu kursorem.</value>
+  </data>
+  <data name="SettingsTargetLanguage" xml:space="preserve">
+    <value>Tłumacz na</value>
+  </data>
+  <data name="SettingsTargetLanguageDescription" xml:space="preserve">
+    <value>Język, na który jest tłumaczona dokumentacja. Domyślnie język interfejsu programu Visual Studio.</value>
+  </data>
+  <data name="SettingsSameAsVisualStudio" xml:space="preserve">
+    <value>Jak w programie Visual Studio</value>
+  </data>
+  <data name="SettingsModel" xml:space="preserve">
+    <value>Model językowy</value>
+  </data>
+  <data name="SettingsModelDescription" xml:space="preserve">
+    <value>Model, który tłumaczy na tym komputerze. Jeśli nie został jeszcze pobrany, jego pobranie zostanie zaproponowane przy następnym tłumaczeniu; wcześniej pobrany model pozostaje, więc powrót do niego nic nie kosztuje.</value>
+  </data>
+  <data name="SettingsModelAutomatic" xml:space="preserve">
+    <value>Automatycznie, według pamięci komputera</value>
+  </data>
+  <data name="SettingsModelQuality" xml:space="preserve">
+    <value>Jakość: Gemma 4 E4B, około 5 GB</value>
+  </data>
+  <data name="SettingsModelLight" xml:space="preserve">
+    <value>Lekki: Gemma 4 E2B, około 3,4 GB</value>
+  </data>
+  <data name="SettingsUseGraphicsCard" xml:space="preserve">
+    <value>Używaj karty graficznej</value>
+  </data>
+  <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
+    <value>Uruchamia model na najszybszej działającej karcie graficznej, kilka razy szybciej niż na procesorze. Wyłącz, aby karta pozostała wolna do innej pracy.</value>
+  </data>
 </root>

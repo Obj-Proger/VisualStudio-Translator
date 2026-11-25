@@ -94,6 +94,44 @@ internal static class UiText
 
     public static string SizeGigabytes => Get();
 
+    public static string SettingsDescription => Get();
+
+    public static string SettingsGeneral => Get();
+
+    public static string SettingsLocalTranslation => Get();
+
+    public static string SettingsLocalTranslationDescription => Get();
+
+    public static string SettingsTranslateTooltips => Get();
+
+    public static string SettingsTranslateTooltipsDescription => Get();
+
+    public static string SettingsTargetLanguage => Get();
+
+    public static string SettingsTargetLanguageDescription => Get();
+
+    public static string SettingsSameAsVisualStudio => Get();
+
+    public static string SettingsModel => Get();
+
+    public static string SettingsModelDescription => Get();
+
+    public static string SettingsModelAutomatic => Get();
+
+    public static string SettingsModelQuality => Get();
+
+    public static string SettingsModelLight => Get();
+
+    public static string SettingsUseGraphicsCard => Get();
+
+    public static string SettingsUseGraphicsCardDescription => Get();
+
+    /// <summary>
+    /// A text by its name, for the settings page, whose attributes can only name the text they show; the name of the
+    /// property above that would return it.
+    /// </summary>
+    public static string ByName(string name) => Get(name);
+
     /// <summary>A text with placeholders filled in, numbers formatted for the same language.</summary>
     public static string Format(string text, params object[] arguments) => string.Format(Culture, text, arguments);
 

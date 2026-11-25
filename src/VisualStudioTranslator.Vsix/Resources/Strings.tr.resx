@@ -143,4 +143,52 @@
   <data name="SizeGigabytes" xml:space="preserve">
     <value>yaklaşık {0} GB</value>
   </data>
+  <data name="SettingsDescription" xml:space="preserve">
+    <value>Kod belgelerinin kendi dilinize çevrilmesi.</value>
+  </data>
+  <data name="SettingsGeneral" xml:space="preserve">
+    <value>Genel</value>
+  </data>
+  <data name="SettingsLocalTranslation" xml:space="preserve">
+    <value>Yerel çeviri</value>
+  </data>
+  <data name="SettingsLocalTranslationDescription" xml:space="preserve">
+    <value>Kodunuzu hiçbir yere göndermeden bu bilgisayarda çeviri yapan dil modeli.</value>
+  </data>
+  <data name="SettingsTranslateTooltips" xml:space="preserve">
+    <value>Araç ipuçlarındaki belgeleri çevir</value>
+  </data>
+  <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
+    <value>Bir sembolün üzerine geldiğinizde belgelerin çevirisini orijinalin altına ekler.</value>
+  </data>
+  <data name="SettingsTargetLanguage" xml:space="preserve">
+    <value>Çevrilecek dil</value>
+  </data>
+  <data name="SettingsTargetLanguageDescription" xml:space="preserve">
+    <value>Belgelerin çevrileceği dil. Varsayılan olarak Visual Studio'nun görüntülendiği dil.</value>
+  </data>
+  <data name="SettingsSameAsVisualStudio" xml:space="preserve">
+    <value>Visual Studio ile aynı</value>
+  </data>
+  <data name="SettingsModel" xml:space="preserve">
+    <value>Dil modeli</value>
+  </data>
+  <data name="SettingsModelDescription" xml:space="preserve">
+    <value>Bu bilgisayarda çeviri yapan model. Henüz indirilmemişse, bir sonraki çeviride indirilmesi önerilir; daha önce indirilen model kalır, bu nedenle ona geri dönmek bir şey kaybettirmez.</value>
+  </data>
+  <data name="SettingsModelAutomatic" xml:space="preserve">
+    <value>Otomatik, bilgisayarın belleğine göre</value>
+  </data>
+  <data name="SettingsModelQuality" xml:space="preserve">
+    <value>Kalite: Gemma 4 E4B, yaklaşık 5 GB</value>
+  </data>
+  <data name="SettingsModelLight" xml:space="preserve">
+    <value>Hafif: Gemma 4 E2B, yaklaşık 3,4 GB</value>
+  </data>
+  <data name="SettingsUseGraphicsCard" xml:space="preserve">
+    <value>Ekran kartını kullan</value>
+  </data>
+  <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
+    <value>Modeli çalışan en hızlı ekran kartında, işlemciden birkaç kat daha hızlı çalıştırır. Kartı başka işler için boş tutmak için kapatın.</value>
+  </data>
 </root>

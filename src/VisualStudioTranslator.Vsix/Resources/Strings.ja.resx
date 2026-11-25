@@ -143,4 +143,52 @@
   <data name="SizeGigabytes" xml:space="preserve">
     <value>約 {0} GB</value>
   </data>
+  <data name="SettingsDescription" xml:space="preserve">
+    <value>コード ドキュメントを自分の言語に翻訳します。</value>
+  </data>
+  <data name="SettingsGeneral" xml:space="preserve">
+    <value>全般</value>
+  </data>
+  <data name="SettingsLocalTranslation" xml:space="preserve">
+    <value>ローカル翻訳</value>
+  </data>
+  <data name="SettingsLocalTranslationDescription" xml:space="preserve">
+    <value>コードをどこにも送信せずに、このコンピューター上で翻訳する言語モデル。</value>
+  </data>
+  <data name="SettingsTranslateTooltips" xml:space="preserve">
+    <value>ヒントのドキュメントを翻訳する</value>
+  </data>
+  <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
+    <value>シンボルをポイントしたときに、ドキュメントの翻訳を原文の下に追加します。</value>
+  </data>
+  <data name="SettingsTargetLanguage" xml:space="preserve">
+    <value>翻訳先</value>
+  </data>
+  <data name="SettingsTargetLanguageDescription" xml:space="preserve">
+    <value>ドキュメントの翻訳先の言語。既定では Visual Studio の表示言語です。</value>
+  </data>
+  <data name="SettingsSameAsVisualStudio" xml:space="preserve">
+    <value>Visual Studio と同じ</value>
+  </data>
+  <data name="SettingsModel" xml:space="preserve">
+    <value>言語モデル</value>
+  </data>
+  <data name="SettingsModelDescription" xml:space="preserve">
+    <value>このコンピューター上で翻訳するモデル。まだダウンロードされていない場合は、次に翻訳が必要になったときにダウンロードが提案されます。以前にダウンロードしたモデルは残るため、元に戻すのに手間はかかりません。</value>
+  </data>
+  <data name="SettingsModelAutomatic" xml:space="preserve">
+    <value>自動 (コンピューターのメモリに応じて)</value>
+  </data>
+  <data name="SettingsModelQuality" xml:space="preserve">
+    <value>高品質: Gemma 4 E4B、約 5 GB</value>
+  </data>
+  <data name="SettingsModelLight" xml:space="preserve">
+    <value>軽量: Gemma 4 E2B、約 3.4 GB</value>
+  </data>
+  <data name="SettingsUseGraphicsCard" xml:space="preserve">
+    <value>グラフィックス カードを使用する</value>
+  </data>
+  <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
+    <value>動作する最速のグラフィックス カードでモデルを実行します。プロセッサより数倍高速です。カードを他の作業用に空けておくにはオフにします。</value>
+  </data>
 </root>

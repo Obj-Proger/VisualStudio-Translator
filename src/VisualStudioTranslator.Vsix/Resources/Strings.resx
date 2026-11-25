@@ -152,4 +152,52 @@
     <value>about {0} GB</value>
     <comment>{0}: a number, already formatted.</comment>
   </data>
+  <data name="SettingsDescription" xml:space="preserve">
+    <value>Translation of code documentation into your language.</value>
+  </data>
+  <data name="SettingsGeneral" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="SettingsLocalTranslation" xml:space="preserve">
+    <value>Local translation</value>
+  </data>
+  <data name="SettingsLocalTranslationDescription" xml:space="preserve">
+    <value>The language model that translates on this computer, without sending your code anywhere.</value>
+  </data>
+  <data name="SettingsTranslateTooltips" xml:space="preserve">
+    <value>Translate documentation in tooltips</value>
+  </data>
+  <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
+    <value>Adds a translation of the documentation below the original when you hover over a symbol.</value>
+  </data>
+  <data name="SettingsTargetLanguage" xml:space="preserve">
+    <value>Translate into</value>
+  </data>
+  <data name="SettingsTargetLanguageDescription" xml:space="preserve">
+    <value>The language documentation is translated into. By default, the language Visual Studio is shown in.</value>
+  </data>
+  <data name="SettingsSameAsVisualStudio" xml:space="preserve">
+    <value>Same as Visual Studio</value>
+  </data>
+  <data name="SettingsModel" xml:space="preserve">
+    <value>Language model</value>
+  </data>
+  <data name="SettingsModelDescription" xml:space="preserve">
+    <value>The model that translates on this computer. One that is not downloaded yet is offered for download the next time a translation is needed; a model downloaded before stays, so switching back costs nothing.</value>
+  </data>
+  <data name="SettingsModelAutomatic" xml:space="preserve">
+    <value>Automatic, by the computer's memory</value>
+  </data>
+  <data name="SettingsModelQuality" xml:space="preserve">
+    <value>Quality: Gemma 4 E4B, about 5 GB</value>
+  </data>
+  <data name="SettingsModelLight" xml:space="preserve">
+    <value>Light: Gemma 4 E2B, about 3.4 GB</value>
+  </data>
+  <data name="SettingsUseGraphicsCard" xml:space="preserve">
+    <value>Use the graphics card</value>
+  </data>
+  <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
+    <value>Runs the model on the fastest graphics card that works, several times faster than on the processor. Turn off to keep the card free for other work.</value>
+  </data>
 </root>

@@ -143,4 +143,52 @@
   <data name="SizeGigabytes" xml:space="preserve">
     <value>약 {0}GB</value>
   </data>
+  <data name="SettingsDescription" xml:space="preserve">
+    <value>코드 문서를 사용자의 언어로 번역합니다.</value>
+  </data>
+  <data name="SettingsGeneral" xml:space="preserve">
+    <value>일반</value>
+  </data>
+  <data name="SettingsLocalTranslation" xml:space="preserve">
+    <value>로컬 번역</value>
+  </data>
+  <data name="SettingsLocalTranslationDescription" xml:space="preserve">
+    <value>코드를 어디에도 보내지 않고 이 컴퓨터에서 번역하는 언어 모델입니다.</value>
+  </data>
+  <data name="SettingsTranslateTooltips" xml:space="preserve">
+    <value>도구 설명의 문서 번역</value>
+  </data>
+  <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
+    <value>기호 위에 마우스를 올리면 원문 아래에 문서 번역을 추가합니다.</value>
+  </data>
+  <data name="SettingsTargetLanguage" xml:space="preserve">
+    <value>번역 대상</value>
+  </data>
+  <data name="SettingsTargetLanguageDescription" xml:space="preserve">
+    <value>문서를 번역할 언어입니다. 기본값은 Visual Studio의 표시 언어입니다.</value>
+  </data>
+  <data name="SettingsSameAsVisualStudio" xml:space="preserve">
+    <value>Visual Studio와 동일</value>
+  </data>
+  <data name="SettingsModel" xml:space="preserve">
+    <value>언어 모델</value>
+  </data>
+  <data name="SettingsModelDescription" xml:space="preserve">
+    <value>이 컴퓨터에서 번역하는 모델입니다. 아직 다운로드하지 않은 모델은 다음에 번역이 필요할 때 다운로드를 제안합니다. 이전에 다운로드한 모델은 유지되므로 다시 전환해도 비용이 들지 않습니다.</value>
+  </data>
+  <data name="SettingsModelAutomatic" xml:space="preserve">
+    <value>자동(컴퓨터 메모리에 따라)</value>
+  </data>
+  <data name="SettingsModelQuality" xml:space="preserve">
+    <value>고품질: Gemma 4 E4B, 약 5GB</value>
+  </data>
+  <data name="SettingsModelLight" xml:space="preserve">
+    <value>경량: Gemma 4 E2B, 약 3.4GB</value>
+  </data>
+  <data name="SettingsUseGraphicsCard" xml:space="preserve">
+    <value>그래픽 카드 사용</value>
+  </data>
+  <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
+    <value>작동하는 가장 빠른 그래픽 카드에서 모델을 실행하며, 프로세서보다 몇 배 빠릅니다. 카드를 다른 작업에 사용하려면 끄세요.</value>
+  </data>
 </root>

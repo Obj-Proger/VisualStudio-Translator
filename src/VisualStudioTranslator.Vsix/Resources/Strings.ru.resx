@@ -143,4 +143,52 @@
   <data name="SizeGigabytes" xml:space="preserve">
     <value>около {0} ГБ</value>
   </data>
+  <data name="SettingsDescription" xml:space="preserve">
+    <value>Перевод документации кода на ваш язык.</value>
+  </data>
+  <data name="SettingsGeneral" xml:space="preserve">
+    <value>Общие</value>
+  </data>
+  <data name="SettingsLocalTranslation" xml:space="preserve">
+    <value>Локальный перевод</value>
+  </data>
+  <data name="SettingsLocalTranslationDescription" xml:space="preserve">
+    <value>Языковая модель, которая переводит на этом компьютере, никуда не отправляя ваш код.</value>
+  </data>
+  <data name="SettingsTranslateTooltips" xml:space="preserve">
+    <value>Переводить документацию в подсказках</value>
+  </data>
+  <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
+    <value>Добавляет перевод документации под оригиналом при наведении указателя на символ.</value>
+  </data>
+  <data name="SettingsTargetLanguage" xml:space="preserve">
+    <value>Перевести на</value>
+  </data>
+  <data name="SettingsTargetLanguageDescription" xml:space="preserve">
+    <value>Язык, на который переводится документация. По умолчанию — язык интерфейса Visual Studio.</value>
+  </data>
+  <data name="SettingsSameAsVisualStudio" xml:space="preserve">
+    <value>Как в Visual Studio</value>
+  </data>
+  <data name="SettingsModel" xml:space="preserve">
+    <value>Языковая модель</value>
+  </data>
+  <data name="SettingsModelDescription" xml:space="preserve">
+    <value>Модель, которая переводит на этом компьютере. Если она ещё не скачана, скачать её будет предложено при следующем переводе; скачанная раньше модель сохраняется, поэтому вернуться к ней можно сразу.</value>
+  </data>
+  <data name="SettingsModelAutomatic" xml:space="preserve">
+    <value>Автоматически, по объёму памяти компьютера</value>
+  </data>
+  <data name="SettingsModelQuality" xml:space="preserve">
+    <value>Качественная: Gemma 4 E4B, около 5 ГБ</value>
+  </data>
+  <data name="SettingsModelLight" xml:space="preserve">
+    <value>Лёгкая: Gemma 4 E2B, около 3,4 ГБ</value>
+  </data>
+  <data name="SettingsUseGraphicsCard" xml:space="preserve">
+    <value>Использовать видеокарту</value>
+  </data>
+  <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
+    <value>Запускает модель на самой быстрой исправной видеокарте — в несколько раз быстрее, чем на процессоре. Отключите, чтобы видеокарта оставалась свободной для другой работы.</value>
+  </data>
 </root>

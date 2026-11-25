@@ -143,4 +143,52 @@
   <data name="SizeGigabytes" xml:space="preserve">
     <value>přibližně {0} GB</value>
   </data>
+  <data name="SettingsDescription" xml:space="preserve">
+    <value>Překlad dokumentace kódu do vašeho jazyka.</value>
+  </data>
+  <data name="SettingsGeneral" xml:space="preserve">
+    <value>Obecné</value>
+  </data>
+  <data name="SettingsLocalTranslation" xml:space="preserve">
+    <value>Místní překlad</value>
+  </data>
+  <data name="SettingsLocalTranslationDescription" xml:space="preserve">
+    <value>Jazykový model, který překládá na tomto počítači a nikam neodesílá váš kód.</value>
+  </data>
+  <data name="SettingsTranslateTooltips" xml:space="preserve">
+    <value>Překládat dokumentaci v popiscích</value>
+  </data>
+  <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
+    <value>Při najetí myší na symbol přidá pod originál překlad dokumentace.</value>
+  </data>
+  <data name="SettingsTargetLanguage" xml:space="preserve">
+    <value>Přeložit do</value>
+  </data>
+  <data name="SettingsTargetLanguageDescription" xml:space="preserve">
+    <value>Jazyk, do kterého se dokumentace překládá. Ve výchozím nastavení jazyk, ve kterém se zobrazuje Visual Studio.</value>
+  </data>
+  <data name="SettingsSameAsVisualStudio" xml:space="preserve">
+    <value>Stejný jako Visual Studio</value>
+  </data>
+  <data name="SettingsModel" xml:space="preserve">
+    <value>Jazykový model</value>
+  </data>
+  <data name="SettingsModelDescription" xml:space="preserve">
+    <value>Model, který překládá na tomto počítači. Pokud ještě není stažený, jeho stažení se nabídne při příštím překladu; dříve stažený model zůstává, takže návrat k němu nic nestojí.</value>
+  </data>
+  <data name="SettingsModelAutomatic" xml:space="preserve">
+    <value>Automaticky, podle paměti počítače</value>
+  </data>
+  <data name="SettingsModelQuality" xml:space="preserve">
+    <value>Kvalitní: Gemma 4 E4B, přibližně 5 GB</value>
+  </data>
+  <data name="SettingsModelLight" xml:space="preserve">
+    <value>Odlehčený: Gemma 4 E2B, přibližně 3,4 GB</value>
+  </data>
+  <data name="SettingsUseGraphicsCard" xml:space="preserve">
+    <value>Používat grafickou kartu</value>
+  </data>
+  <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
+    <value>Spouští model na nejrychlejší funkční grafické kartě, několikrát rychleji než na procesoru. Vypněte, aby karta zůstala volná pro jinou práci.</value>
+  </data>
 </root>

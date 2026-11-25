@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using Microsoft.VisualStudio.Shell;
 using VisualStudioTranslator.Core.Languages;
+using VisualStudioTranslator.Vsix.Resources;
 
 namespace VisualStudioTranslator.Vsix.Options;
 
@@ -11,36 +12,33 @@ namespace VisualStudioTranslator.Vsix.Options;
 /// </summary>
 public sealed class GeneralOptionsPage : DialogPage
 {
-    private const string Category = "General";
-    private const string LocalCategory = "Local translation";
+    // The names of UiText's texts, which the attributes below show in the language of Visual Studio.
+    private const string Category = nameof(UiText.SettingsGeneral);
+    private const string LocalCategory = nameof(UiText.SettingsLocalTranslation);
 
-    [Category(Category)]
-    [DisplayName("Translate documentation in tooltips")]
-    [Description("Adds a translation of the documentation below the original when you hover over a symbol.")]
+    [LocalizedCategory(Category)]
+    [LocalizedDisplayName(nameof(UiText.SettingsTranslateTooltips))]
+    [LocalizedDescription(nameof(UiText.SettingsTranslateTooltipsDescription))]
     [DefaultValue(true)]
     public bool TranslateTooltips { get; set; } = true;
 
-    [Category(Category)]
-    [DisplayName("Translate into")]
-    [Description("The language documentation is translated into. By default, the language Visual Studio is shown in.")]
+    [LocalizedCategory(Category)]
+    [LocalizedDisplayName(nameof(UiText.SettingsTargetLanguage))]
+    [LocalizedDescription(nameof(UiText.SettingsTargetLanguageDescription))]
     [DefaultValue(TargetLanguages.FollowVisualStudio)]
     [TypeConverter(typeof(LanguageChoiceConverter))]
     public string TargetLanguage { get; set; } = TargetLanguages.FollowVisualStudio;
 
-    [Category(LocalCategory)]
-    [DisplayName("Language model")]
-    [Description(
-        "The model that translates on this computer. One that is not downloaded yet is offered for download the next " +
-        "time a translation is needed; a model downloaded before stays, so switching back costs nothing.")]
+    [LocalizedCategory(LocalCategory)]
+    [LocalizedDisplayName(nameof(UiText.SettingsModel))]
+    [LocalizedDescription(nameof(UiText.SettingsModelDescription))]
     [DefaultValue(ModelChoiceConverter.Automatic)]
     [TypeConverter(typeof(ModelChoiceConverter))]
     public string Model { get; set; } = ModelChoiceConverter.Automatic;
 
-    [Category(LocalCategory)]
-    [DisplayName("Use the graphics card")]
-    [Description(
-        "Runs the model on the fastest graphics card that works, several times faster than on the processor. " +
-        "Turn off to keep the card free for other work.")]
+    [LocalizedCategory(LocalCategory)]
+    [LocalizedDisplayName(nameof(UiText.SettingsUseGraphicsCard))]
+    [LocalizedDescription(nameof(UiText.SettingsUseGraphicsCardDescription))]
     [DefaultValue(true)]
     public bool UseGraphicsCard { get; set; } = true;
 }

@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Globalization;
 using VisualStudioTranslator.Core.Languages;
+using VisualStudioTranslator.Vsix.Resources;
 
 namespace VisualStudioTranslator.Vsix.Options;
 
@@ -10,7 +11,7 @@ namespace VisualStudioTranslator.Vsix.Options;
 /// </summary>
 internal sealed class LanguageChoiceConverter : StringConverter
 {
-    private const string FollowVisualStudioLabel = "Same as Visual Studio";
+    private static string FollowVisualStudioLabel => UiText.SettingsSameAsVisualStudio;
 
     public override bool GetStandardValuesSupported(ITypeDescriptorContext context) => true;
 

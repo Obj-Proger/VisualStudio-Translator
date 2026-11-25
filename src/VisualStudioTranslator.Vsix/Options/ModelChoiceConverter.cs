@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Globalization;
 using VisualStudioTranslator.Core.Rpc;
+using VisualStudioTranslator.Vsix.Resources;
 
 namespace VisualStudioTranslator.Vsix.Options;
 
@@ -13,13 +14,9 @@ internal sealed class ModelChoiceConverter : StringConverter
     /// <summary>The tag of <see cref="LocalModelChoice.Automatic"/>, as a constant for the page's default.</summary>
     public const string Automatic = "auto";
 
-    // In the order of LocalModelSettings.ModelTags, as in registration.json.
-    private static readonly string[] Labels =
-    [
-        "Automatic, by the computer's memory",
-        "Quality: Gemma 4 E4B, about 5 GB",
-        "Light: Gemma 4 E2B, about 3.4 GB",
-    ];
+    // In the order of LocalModelSettings.ModelTags, the same texts registration.json shows.
+    private static string[] Labels =>
+        [UiText.SettingsModelAutomatic, UiText.SettingsModelQuality, UiText.SettingsModelLight];
 
     public override bool GetStandardValuesSupported(ITypeDescriptorContext context) => true;
 
