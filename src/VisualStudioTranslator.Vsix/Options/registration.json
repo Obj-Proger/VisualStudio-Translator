@@ -1,0 +1,46 @@
+{
+  "properties": {
+    "visualStudioTranslator.general.translateTooltips": {
+      "type": "boolean",
+      "title": "Translate documentation in tooltips",
+      "description": "Adds a translation of the documentation below the original when you hover over a symbol.",
+      "default": true,
+      "order": 0
+    },
+    "visualStudioTranslator.general.targetLanguage": {
+      "type": "string",
+      "title": "Translate into",
+      "description": "The language documentation is translated into. By default, the language Visual Studio is shown in.",
+      "default": "auto",
+      "enum": [ "auto", "en", "ru", "de", "fr", "es", "it", "pt-BR", "pl", "cs", "tr", "zh-Hans", "ja", "ko" ],
+      "enumItemLabels": [
+        "Same as Visual Studio",
+        "English",
+        "Русский",
+        "Deutsch",
+        "Français",
+        "Español",
+        "Italiano",
+        "Português (Brasil)",
+        "Polski",
+        "Čeština",
+        "Türkçe",
+        "中文(简体)",
+        "日本語",
+        "한국어"
+      ],
+      "enableWhen": "${config:visualStudioTranslator.general.translateTooltips}=='true'",
+      "order": 1
+    }
+  },
+  "categories": {
+    "visualStudioTranslator": {
+      "title": "Visual Studio Translator",
+      "description": "Translation of code documentation into your language."
+    },
+    "visualStudioTranslator.general": {
+      "title": "General",
+      "order": 0
+    }
+  }
+}

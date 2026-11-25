@@ -1,9 +1,10 @@
-﻿using System.Globalization;
-using Microsoft.VisualStudio.Shell;
+﻿using Microsoft.VisualStudio.Shell;
 using StreamJsonRpc;
 using VisualStudioTranslator.Core.Concurrency;
 using VisualStudioTranslator.Core.Documentation;
+using VisualStudioTranslator.Core.Languages;
 using VisualStudioTranslator.Core.Rpc;
+using VisualStudioTranslator.Vsix.Options;
 using VisualStudioTranslator.Vsix.Service;
 using VisualStudioTranslator.Vsix.Setup;
 
@@ -49,37 +50,32 @@ internal sealed class DocumentationTranslator(EngineConnection connection)
     /// The work, which gives the translated document, or <see langword="null"/> when there is nothing to show:
     /// no language to translate into (then at once), or the Engine could not translate it.
     /// </returns>
-    public Task<DocumentModel?> TranslateAsync(string documentationXml)
+    public async Task<DocumentModel?> TranslateAsync(string documentationXml)
     {
-        string? targetLanguage = GetTargetLanguage();
-        if (targetLanguage is null)
+        TranslatorSettings settings = await TranslatorOptions.Shared.ReadAsync(CancellationToken.None).ConfigureAwait(false);
+        string? targetLanguage = settings.ResolvedTargetLanguage;
+
+        // Documentation is taken to be English for now, so English as the target leaves nothing to do until the
+        // language a comment is written in is told apart.
+        if (targetLanguage is null || TargetLanguages.IsSameLanguage(targetLanguage, SourceLanguage))
         {
             if (!_loggedNoTarget)
             {
                 _loggedNoTarget = true;
-                DiagnosticLog.Info(Source, $"Nothing to translate into: the display language is '{CultureInfo.CurrentUICulture.Name}'.");
+                DiagnosticLog.Info(
+                    Source,
+                    $"Nothing to translate into: tooltips {(settings.TranslateTooltips ? "on" : "off")}, " +
+                    $"language '{settings.TargetLanguage}', display language '{settings.DisplayLanguage}'.");
             }
 
-            return Task.FromResult<DocumentModel?>(null);
-        }
-
-        return _inFlight.GetOrStart(
-            targetLanguage + "\n" + documentationXml,
-            () => RequestAsync(documentationXml, targetLanguage));
-    }
-
-    // For now the language of Windows' display decides. A setting replaces this once there is a
-    // place for settings. An English display needs no translation of English documentation.
-    private static string? GetTargetLanguage()
-    {
-        string tag = CultureInfo.CurrentUICulture.Name;
-
-        if (tag.Length == 0 || (tag.StartsWith("en", StringComparison.OrdinalIgnoreCase) && (tag.Length == 2 || tag[2] == '-')))
-        {
             return null;
         }
 
-        return tag;
+#pragma warning disable VSTHRD003 // Shared by every hover over the same comment, and started off the UI thread.
+        return await _inFlight.GetOrStart(
+            targetLanguage + "\n" + documentationXml,
+            () => RequestAsync(documentationXml, targetLanguage)).ConfigureAwait(false);
+#pragma warning restore VSTHRD003
     }
 
     private async Task<DocumentModel?> RequestAsync(string documentationXml, string targetLanguage)
