@@ -6,6 +6,7 @@ namespace VisualStudioTranslator.Vsix.TranslatorWindow;
 /// <summary>
 /// The translator window: View &gt; Other Windows &gt; Translator, Ctrl+Shift+Alt+T, or Translate Selection in the
 /// editor's context menu. Opens docked with the Output window the first time, and where the user left it after that.
+/// What it shows is in <see cref="TranslatorView"/>.
 /// </summary>
 [Guid(WindowGuidString)]
 public sealed class TranslatorToolWindow : ToolWindowPane
@@ -25,7 +26,12 @@ public sealed class TranslatorToolWindow : ToolWindowPane
     // Also when Visual Studio brings the window back on start-up, before any command of the extension has run.
     public override void OnToolWindowCreated()
     {
+        ThreadHelper.ThrowIfNotOnUIThread();
         base.OnToolWindowCreated();
-        View.Tasks = (Package as AsyncPackage)?.JoinableTaskFactory;
+
+        if (Package is AsyncPackage package)
+        {
+            View.Attach(package.JoinableTaskFactory, new TranslatorWindowState(package));
+        }
     }
 }

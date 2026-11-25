@@ -92,7 +92,7 @@ internal static class TranslatorCommands
             return;
         }
 
-        translator.View.UseLanguageFromSettings(settings);
+        translator.View.ChooseLanguage(settings);
 
         if (text is null)
         {
