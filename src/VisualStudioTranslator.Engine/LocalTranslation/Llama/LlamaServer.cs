@@ -32,8 +32,8 @@ namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
 /// With <see cref="LlamaServerOptions.GpuLayers"/> above zero the model goes to the graphics card, which is
 /// several times faster when it works. It does not always: a driver can crash the server while it loads the
 /// model, or let it run and compute nonsense. So a server started that way is asked one question with a known
-/// answer before it is used, and if it fails either way it is replaced by one on the processor, which is what
-/// every later start then uses (see <see cref="GpuVerdict"/>). A machine without a usable card at all needs
+/// answer before it is used, and if it fails either way it is replaced by one on the processor, which the rest
+/// of this run of the Engine keeps to, and later runs for a while (see <see cref="GpuVerdict"/>). A machine without a usable card at all needs
 /// none of this: the server finds no device and stays on the processor by itself.
 /// </para>
 /// </summary>
@@ -126,6 +126,7 @@ internal sealed class LlamaServer : IDisposable
                 if (running.GpuLayers > 0)
                 {
                     await CheckAnswersAsync(cancellationToken).ConfigureAwait(false);
+                    _gpuVerdict?.MarkUsable();
                 }
             }
             catch (TranslationProviderException exception) when (running.GpuLayers > 0)

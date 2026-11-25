@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using VisualStudioTranslator.Core.Providers.Abstractions;
 using VisualStudioTranslator.Engine.LocalTranslation.Llama;
 using Xunit;
@@ -293,12 +294,12 @@ public sealed class LlamaServerTests : IDisposable
     {
         _transport.CheckAnswer = "nonsense";
 
-        using (LlamaServer first = Server(gpuLayers: AllLayers, verdict: new GpuVerdict(_verdictPath)))
+        using (LlamaServer first = Server(gpuLayers: AllLayers, verdict: new GpuVerdict(_verdictPath, TimeProvider.System)))
         {
             await first.EnsureStartedAsync(Token);
         }
 
-        using LlamaServer second = Server(gpuLayers: AllLayers, verdict: new GpuVerdict(_verdictPath));
+        using LlamaServer second = Server(gpuLayers: AllLayers, verdict: new GpuVerdict(_verdictPath, TimeProvider.System));
         await second.EnsureStartedAsync(Token);
 
         _launcher.Started.Select(GpuLayers).Should().Equal(AllLayers, 0, 0);
@@ -307,7 +308,7 @@ public sealed class LlamaServerTests : IDisposable
     [Fact]
     public async Task EnsureStartedAsync_CardThatFailedWithAnotherBuild_GetsANewChance()
     {
-        GpuVerdict verdict = new(_verdictPath);
+        GpuVerdict verdict = new(_verdictPath, TimeProvider.System);
         verdict.MarkUnusable(@"C:\engine\older\llama-server.exe");
         using LlamaServer server = Server(gpuLayers: AllLayers, verdict: verdict);
 
@@ -330,9 +331,19 @@ public sealed class LlamaServerTests : IDisposable
     }
 
     [Fact]
-    public void GpuVerdict_NothingRemembered_IsNotUnusable()
+    public async Task EnsureStartedAsync_CardThatWorksAgain_ForgetsEarlierFailures()
     {
-        new GpuVerdict(_verdictPath).IsUnusable(Executable).Should().BeFalse();
+        FakeTimeProvider time = new();
+        GpuVerdict verdict = new(_verdictPath, time);
+        verdict.MarkUnusable(Executable);
+        verdict.MarkUnusable(Executable);
+        time.Advance(TimeSpan.FromDays(2));
+        using LlamaServer server = Server(gpuLayers: AllLayers, verdict: verdict);
+
+        await server.EnsureStartedAsync(Token);
+
+        GpuLayers(_launcher.Started.Single()).Should().Be(AllLayers);
+        File.Exists(_verdictPath).Should().BeFalse();
     }
 
     [Fact]
