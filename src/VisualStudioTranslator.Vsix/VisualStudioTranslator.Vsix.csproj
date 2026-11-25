@@ -44,6 +44,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- The translator window's menu items and shortcut, compiled into the resource the package names in
+         ProvideMenuResource. -->
+		<VSCTCompile Include="TranslatorWindow\Commands.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+	</ItemGroup>
+
+	<ItemGroup>
 		<!-- The settings Visual Studio 2026 shows in Tools > Options, read by Visual Studio from the .vsix. -->
 		<Content Include="Options\registration.json">
 			<IncludeInVSIX>true</IncludeInVSIX>
