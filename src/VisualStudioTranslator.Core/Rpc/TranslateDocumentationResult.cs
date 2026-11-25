@@ -28,6 +28,12 @@ public enum TranslationOutcome
 
     /// <summary>The provider failed; <see cref="TranslateDocumentationResult.ProviderFailure"/> says how, when it is known.</summary>
     ProviderFailed = 4,
+
+    /// <summary>
+    /// The text is longer than <see cref="TranslateTextRequest.MaxLength"/>. Nothing was translated.
+    /// Added in protocol version 1.4.
+    /// </summary>
+    TextTooLong = 5,
 }
 
 /// <summary>

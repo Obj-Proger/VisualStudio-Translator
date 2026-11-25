@@ -49,51 +49,53 @@ internal sealed class TranslatorService(
     {
         // The parser never throws, so an unreadable comment is just an empty document.
         DocumentModel document = DocumentationXmlParser.Parse(request.DocumentationXml);
-        int segmentCount = DocumentSegmenter.Segment(document).Count;
 
-        LanguagePair? languages = LanguagePair.Create(request.SourceLanguage, request.TargetLanguage);
-        if (languages is null)
-        {
-            return Unchanged(document, segmentCount, TranslationOutcome.InvalidLanguage);
-        }
-
-        ProviderSelection selection = ProviderSelector.Select(providers, languages, request.AllowCloudProvider);
-        if (selection.Provider is not { } provider)
-        {
-            if (selection.CloudConsentRequired)
-            {
-                return Unchanged(document, segmentCount, TranslationOutcome.CloudConsentRequired);
-            }
-
-            logger.NoProviderAvailable(languages);
-            return Unchanged(document, segmentCount, TranslationOutcome.NoProviderAvailable);
-        }
-
-        // The wire is the one place a malformed entry can arrive. A blank term would match
-        // everywhere once it became part of a pattern, so it never gets that far.
-        Glossary glossary = new()
-        {
-            Entries = [.. (request.Glossary ?? []).Where(entry => !string.IsNullOrWhiteSpace(entry.Term))],
-        };
-
-        TranslationResult translation = await orchestrator.TranslateAsync(
-            new TranslationRequest
-            {
-                Document = document,
-                Languages = languages,
-                Glossary = glossary,
-                AllowCloudProvider = request.AllowCloudProvider,
-            },
-            provider,
-            cancellationToken);
-
-        logger.DocumentationTranslated(
-            translation.SegmentCount, translation.CachedCount, translation.TranslatedCount, translation.UnchangedCount);
+        Translated translation = await TranslateAsync(
+            document,
+            request.SourceLanguage,
+            request.TargetLanguage,
+            request.Glossary,
+            request.AllowCloudProvider,
+            cancellationToken).ConfigureAwait(false);
 
         return new TranslateDocumentationResult
         {
             DocumentationXml = DocumentationXmlWriter.Write(translation.Document),
-            Outcome = OutcomeOf(translation),
+            Outcome = translation.Outcome,
+            SegmentCount = translation.SegmentCount,
+            CachedCount = translation.CachedCount,
+            TranslatedCount = translation.TranslatedCount,
+            UnchangedCount = translation.UnchangedCount,
+            ProviderFailure = translation.ProviderFailure,
+        };
+    }
+
+    public async Task<TranslateTextResult> TranslateTextAsync(TranslateTextRequest request, CancellationToken cancellationToken)
+    {
+        string text = request.Text ?? string.Empty;
+        PlainTextDocument layout = PlainText.Parse(text);
+        Translated translation;
+
+        if (text.Length > TranslateTextRequest.MaxLength)
+        {
+            translation = Unchanged(layout.Document, TranslationOutcome.TextTooLong);
+        }
+        else
+        {
+            translation = await TranslateAsync(
+                layout.Document,
+                request.SourceLanguage,
+                request.TargetLanguage,
+                request.Glossary,
+                request.AllowCloudProvider,
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        return new TranslateTextResult
+        {
+            // Text left wholly as it was goes back exactly as it came, line breaks and all, not as laid out again.
+            Text = translation.TranslatedCount + translation.CachedCount == 0 ? text : PlainText.Write(layout, translation.Document),
+            Outcome = translation.Outcome,
             SegmentCount = translation.SegmentCount,
             CachedCount = translation.CachedCount,
             TranslatedCount = translation.TranslatedCount,
@@ -155,19 +157,81 @@ internal sealed class TranslatorService(
         return translation.ProviderFailure is not null ? TranslationOutcome.ProviderFailed : TranslationOutcome.Completed;
     }
 
-    // The document goes back through the writer even when nothing was translated, so a client
-    // always receives XML in the one shape it can rely on, not whatever it happened to send.
-    private static TranslateDocumentationResult Unchanged(DocumentModel document, int segmentCount, TranslationOutcome outcome) =>
-        new()
+    // What documentation and plain text share: the languages checked, a provider chosen, the document translated.
+    private async Task<Translated> TranslateAsync(
+        DocumentModel document,
+        string sourceLanguage,
+        string targetLanguage,
+        IReadOnlyList<GlossaryEntry>? glossaryEntries,
+        bool allowCloudProvider,
+        CancellationToken cancellationToken)
+    {
+        LanguagePair? languages = LanguagePair.Create(sourceLanguage, targetLanguage);
+        if (languages is null)
         {
-            DocumentationXml = DocumentationXmlWriter.Write(document),
-            Outcome = outcome,
-            SegmentCount = segmentCount,
-            CachedCount = 0,
-            TranslatedCount = 0,
-            UnchangedCount = segmentCount,
+            return Unchanged(document, TranslationOutcome.InvalidLanguage);
+        }
+
+        ProviderSelection selection = ProviderSelector.Select(providers, languages, allowCloudProvider);
+        if (selection.Provider is not { } provider)
+        {
+            if (selection.CloudConsentRequired)
+            {
+                return Unchanged(document, TranslationOutcome.CloudConsentRequired);
+            }
+
+            logger.NoProviderAvailable(languages);
+            return Unchanged(document, TranslationOutcome.NoProviderAvailable);
+        }
+
+        // The wire is the one place a malformed entry can arrive. A blank term would match
+        // everywhere once it became part of a pattern, so it never gets that far.
+        Glossary glossary = new()
+        {
+            Entries = [.. (glossaryEntries ?? []).Where(entry => !string.IsNullOrWhiteSpace(entry.Term))],
         };
+
+        TranslationResult translation = await orchestrator.TranslateAsync(
+            new TranslationRequest
+            {
+                Document = document,
+                Languages = languages,
+                Glossary = glossary,
+                AllowCloudProvider = allowCloudProvider,
+            },
+            provider,
+            cancellationToken).ConfigureAwait(false);
+
+        logger.DocumentationTranslated(
+            translation.SegmentCount, translation.CachedCount, translation.TranslatedCount, translation.UnchangedCount);
+
+        return new Translated(
+            translation.Document,
+            OutcomeOf(translation),
+            translation.SegmentCount,
+            translation.CachedCount,
+            translation.TranslatedCount,
+            translation.UnchangedCount,
+            translation.ProviderFailure);
+    }
+
+    private static Translated Unchanged(DocumentModel document, TranslationOutcome outcome)
+    {
+        int segmentCount = DocumentSegmenter.Segment(document).Count;
+
+        return new Translated(document, outcome, segmentCount, 0, 0, segmentCount, ProviderFailure: null);
+    }
 
     private static string GetServiceVersion() =>
         typeof(TranslatorService).Assembly.GetName().Version?.ToString() ?? "0.0.0";
+
+    // A translation as both kinds of request answer it.
+    private sealed record Translated(
+        DocumentModel Document,
+        TranslationOutcome Outcome,
+        int SegmentCount,
+        int CachedCount,
+        int TranslatedCount,
+        int UnchangedCount,
+        ProviderFailureKind? ProviderFailure);
 }

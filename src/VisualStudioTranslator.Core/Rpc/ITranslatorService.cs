@@ -53,4 +53,12 @@ public interface ITranslatorService
     /// Added in protocol version 1.3.
     /// </summary>
     Task ApplyLocalModelSettingsAsync(LocalModelSettings settings, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Translates plain text, through the same providers, cache and checks as documentation. Like
+    /// <see cref="TranslateDocumentationAsync"/> it never fails because of the content: what cannot be translated
+    /// comes back as it was.
+    /// Added in protocol version 1.4.
+    /// </summary>
+    Task<TranslateTextResult> TranslateTextAsync(TranslateTextRequest request, CancellationToken cancellationToken);
 }

@@ -207,6 +207,68 @@ public sealed class TranslatorServiceTests
     }
 
     [Fact]
+    public async Task TranslateTextAsync_TranslatesEachParagraphAndKeepsTheLayout()
+    {
+        Dictionary<string, string> translations = new()
+        {
+            [Sentence] = "Возвращает количество элементов.",
+            ["Gets the name."] = "Получает имя.",
+        };
+
+        TranslateTextRequest request = new()
+        {
+            Text = "Returns the number\nof items.\n\n- Gets the name.",
+            SourceLanguage = "und",
+            TargetLanguage = "ru",
+        };
+
+        TranslateTextResult result = await Service(new StubProvider("local", translations: translations))
+            .TranslateTextAsync(request, Token);
+
+        result.Outcome.Should().Be(TranslationOutcome.Completed);
+        result.Text.Should().Be("Возвращает количество элементов.\n\n- Получает имя.");
+        result.SegmentCount.Should().Be(2);
+        result.TranslatedCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task TranslateTextAsync_NoProvider_ReturnsTheTextExactlyAsItCame()
+    {
+        const string Text = "Returns the number\r\nof items.";
+
+        TranslateTextResult result = await Service().TranslateTextAsync(
+            new TranslateTextRequest { Text = Text, SourceLanguage = "und", TargetLanguage = "ru" }, Token);
+
+        result.Outcome.Should().Be(TranslationOutcome.NoProviderAvailable);
+        result.Text.Should().Be(Text);
+        result.UnchangedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task TranslateTextAsync_TextTooLong_TranslatesNothing()
+    {
+        StubProvider provider = new("local", translations: Translations);
+        string text = new('a', TranslateTextRequest.MaxLength + 1);
+
+        TranslateTextResult result = await Service(provider).TranslateTextAsync(
+            new TranslateTextRequest { Text = text, SourceLanguage = "und", TargetLanguage = "ru" }, Token);
+
+        result.Outcome.Should().Be(TranslationOutcome.TextTooLong);
+        result.Text.Should().Be(text);
+        provider.Calls.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task TranslateTextAsync_InvalidLanguage_ReturnsTheTextUnchanged()
+    {
+        TranslateTextResult result = await Service(new StubProvider("local", translations: Translations)).TranslateTextAsync(
+            new TranslateTextRequest { Text = Sentence, SourceLanguage = "und", TargetLanguage = "english" }, Token);
+
+        result.Outcome.Should().Be(TranslationOutcome.InvalidLanguage);
+        result.Text.Should().Be(Sentence);
+    }
+
+    [Fact]
     public async Task GetModelStatusAsync_AsksTheInstallerAboutTheNormalizedPair()
     {
         FakeModelInstaller installer = new();

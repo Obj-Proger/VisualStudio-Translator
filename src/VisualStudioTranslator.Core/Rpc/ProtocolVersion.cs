@@ -11,9 +11,9 @@ public static class ProtocolVersion
 
     /// <summary>
     /// 1: added <c>TranslateDocumentationAsync</c>. 2: added the model installation methods.
-    /// 3: added <c>ApplyLocalModelSettingsAsync</c>.
+    /// 3: added <c>ApplyLocalModelSettingsAsync</c>. 4: added <c>TranslateTextAsync</c>.
     /// </summary>
-    public const int Minor = 3;
+    public const int Minor = 4;
 
     /// <summary>
     /// Whether a peer advertising <paramref name="otherMajor"/> as its major version
