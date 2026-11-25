@@ -30,10 +30,34 @@ public enum ReferenceKind
     Event,
     TypeParameter,
     Parameter,
+
+    /// <summary>A keyword within a reference, such as <c>string</c> in a parameter list.</summary>
+    Keyword,
+
+    /// <summary>Punctuation within a reference: the dot between a type and its member, brackets, commas.</summary>
+    Punctuation,
+
+    /// <summary>Anything else within a reference, such as the space after a comma.</summary>
+    Text,
 }
 
-/// <summary>A reference target resolved to the text to show for it and the kind of symbol it is.</summary>
-public sealed record ResolvedReference(string DisplayText, ReferenceKind Kind);
+/// <summary>One piece of a resolved reference, coloured on its own as the editor colours it.</summary>
+public sealed record ResolvedPart(string Text, ReferenceKind Kind);
+
+/// <summary>
+/// A reference target resolved to what the editor shows for it, in pieces: in "LanguageTag.Normalize(string)" the
+/// type, the dot, the method and the keyword each have their own colour, as in the original documentation.
+/// </summary>
+public sealed record ResolvedReference(IReadOnlyList<ResolvedPart> Parts)
+{
+    /// <summary>A reference shown as one piece, of one kind.</summary>
+    public ResolvedReference(string displayText, ReferenceKind kind)
+        : this([new ResolvedPart(displayText, kind)])
+    {
+    }
+
+    public string DisplayText => string.Concat(Parts.Select(part => part.Text));
+}
 
 public sealed record RenderedRun(string Text, RunStyle Style, ReferenceKind? Reference = null);
 
@@ -240,7 +264,7 @@ public static class DocumentRenderer
 
                 if (references is not null && references.TryGetValue(reference.Target, out ResolvedReference resolved))
                 {
-                    return [new RenderedRun(resolved.DisplayText, RunStyle.Reference, resolved.Kind)];
+                    return resolved.Parts.Select(part => new RenderedRun(part.Text, RunStyle.Reference, part.Kind));
                 }
 
                 return [new RenderedRun(DisplayName(reference.Target), RunStyle.Reference, ReferenceKind.Unknown)];

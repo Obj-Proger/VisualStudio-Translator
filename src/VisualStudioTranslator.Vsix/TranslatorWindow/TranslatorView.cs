@@ -139,6 +139,21 @@ internal sealed class TranslatorView : UserControl
         {
             Arrange(columns);
         }
+
+        // Visual Studio brings an open window back when it starts, before any command has chosen its language.
+        if (_language.SelectedItem is null)
+        {
+            _ = tasks.RunAsync(async () =>
+            {
+                TranslatorSettings settings = await TranslatorOptions.Shared.ReadAsync(CancellationToken.None).ConfigureAwait(true);
+                await tasks.SwitchToMainThreadAsync();
+
+                if (_language.SelectedItem is null)
+                {
+                    ChooseLanguage(settings);
+                }
+            });
+        }
     }
 
     /// <summary>Puts the cursor in the text to translate.</summary>

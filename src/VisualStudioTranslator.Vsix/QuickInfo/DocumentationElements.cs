@@ -107,6 +107,9 @@ internal static class DocumentationElements
         ReferenceKind.Event => ClassificationTypeNames.EventName,
         ReferenceKind.TypeParameter => ClassificationTypeNames.TypeParameterName,
         ReferenceKind.Parameter => ClassificationTypeNames.ParameterName,
+        ReferenceKind.Keyword => ClassificationTypeNames.Keyword,
+        ReferenceKind.Punctuation => ClassificationTypeNames.Punctuation,
+        ReferenceKind.Text => ClassificationTypeNames.Text,
         _ => ClassificationTypeNames.Identifier,
     };
 }

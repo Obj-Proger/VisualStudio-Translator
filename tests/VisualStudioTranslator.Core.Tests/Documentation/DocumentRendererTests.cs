@@ -108,6 +108,39 @@ public sealed class DocumentRendererTests
     }
 
     [Fact]
+    public void RenderParagraphs_ResolvedCrefInParts_KeepsEachPartWithItsOwnKind()
+    {
+        Dictionary<string, ResolvedReference> references = new()
+        {
+            ["M:Ns.LanguageTag.Normalize(System.String)"] = new ResolvedReference(
+            [
+                new ResolvedPart("LanguageTag", ReferenceKind.Class),
+                new ResolvedPart(".", ReferenceKind.Punctuation),
+                new ResolvedPart("Normalize", ReferenceKind.Method),
+                new ResolvedPart("(", ReferenceKind.Punctuation),
+                new ResolvedPart("string", ReferenceKind.Keyword),
+                new ResolvedPart(")", ReferenceKind.Punctuation),
+            ]),
+        };
+        Section section = ParagraphOf(new Ref { Kind = RefKind.Cref, Target = "M:Ns.LanguageTag.Normalize(System.String)" });
+
+        DocumentRenderer.RenderParagraphs(section, references)[0].Should().Equal(
+            new RenderedRun("LanguageTag", RunStyle.Reference, ReferenceKind.Class),
+            new RenderedRun(".", RunStyle.Reference, ReferenceKind.Punctuation),
+            new RenderedRun("Normalize", RunStyle.Reference, ReferenceKind.Method),
+            new RenderedRun("(", RunStyle.Reference, ReferenceKind.Punctuation),
+            new RenderedRun("string", RunStyle.Reference, ReferenceKind.Keyword),
+            new RenderedRun(")", RunStyle.Reference, ReferenceKind.Punctuation));
+    }
+
+    [Fact]
+    public void ResolvedReference_DisplayText_IsThePartsTogether()
+    {
+        new ResolvedReference([new ResolvedPart("Result", ReferenceKind.Class), new ResolvedPart("<", ReferenceKind.Punctuation)])
+            .DisplayText.Should().Be("Result<");
+    }
+
+    [Fact]
     public void RenderParagraphs_CrefAbsentFromTheResolvedSet_FallsBackToTheGuessedName()
     {
         Dictionary<string, ResolvedReference> references = new()

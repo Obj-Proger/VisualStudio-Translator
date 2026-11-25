@@ -8,18 +8,21 @@ namespace VisualStudioTranslator.Vsix.Symbols;
 
 /// <summary>
 /// Resolves the references in a piece of documentation to what the editor itself would show
-/// for them: "T:Ns.Result`1" becomes "Result&lt;TValue&gt;", and the kind of symbol it is decides
-/// the colour. The documentation id alone cannot say either; only the compilation can.
+/// for them: "T:Ns.Result`1" becomes "Result&lt;TValue&gt;", and "M:Ns.LanguageTag.Normalize(System.String)"
+/// becomes "LanguageTag.Normalize(string)". Each part keeps its own kind, so the type, the member and the keywords
+/// are coloured as in the original documentation above. The documentation id alone cannot say any of it; only the
+/// compilation can.
 /// </summary>
 internal static class SymbolReferenceResolver
 {
-    // Names only, with type parameters and the containing type for members, so a property
-    // reads "Service.BasePrice" and a generic type "Result<TValue>". Parameter lists are left
-    // out: a reference in prose names a symbol, it does not show its signature.
+    // As the editor shows a reference in documentation: names only, with type parameters, the containing type for
+    // members and the parameter types of methods, so a property reads "Service.BasePrice", a generic type
+    // "Result<TValue>" and a method "LanguageTag.Normalize(string)".
     private static readonly SymbolDisplayFormat DisplayFormat = new(
         typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameOnly,
         genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
-        memberOptions: SymbolDisplayMemberOptions.IncludeContainingType,
+        memberOptions: SymbolDisplayMemberOptions.IncludeContainingType | SymbolDisplayMemberOptions.IncludeParameters,
+        parameterOptions: SymbolDisplayParameterOptions.IncludeType,
         miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
 
     /// <summary>
@@ -54,7 +57,8 @@ internal static class SymbolReferenceResolver
 
                 if (symbol != null)
                 {
-                    resolved[target] = new ResolvedReference(symbol.ToDisplayString(DisplayFormat), KindOf(symbol));
+                    resolved[target] = new ResolvedReference(
+                        [.. symbol.ToDisplayParts(DisplayFormat).Select(part => new ResolvedPart(part.ToString(), KindOf(part)))]);
                 }
             }
         }
@@ -65,6 +69,28 @@ internal static class SymbolReferenceResolver
 
         return resolved;
     }
+
+    // A part names its symbol when it has one; otherwise its kind says what it is.
+    private static ReferenceKind KindOf(SymbolDisplayPart part) => part.Symbol is { } symbol && IsNamePart(part.Kind)
+        ? KindOf(symbol)
+        : part.Kind switch
+        {
+            SymbolDisplayPartKind.Keyword => ReferenceKind.Keyword,
+            SymbolDisplayPartKind.Punctuation or SymbolDisplayPartKind.Operator => ReferenceKind.Punctuation,
+            SymbolDisplayPartKind.ClassName or SymbolDisplayPartKind.RecordClassName or SymbolDisplayPartKind.ErrorTypeName
+                => ReferenceKind.Class,
+            SymbolDisplayPartKind.StructName or SymbolDisplayPartKind.RecordStructName => ReferenceKind.Struct,
+            SymbolDisplayPartKind.InterfaceName => ReferenceKind.Interface,
+            SymbolDisplayPartKind.EnumName => ReferenceKind.Enum,
+            SymbolDisplayPartKind.DelegateName => ReferenceKind.Delegate,
+            SymbolDisplayPartKind.NamespaceName => ReferenceKind.Namespace,
+            SymbolDisplayPartKind.TypeParameterName => ReferenceKind.TypeParameter,
+            _ => ReferenceKind.Text,
+        };
+
+    private static bool IsNamePart(SymbolDisplayPartKind kind) =>
+        kind is not (SymbolDisplayPartKind.Keyword or SymbolDisplayPartKind.Punctuation
+            or SymbolDisplayPartKind.Operator or SymbolDisplayPartKind.Space or SymbolDisplayPartKind.Text);
 
     private static ReferenceKind KindOf(ISymbol symbol) => symbol switch
     {
