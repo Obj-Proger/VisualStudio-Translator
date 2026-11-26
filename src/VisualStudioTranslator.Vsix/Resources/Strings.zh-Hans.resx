@@ -185,4 +185,10 @@
   <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
     <value>在可用的最快显卡上运行模型，比在处理器上快数倍。关闭此选项可让显卡空闲以用于其他工作。</value>
   </data>
+  <data name="SettingsTranslateErrors" xml:space="preserve">
+    <value>翻译错误消息</value>
+  </data>
+  <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
+    <value>翻译将鼠标悬停在带下划线的代码上时显示的错误和警告消息，以及工具提示中的其他文本。</value>
+  </data>
 </root>

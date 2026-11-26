@@ -27,15 +27,20 @@ internal sealed class TooltipTranslation
 
     private readonly IViewElementFactoryService _viewElements;
     private readonly IAsyncQuickInfoSession _session;
+    private readonly IReadOnlyList<object> _untranslated;
     private readonly ContentControl _host;
     private bool _started;
 
-    public TooltipTranslation(IViewElementFactoryService viewElements, IAsyncQuickInfoSession session)
+    /// <param name="untranslated">Tooltip content whose lines are to be left as they are: the messages of errors and
+    /// warnings, when the user wants those in the original.</param>
+    public TooltipTranslation(
+        IViewElementFactoryService viewElements, IAsyncQuickInfoSession session, IReadOnlyList<object> untranslated)
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
         _viewElements = viewElements;
         _session = session;
+        _untranslated = untranslated;
         _host = new ContentControl { Focusable = false, Visibility = Visibility.Collapsed };
 
         session.StateChanged += OnStateChanged;
@@ -87,8 +92,10 @@ internal sealed class TooltipTranslation
             return;
         }
 
+        // The lines to leave are told by their text: a source may draw a copy of the content rather than the content.
+        HashSet<string> leave = [.. TooltipContent.Read(_untranslated).Select(line => line.Text)];
         IReadOnlyList<TooltipLine> lines = TooltipContent.Read(content);
-        List<TooltipLine> prose = [.. lines.Where(line => TooltipText.IsProse(line.Runs))];
+        List<TooltipLine> prose = [.. lines.Where(line => TooltipText.IsProse(line.Runs) && !leave.Contains(line.Text))];
 
         if (prose.Count == 0)
         {

@@ -185,4 +185,10 @@
   <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
     <value>작동하는 가장 빠른 그래픽 카드에서 모델을 실행하며, 프로세서보다 몇 배 빠릅니다. 카드를 다른 작업에 사용하려면 끄세요.</value>
   </data>
+  <data name="SettingsTranslateErrors" xml:space="preserve">
+    <value>오류 메시지 번역</value>
+  </data>
+  <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
+    <value>밑줄이 그어진 코드 위로 마우스를 가져갈 때 표시되는 오류 및 경고 메시지를 도구 설명의 다른 텍스트와 함께 번역합니다.</value>
+  </data>
 </root>

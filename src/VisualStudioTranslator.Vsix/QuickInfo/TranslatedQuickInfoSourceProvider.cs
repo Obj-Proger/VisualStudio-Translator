@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Adornments;
+using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using VisualStudioTranslator.Vsix.Options;
 
@@ -14,10 +15,11 @@ namespace VisualStudioTranslator.Vsix.QuickInfo;
 [Name("Visual Studio Translator Quick Info")]
 [ContentType("any")]
 [method: ImportingConstructor]
-internal sealed class TranslatedQuickInfoSourceProvider(IViewElementFactoryService viewElements) : IAsyncQuickInfoSourceProvider
+internal sealed class TranslatedQuickInfoSourceProvider(
+    IViewElementFactoryService viewElements, IViewTagAggregatorFactoryService tagAggregators) : IAsyncQuickInfoSourceProvider
 {
     public IAsyncQuickInfoSource TryCreateQuickInfoSource(ITextBuffer textBuffer) =>
-        new TranslatedQuickInfoSource(textBuffer, viewElements);
+        new TranslatedQuickInfoSource(textBuffer, viewElements, tagAggregators);
 }
 
 /// <summary>
@@ -26,7 +28,9 @@ internal sealed class TranslatedQuickInfoSourceProvider(IViewElementFactoryServi
 /// <see cref="TooltipTranslation"/> fills in once the tooltip is on screen, if it has text to translate. Whatever goes
 /// wrong, the original tooltip is unaffected: this source answers with nothing rather than failing.
 /// </summary>
-internal sealed class TranslatedQuickInfoSource(ITextBuffer buffer, IViewElementFactoryService viewElements) : IAsyncQuickInfoSource
+internal sealed class TranslatedQuickInfoSource(
+    ITextBuffer buffer, IViewElementFactoryService viewElements, IViewTagAggregatorFactoryService tagAggregators)
+    : IAsyncQuickInfoSource
 {
     private const string Source = nameof(TranslatedQuickInfoSource);
 
@@ -50,7 +54,8 @@ internal sealed class TranslatedQuickInfoSource(ITextBuffer buffer, IViewElement
             // WPF elements belong to the thread that made them, and the tooltip is drawn on the UI thread.
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-            TooltipTranslation translation = new(viewElements, session);
+            IReadOnlyList<object> untranslated = settings.TranslateErrors ? [] : ErrorsAt(session);
+            TooltipTranslation translation = new(viewElements, session, untranslated);
 
             // No span of its own: the tooltip covers what the other sources say it covers.
             return new QuickInfoItem(null, translation.Element);
@@ -68,5 +73,23 @@ internal sealed class TranslatedQuickInfoSource(ITextBuffer buffer, IViewElement
 
     public void Dispose()
     {
+    }
+
+    // What the errors and warnings under the mouse show in a tooltip: the squiggles' own tooltip content, which is
+    // what the tooltip draws for them.
+    private List<object> ErrorsAt(IAsyncQuickInfoSession session)
+    {
+        ThreadHelper.ThrowIfNotOnUIThread();
+
+        SnapshotPoint? point = session.GetTriggerPoint(session.TextView.TextBuffer.CurrentSnapshot);
+        if (point is null)
+        {
+            return [];
+        }
+
+        SnapshotSpan span = new(point.Value, point.Value.Position < point.Value.Snapshot.Length ? 1 : 0);
+        using ITagAggregator<IErrorTag> errors = tagAggregators.CreateTagAggregator<IErrorTag>(session.TextView);
+
+        return [.. errors.GetTags(span).Select(tag => tag.Tag.ToolTipContent).OfType<object>()];
     }
 }

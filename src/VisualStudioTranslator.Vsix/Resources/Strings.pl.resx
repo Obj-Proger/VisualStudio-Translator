@@ -185,4 +185,10 @@
   <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
     <value>Uruchamia model na najszybszej działającej karcie graficznej, kilka razy szybciej niż na procesorze. Wyłącz, aby karta pozostała wolna do innej pracy.</value>
   </data>
+  <data name="SettingsTranslateErrors" xml:space="preserve">
+    <value>Tłumacz komunikaty o błędach</value>
+  </data>
+  <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
+    <value>Tłumaczy komunikaty o błędach i ostrzeżeniach wyświetlane po wskazaniu podkreślonego kodu wraz z resztą tekstu etykietki.</value>
+  </data>
 </root>

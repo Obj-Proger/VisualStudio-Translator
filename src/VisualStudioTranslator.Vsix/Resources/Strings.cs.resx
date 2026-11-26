@@ -185,4 +185,10 @@
   <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
     <value>Spouští model na nejrychlejší funkční grafické kartě, několikrát rychleji než na procesoru. Vypněte, aby karta zůstala volná pro jinou práci.</value>
   </data>
+  <data name="SettingsTranslateErrors" xml:space="preserve">
+    <value>Překládat chybové zprávy</value>
+  </data>
+  <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
+    <value>Překládá zprávy o chybách a upozorněních zobrazené po najetí myší na podtržený kód spolu se zbytkem textu popisku.</value>
+  </data>
 </root>

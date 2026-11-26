@@ -29,6 +29,12 @@ public sealed class GeneralOptionsPage : DialogPage
     [TypeConverter(typeof(LanguageChoiceConverter))]
     public string TargetLanguage { get; set; } = TargetLanguages.FollowVisualStudio;
 
+    [LocalizedCategory(Category)]
+    [LocalizedDisplayName(nameof(UiText.SettingsTranslateErrors))]
+    [LocalizedDescription(nameof(UiText.SettingsTranslateErrorsDescription))]
+    [DefaultValue(true)]
+    public bool TranslateErrors { get; set; } = true;
+
     [LocalizedCategory(LocalCategory)]
     [LocalizedDisplayName(nameof(UiText.SettingsModel))]
     [LocalizedDescription(nameof(UiText.SettingsModelDescription))]

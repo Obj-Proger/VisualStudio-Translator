@@ -185,4 +185,10 @@
   <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
     <value>Запускает модель на самой быстрой исправной видеокарте — в несколько раз быстрее, чем на процессоре. Отключите, чтобы видеокарта оставалась свободной для другой работы.</value>
   </data>
+  <data name="SettingsTranslateErrors" xml:space="preserve">
+    <value>Переводить сообщения об ошибках</value>
+  </data>
+  <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
+    <value>Переводит сообщения об ошибках и предупреждениях, которые появляются при наведении указателя на подчёркнутый код, вместе с остальным текстом подсказки.</value>
+  </data>
 </root>

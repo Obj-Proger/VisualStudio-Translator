@@ -185,4 +185,10 @@
   <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
     <value>動作する最速のグラフィックス カードでモデルを実行します。プロセッサより数倍高速です。カードを他の作業用に空けておくにはオフにします。</value>
   </data>
+  <data name="SettingsTranslateErrors" xml:space="preserve">
+    <value>エラー メッセージを翻訳する</value>
+  </data>
+  <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
+    <value>下線付きのコードにポインターを合わせたときに表示されるエラーと警告のメッセージを、ツールヒントの他のテキストと一緒に翻訳します。</value>
+  </data>
 </root>

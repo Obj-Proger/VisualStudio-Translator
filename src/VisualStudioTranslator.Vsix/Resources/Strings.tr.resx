@@ -185,4 +185,10 @@
   <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
     <value>Modeli çalışan en hızlı ekran kartında, işlemciden birkaç kat daha hızlı çalıştırır. Kartı başka işler için boş tutmak için kapatın.</value>
   </data>
+  <data name="SettingsTranslateErrors" xml:space="preserve">
+    <value>Hata iletilerini çevir</value>
+  </data>
+  <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
+    <value>Altı çizili kodun üzerine gelindiğinde görüntülenen hata ve uyarı iletilerini, araç ipucunun diğer metniyle birlikte çevirir.</value>
+  </data>
 </root>

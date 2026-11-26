@@ -185,4 +185,10 @@
   <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
     <value>Führt das Modell auf der schnellsten funktionierenden Grafikkarte aus, mehrfach schneller als auf dem Prozessor. Deaktivieren Sie die Option, um die Grafikkarte für andere Arbeit frei zu halten.</value>
   </data>
+  <data name="SettingsTranslateErrors" xml:space="preserve">
+    <value>Fehlermeldungen übersetzen</value>
+  </data>
+  <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
+    <value>Übersetzt die Meldungen zu Fehlern und Warnungen, die beim Zeigen auf unterstrichenen Code erscheinen, zusammen mit dem übrigen Text der QuickInfo.</value>
+  </data>
 </root>

@@ -192,4 +192,10 @@
   <data name="SettingsUseGraphicsCardDescription" xml:space="preserve">
     <value>Runs the model on the fastest graphics card that works, several times faster than on the processor. Turn off to keep the card free for other work.</value>
   </data>
+  <data name="SettingsTranslateErrors" xml:space="preserve">
+    <value>Translate error messages</value>
+  </data>
+  <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
+    <value>Translates the messages of errors and warnings shown when you hover over underlined code, along with the rest of the tooltip.</value>
+  </data>
 </root>

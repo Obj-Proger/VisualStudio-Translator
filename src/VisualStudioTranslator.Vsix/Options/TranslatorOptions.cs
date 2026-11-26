@@ -17,8 +17,9 @@ namespace VisualStudioTranslator.Vsix.Options;
 /// <param name="DisplayLanguage">The language Visual Studio is shown in, as its UI thread knows it.</param>
 /// <param name="Model">The model chosen, as its tag (see <see cref="LocalModelSettings.ModelTags"/>).</param>
 /// <param name="UseGraphicsCard">Whether the model may run on a graphics card.</param>
+/// <param name="TranslateErrors">Whether the messages of errors and warnings in tooltips are translated too.</param>
 internal sealed record TranslatorSettings(
-    bool TranslateTooltips, string TargetLanguage, string DisplayLanguage, string Model, bool UseGraphicsCard)
+    bool TranslateTooltips, string TargetLanguage, string DisplayLanguage, string Model, bool UseGraphicsCard, bool TranslateErrors)
 {
     /// <summary>The language to translate into, or <see langword="null"/> when there is none.</summary>
     public string? ResolvedTargetLanguage =>
@@ -47,6 +48,7 @@ internal sealed class TranslatorOptions
     public const string TargetLanguageMoniker = "visualStudioTranslator.general.targetLanguage";
     public const string ModelMoniker = "visualStudioTranslator.localModel.model";
     public const string UseGraphicsCardMoniker = "visualStudioTranslator.localModel.useGraphicsCard";
+    public const string TranslateErrorsMoniker = "visualStudioTranslator.general.translateErrors";
 
     private const string Source = nameof(TranslatorOptions);
 
@@ -101,11 +103,11 @@ internal sealed class TranslatorOptions
         if (_package?.GeneralOptions is { } page)
         {
             return new TranslatorSettings(
-                page.TranslateTooltips, page.TargetLanguage, displayLanguage, page.Model, page.UseGraphicsCard);
+                page.TranslateTooltips, page.TargetLanguage, displayLanguage, page.Model, page.UseGraphicsCard, page.TranslateErrors);
         }
 
         return new TranslatorSettings(
-            true, TargetLanguages.FollowVisualStudio, displayLanguage, ModelChoiceConverter.Automatic, true);
+            true, TargetLanguages.FollowVisualStudio, displayLanguage, ModelChoiceConverter.Automatic, true, true);
     }
 
     // Null when Unified Settings is off or did not answer; the classic page holds the settings then.
@@ -128,6 +130,7 @@ internal sealed class TranslatorOptions
                 // picked them up yet still reads the ones it has from here rather than from the classic page.
                 SettingRetrieval<string> model = reader.GetValue<string>(ModelMoniker);
                 SettingRetrieval<bool> useGraphicsCard = reader.GetValue<bool>(UseGraphicsCardMoniker);
+                SettingRetrieval<bool> translateErrors = reader.GetValue<bool>(TranslateErrorsMoniker);
 
                 return new TranslatorSettings(
                     translate.Value,
@@ -136,7 +139,8 @@ internal sealed class TranslatorOptions
                     model.Outcome == SettingRetrievalOutcome.Success
                         ? model.Value ?? ModelChoiceConverter.Automatic
                         : ModelChoiceConverter.Automatic,
-                    useGraphicsCard.Outcome != SettingRetrievalOutcome.Success || useGraphicsCard.Value);
+                    OrTrue(useGraphicsCard),
+                    OrTrue(translateErrors));
             }
 
             return null;
@@ -153,6 +157,10 @@ internal sealed class TranslatorOptions
             return null;
         }
     }
+
+    // A setting on by default reads as on until Visual Studio has it.
+    private static bool OrTrue(SettingRetrieval<bool> setting) =>
+        setting.Outcome != SettingRetrievalOutcome.Success || setting.Value;
 
     private sealed record Snapshot(TranslatorSettings Settings, long ReadAt);
 
