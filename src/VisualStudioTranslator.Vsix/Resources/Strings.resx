@@ -45,14 +45,6 @@
     <value>Translation</value>
     <comment>Heads the translated section of a tooltip; also the accessible name of the translation box.</comment>
   </data>
-  <data name="ReturnsCaption" xml:space="preserve">
-    <value>Returns:</value>
-    <comment>As Visual Studio's own tooltip captions the returns section.</comment>
-  </data>
-  <data name="ValueCaption" xml:space="preserve">
-    <value>Value:</value>
-    <comment>As Visual Studio's own tooltip captions the value section.</comment>
-  </data>
   <data name="Translating" xml:space="preserve">
     <value>Translating…</value>
   </data>
@@ -165,10 +157,10 @@
     <value>The language model that translates on this computer, without sending your code anywhere.</value>
   </data>
   <data name="SettingsTranslateTooltips" xml:space="preserve">
-    <value>Translate documentation in tooltips</value>
+    <value>Translate tooltips</value>
   </data>
   <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
-    <value>Adds a translation of the documentation below the original when you hover over a symbol.</value>
+    <value>Translates the text of tooltips, such as documentation, when you hover over code, in any programming language.</value>
   </data>
   <data name="SettingsTargetLanguage" xml:space="preserve">
     <value>Translate into</value>

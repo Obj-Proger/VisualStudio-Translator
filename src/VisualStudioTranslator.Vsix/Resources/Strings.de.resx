@@ -44,12 +44,6 @@
   <data name="TranslationLabel" xml:space="preserve">
     <value>Übersetzung</value>
   </data>
-  <data name="ReturnsCaption" xml:space="preserve">
-    <value>Rückgabewerte:</value>
-  </data>
-  <data name="ValueCaption" xml:space="preserve">
-    <value>Wert:</value>
-  </data>
   <data name="Translating" xml:space="preserve">
     <value>Wird übersetzt…</value>
   </data>
@@ -156,10 +150,10 @@
     <value>Das Sprachmodell, das auf diesem Computer übersetzt, ohne Ihren Code irgendwohin zu senden.</value>
   </data>
   <data name="SettingsTranslateTooltips" xml:space="preserve">
-    <value>Dokumentation in QuickInfos übersetzen</value>
+    <value>QuickInfos übersetzen</value>
   </data>
   <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
-    <value>Fügt unter dem Original eine Übersetzung der Dokumentation hinzu, wenn Sie mit der Maus auf ein Symbol zeigen.</value>
+    <value>Übersetzt den Text von QuickInfos, etwa Dokumentation, wenn Sie auf Code zeigen, in jeder Programmiersprache.</value>
   </data>
   <data name="SettingsTargetLanguage" xml:space="preserve">
     <value>Übersetzen in</value>

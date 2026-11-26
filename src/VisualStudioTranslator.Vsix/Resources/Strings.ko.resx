@@ -44,12 +44,6 @@
   <data name="TranslationLabel" xml:space="preserve">
     <value>번역</value>
   </data>
-  <data name="ReturnsCaption" xml:space="preserve">
-    <value>반환 값:</value>
-  </data>
-  <data name="ValueCaption" xml:space="preserve">
-    <value>값:</value>
-  </data>
   <data name="Translating" xml:space="preserve">
     <value>번역 중…</value>
   </data>
@@ -156,10 +150,10 @@
     <value>코드를 어디에도 보내지 않고 이 컴퓨터에서 번역하는 언어 모델입니다.</value>
   </data>
   <data name="SettingsTranslateTooltips" xml:space="preserve">
-    <value>도구 설명의 문서 번역</value>
+    <value>도구 설명 번역</value>
   </data>
   <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
-    <value>기호 위에 마우스를 올리면 원문 아래에 문서 번역을 추가합니다.</value>
+    <value>모든 프로그래밍 언어의 코드 위로 마우스를 가져갈 때 설명서 등 도구 설명의 텍스트를 번역합니다.</value>
   </data>
   <data name="SettingsTargetLanguage" xml:space="preserve">
     <value>번역 대상</value>

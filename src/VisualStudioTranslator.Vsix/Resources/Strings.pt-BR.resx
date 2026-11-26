@@ -44,12 +44,6 @@
   <data name="TranslationLabel" xml:space="preserve">
     <value>Tradução</value>
   </data>
-  <data name="ReturnsCaption" xml:space="preserve">
-    <value>Retorna:</value>
-  </data>
-  <data name="ValueCaption" xml:space="preserve">
-    <value>Valor:</value>
-  </data>
   <data name="Translating" xml:space="preserve">
     <value>Traduzindo…</value>
   </data>
@@ -156,10 +150,10 @@
     <value>O modelo de linguagem que traduz neste computador, sem enviar seu código para lugar nenhum.</value>
   </data>
   <data name="SettingsTranslateTooltips" xml:space="preserve">
-    <value>Traduzir a documentação nas dicas de ferramentas</value>
+    <value>Traduzir dicas de ferramenta</value>
   </data>
   <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
-    <value>Adiciona uma tradução da documentação abaixo do original quando você passa o ponteiro sobre um símbolo.</value>
+    <value>Traduz o texto das dicas de ferramenta, como a documentação, ao passar o mouse sobre o código, em qualquer linguagem de programação.</value>
   </data>
   <data name="SettingsTargetLanguage" xml:space="preserve">
     <value>Traduzir para</value>

@@ -44,12 +44,6 @@
   <data name="TranslationLabel" xml:space="preserve">
     <value>Překlad</value>
   </data>
-  <data name="ReturnsCaption" xml:space="preserve">
-    <value>Vrací:</value>
-  </data>
-  <data name="ValueCaption" xml:space="preserve">
-    <value>Hodnota:</value>
-  </data>
   <data name="Translating" xml:space="preserve">
     <value>Překládá se…</value>
   </data>
@@ -156,10 +150,10 @@
     <value>Jazykový model, který překládá na tomto počítači a nikam neodesílá váš kód.</value>
   </data>
   <data name="SettingsTranslateTooltips" xml:space="preserve">
-    <value>Překládat dokumentaci v popiscích</value>
+    <value>Překládat popisky</value>
   </data>
   <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
-    <value>Při najetí myší na symbol přidá pod originál překlad dokumentace.</value>
+    <value>Překládá text popisků, například dokumentaci, po najetí myší na kód v libovolném programovacím jazyce.</value>
   </data>
   <data name="SettingsTargetLanguage" xml:space="preserve">
     <value>Přeložit do</value>

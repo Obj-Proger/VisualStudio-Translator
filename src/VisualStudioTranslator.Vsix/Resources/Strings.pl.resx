@@ -44,12 +44,6 @@
   <data name="TranslationLabel" xml:space="preserve">
     <value>Tłumaczenie</value>
   </data>
-  <data name="ReturnsCaption" xml:space="preserve">
-    <value>Zwraca:</value>
-  </data>
-  <data name="ValueCaption" xml:space="preserve">
-    <value>Wartość:</value>
-  </data>
   <data name="Translating" xml:space="preserve">
     <value>Tłumaczenie…</value>
   </data>
@@ -156,10 +150,10 @@
     <value>Model językowy, który tłumaczy na tym komputerze, nie wysyłając nigdzie Twojego kodu.</value>
   </data>
   <data name="SettingsTranslateTooltips" xml:space="preserve">
-    <value>Tłumacz dokumentację w etykietkach narzędzi</value>
+    <value>Tłumacz etykietki</value>
   </data>
   <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
-    <value>Dodaje tłumaczenie dokumentacji pod oryginałem po wskazaniu symbolu kursorem.</value>
+    <value>Tłumaczy tekst etykietek, na przykład dokumentację, po wskazaniu kodu w dowolnym języku programowania.</value>
   </data>
   <data name="SettingsTargetLanguage" xml:space="preserve">
     <value>Tłumacz na</value>

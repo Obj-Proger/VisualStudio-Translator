@@ -44,12 +44,6 @@
   <data name="TranslationLabel" xml:space="preserve">
     <value>翻译</value>
   </data>
-  <data name="ReturnsCaption" xml:space="preserve">
-    <value>返回结果:</value>
-  </data>
-  <data name="ValueCaption" xml:space="preserve">
-    <value>值:</value>
-  </data>
   <data name="Translating" xml:space="preserve">
     <value>正在翻译…</value>
   </data>
@@ -156,10 +150,10 @@
     <value>在此计算机上进行翻译的语言模型，不会将你的代码发送到任何地方。</value>
   </data>
   <data name="SettingsTranslateTooltips" xml:space="preserve">
-    <value>翻译工具提示中的文档</value>
+    <value>翻译工具提示</value>
   </data>
   <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
-    <value>悬停在符号上时，在原文下方添加文档的译文。</value>
+    <value>将鼠标悬停在任何编程语言的代码上时，翻译工具提示中的文本，例如文档。</value>
   </data>
   <data name="SettingsTargetLanguage" xml:space="preserve">
     <value>翻译为</value>

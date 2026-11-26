@@ -44,12 +44,6 @@
   <data name="TranslationLabel" xml:space="preserve">
     <value>Перевод</value>
   </data>
-  <data name="ReturnsCaption" xml:space="preserve">
-    <value>Возврат:</value>
-  </data>
-  <data name="ValueCaption" xml:space="preserve">
-    <value>Значение:</value>
-  </data>
   <data name="Translating" xml:space="preserve">
     <value>Выполняется перевод…</value>
   </data>
@@ -156,10 +150,10 @@
     <value>Языковая модель, которая переводит на этом компьютере, никуда не отправляя ваш код.</value>
   </data>
   <data name="SettingsTranslateTooltips" xml:space="preserve">
-    <value>Переводить документацию в подсказках</value>
+    <value>Переводить подсказки</value>
   </data>
   <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
-    <value>Добавляет перевод документации под оригиналом при наведении указателя на символ.</value>
+    <value>Переводит текст подсказок, например документацию, при наведении указателя на код на любом языке программирования.</value>
   </data>
   <data name="SettingsTargetLanguage" xml:space="preserve">
     <value>Перевести на</value>

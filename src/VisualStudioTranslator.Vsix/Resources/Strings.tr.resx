@@ -44,12 +44,6 @@
   <data name="TranslationLabel" xml:space="preserve">
     <value>Çeviri</value>
   </data>
-  <data name="ReturnsCaption" xml:space="preserve">
-    <value>Döndürülenler:</value>
-  </data>
-  <data name="ValueCaption" xml:space="preserve">
-    <value>Değer:</value>
-  </data>
   <data name="Translating" xml:space="preserve">
     <value>Çevriliyor…</value>
   </data>
@@ -156,10 +150,10 @@
     <value>Kodunuzu hiçbir yere göndermeden bu bilgisayarda çeviri yapan dil modeli.</value>
   </data>
   <data name="SettingsTranslateTooltips" xml:space="preserve">
-    <value>Araç ipuçlarındaki belgeleri çevir</value>
+    <value>Araç ipuçlarını çevir</value>
   </data>
   <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
-    <value>Bir sembolün üzerine geldiğinizde belgelerin çevirisini orijinalin altına ekler.</value>
+    <value>Herhangi bir programlama dilinde kodun üzerine gelindiğinde, belgeler gibi araç ipucu metinlerini çevirir.</value>
   </data>
   <data name="SettingsTargetLanguage" xml:space="preserve">
     <value>Çevrilecek dil</value>

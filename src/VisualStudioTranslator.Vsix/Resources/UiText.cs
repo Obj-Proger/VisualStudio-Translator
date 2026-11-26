@@ -8,7 +8,7 @@ namespace VisualStudioTranslator.Vsix.Resources;
 /// The extension's own words, in the language Visual Studio is shown in: captions in tooltips, the translator window,
 /// the bar offering the model. They come from Strings.resx and its translations, one file per language the extension
 /// translates into; a language without its own file falls back to English. Where Visual Studio has its own word for
-/// the same thing, such as the caption of a tooltip's returns section, the translation uses that word.
+/// the same thing, the translation uses that word.
 /// </summary>
 internal static class UiText
 {
@@ -27,10 +27,6 @@ internal static class UiText
     }
 
     public static string TranslationLabel => Get();
-
-    public static string ReturnsCaption => Get();
-
-    public static string ValueCaption => Get();
 
     public static string Translating => Get();
 

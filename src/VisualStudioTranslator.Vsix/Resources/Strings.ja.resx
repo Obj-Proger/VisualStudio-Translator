@@ -44,12 +44,6 @@
   <data name="TranslationLabel" xml:space="preserve">
     <value>翻訳</value>
   </data>
-  <data name="ReturnsCaption" xml:space="preserve">
-    <value>戻り値:</value>
-  </data>
-  <data name="ValueCaption" xml:space="preserve">
-    <value>値:</value>
-  </data>
   <data name="Translating" xml:space="preserve">
     <value>翻訳中…</value>
   </data>
@@ -156,10 +150,10 @@
     <value>コードをどこにも送信せずに、このコンピューター上で翻訳する言語モデル。</value>
   </data>
   <data name="SettingsTranslateTooltips" xml:space="preserve">
-    <value>ヒントのドキュメントを翻訳する</value>
+    <value>ツールヒントを翻訳する</value>
   </data>
   <data name="SettingsTranslateTooltipsDescription" xml:space="preserve">
-    <value>シンボルをポイントしたときに、ドキュメントの翻訳を原文の下に追加します。</value>
+    <value>任意のプログラミング言語のコードにポインターを合わせたときに、ドキュメントなどのツールヒントのテキストを翻訳します。</value>
   </data>
   <data name="SettingsTargetLanguage" xml:space="preserve">
     <value>翻訳先</value>
