@@ -191,4 +191,16 @@
   <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
     <value>Překládá zprávy o chybách a upozorněních zobrazené po najetí myší na podtržený kód spolu se zbytkem textu popisku.</value>
   </data>
+  <data name="SettingsReplaceOriginal" xml:space="preserve">
+    <value>Nahrazovat originál překladem (experimentální)</value>
+  </data>
+  <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
+    <value>Zobrazí překlad místo původního textu popisku s odkazem pro návrat k originálu. Pokud text nelze přesně přiřadit, zobrazí se překlad jako obvykle pod ním.</value>
+  </data>
+  <data name="ShowOriginal" xml:space="preserve">
+    <value>Zobrazit originál</value>
+  </data>
+  <data name="ShowTranslation" xml:space="preserve">
+    <value>Zobrazit překlad</value>
+  </data>
 </root>

@@ -191,4 +191,16 @@
   <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
     <value>下線付きのコードにポインターを合わせたときに表示されるエラーと警告のメッセージを、ツールヒントの他のテキストと一緒に翻訳します。</value>
   </data>
+  <data name="SettingsReplaceOriginal" xml:space="preserve">
+    <value>原文を翻訳で置き換える (試験段階)</value>
+  </data>
+  <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
+    <value>ツールヒントの元のテキストの代わりに翻訳を表示し、原文に戻すリンクを付けます。テキストを正確に対応付けられない場合は、通常どおり翻訳をその下に表示します。</value>
+  </data>
+  <data name="ShowOriginal" xml:space="preserve">
+    <value>原文を表示</value>
+  </data>
+  <data name="ShowTranslation" xml:space="preserve">
+    <value>翻訳を表示</value>
+  </data>
 </root>

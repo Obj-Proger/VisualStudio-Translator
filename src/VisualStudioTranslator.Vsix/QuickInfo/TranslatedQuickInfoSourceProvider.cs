@@ -55,7 +55,7 @@ internal sealed class TranslatedQuickInfoSource(
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
             IReadOnlyList<object> untranslated = settings.TranslateErrors ? [] : ErrorsAt(session);
-            TooltipTranslation translation = new(viewElements, session, untranslated);
+            TooltipTranslation translation = new(viewElements, session, untranslated, settings.ReplaceOriginal);
 
             // No span of its own: the tooltip covers what the other sources say it covers.
             return new QuickInfoItem(null, translation.Element);

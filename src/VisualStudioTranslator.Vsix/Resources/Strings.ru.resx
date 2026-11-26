@@ -191,4 +191,16 @@
   <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
     <value>Переводит сообщения об ошибках и предупреждениях, которые появляются при наведении указателя на подчёркнутый код, вместе с остальным текстом подсказки.</value>
   </data>
+  <data name="SettingsReplaceOriginal" xml:space="preserve">
+    <value>Заменять оригинал переводом (экспериментально)</value>
+  </data>
+  <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
+    <value>Показывает перевод на месте исходного текста подсказки со ссылкой для возврата к оригиналу. Если текст не удаётся точно сопоставить, перевод, как обычно, показывается под ним.</value>
+  </data>
+  <data name="ShowOriginal" xml:space="preserve">
+    <value>Показать оригинал</value>
+  </data>
+  <data name="ShowTranslation" xml:space="preserve">
+    <value>Показать перевод</value>
+  </data>
 </root>

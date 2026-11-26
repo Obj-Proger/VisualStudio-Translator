@@ -40,6 +40,14 @@
       "enableWhen": "${config:visualStudioTranslator.general.translateTooltips}=='true'",
       "order": 2
     },
+    "visualStudioTranslator.general.replaceOriginal": {
+      "type": "boolean",
+      "title": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsReplaceOriginal;..\\VisualStudioTranslator.Vsix.dll",
+      "description": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsReplaceOriginalDescription;..\\VisualStudioTranslator.Vsix.dll",
+      "default": false,
+      "enableWhen": "${config:visualStudioTranslator.general.translateTooltips}=='true'",
+      "order": 3
+    },
     "visualStudioTranslator.localModel.model": {
       "type": "string",
       "title": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsModel;..\\VisualStudioTranslator.Vsix.dll",

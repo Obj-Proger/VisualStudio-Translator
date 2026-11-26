@@ -191,4 +191,16 @@
   <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
     <value>Traduz as mensagens de erros e avisos exibidas ao passar o mouse sobre código sublinhado, junto com o restante do texto da dica de ferramenta.</value>
   </data>
+  <data name="SettingsReplaceOriginal" xml:space="preserve">
+    <value>Substituir o original pela tradução (experimental)</value>
+  </data>
+  <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
+    <value>Mostra a tradução no lugar do texto original da dica de ferramenta, com um link para voltar ao original. Se o texto não puder ser correspondido exatamente, a tradução é mostrada abaixo dele, como de costume.</value>
+  </data>
+  <data name="ShowOriginal" xml:space="preserve">
+    <value>Mostrar original</value>
+  </data>
+  <data name="ShowTranslation" xml:space="preserve">
+    <value>Mostrar tradução</value>
+  </data>
 </root>

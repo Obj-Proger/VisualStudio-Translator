@@ -110,6 +110,14 @@ internal static class UiText
 
     public static string SettingsTranslateErrorsDescription => Get();
 
+    public static string SettingsReplaceOriginal => Get();
+
+    public static string SettingsReplaceOriginalDescription => Get();
+
+    public static string ShowOriginal => Get();
+
+    public static string ShowTranslation => Get();
+
     public static string SettingsSameAsVisualStudio => Get();
 
     public static string SettingsModel => Get();

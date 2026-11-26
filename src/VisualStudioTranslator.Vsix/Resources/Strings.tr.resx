@@ -191,4 +191,16 @@
   <data name="SettingsTranslateErrorsDescription" xml:space="preserve">
     <value>Altı çizili kodun üzerine gelindiğinde görüntülenen hata ve uyarı iletilerini, araç ipucunun diğer metniyle birlikte çevirir.</value>
   </data>
+  <data name="SettingsReplaceOriginal" xml:space="preserve">
+    <value>Orijinali çeviriyle değiştir (deneysel)</value>
+  </data>
+  <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
+    <value>Çeviriyi, araç ipucunun özgün metninin yerinde, orijinale dönmek için bir bağlantıyla gösterir. Metin tam olarak eşleştirilemezse çeviri her zamanki gibi altında gösterilir.</value>
+  </data>
+  <data name="ShowOriginal" xml:space="preserve">
+    <value>Orijinali göster</value>
+  </data>
+  <data name="ShowTranslation" xml:space="preserve">
+    <value>Çeviriyi göster</value>
+  </data>
 </root>

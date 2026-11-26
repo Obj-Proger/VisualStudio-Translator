@@ -1,11 +1,15 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Input;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Language.StandardClassification;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Adornments;
 using VisualStudioTranslator.Core.Documentation;
 using VisualStudioTranslator.Vsix.Resources;
+using VisualStudioTranslator.Vsix.Service;
 using VisualStudioTranslator.Vsix.Translation;
 
 namespace VisualStudioTranslator.Vsix.QuickInfo;
@@ -20,6 +24,12 @@ namespace VisualStudioTranslator.Vsix.QuickInfo;
 /// translation; the same comment hovered again comes from the Engine's cache. Text already in the language asked
 /// for comes back unchanged and is not shown twice.
 /// </para>
+/// <para>
+/// With the experimental setting on, the translation takes the place of the original lines instead
+/// (<see cref="InPlaceTranslation"/>): there is no label, the strip alone shows while the translation is on its way,
+/// and a link then switches between the translation and the original. Where the lines cannot be found exactly, the
+/// translation is shown below as usual.
+/// </para>
 /// </summary>
 internal sealed class TooltipTranslation
 {
@@ -28,19 +38,23 @@ internal sealed class TooltipTranslation
     private readonly IViewElementFactoryService _viewElements;
     private readonly IAsyncQuickInfoSession _session;
     private readonly IReadOnlyList<object> _untranslated;
+    private readonly bool _inPlace;
     private readonly ContentControl _host;
     private bool _started;
+    private IReadOnlyList<TranslatedLine>? _pendingLines;
 
     /// <param name="untranslated">Tooltip content whose lines are to be left as they are: the messages of errors and
     /// warnings, when the user wants those in the original.</param>
+    /// <param name="inPlace">Whether the translation is to take the place of the original lines.</param>
     public TooltipTranslation(
-        IViewElementFactoryService viewElements, IAsyncQuickInfoSession session, IReadOnlyList<object> untranslated)
+        IViewElementFactoryService viewElements, IAsyncQuickInfoSession session, IReadOnlyList<object> untranslated, bool inPlace)
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
         _viewElements = viewElements;
         _session = session;
         _untranslated = untranslated;
+        _inPlace = inPlace;
         _host = new ContentControl { Focusable = false, Visibility = Visibility.Collapsed };
 
         session.StateChanged += OnStateChanged;
@@ -139,9 +153,63 @@ internal sealed class TooltipTranslation
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
+        if (_inPlace && lines.Count > 0)
+        {
+            // The tooltip is looked through only once it is on screen; until then there is nothing to look through.
+            if (PresentationSource.FromVisual(_host) is null)
+            {
+                _pendingLines = lines;
+                _host.Loaded += ShowWhenLoaded;
+                return;
+            }
+
+            if (InPlaceTranslation.TryApply(_host, lines) is { } inPlace)
+            {
+                _host.Content = Switch(inPlace);
+                _host.Visibility = Visibility.Visible;
+                return;
+            }
+
+            DiagnosticLog.Info(Source, "The tooltip's lines could not be found exactly; the translation is shown below them.");
+        }
+
         UIElement? translation = lines.Count == 0 ? null : Render(TranslatedElements.Create(lines));
         _host.Content = translation;
         _host.Visibility = translation is null ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void ShowWhenLoaded(object sender, RoutedEventArgs e)
+    {
+        ThreadHelper.ThrowIfNotOnUIThread();
+
+        _host.Loaded -= ShowWhenLoaded;
+
+        if (_pendingLines is { } lines && _session.State != QuickInfoSessionState.Dismissed)
+        {
+            _pendingLines = null;
+            Show(lines);
+        }
+    }
+
+    // The link under a translation shown in place, in the look of Visual Studio's own links: it shows the original,
+    // and then the translation again.
+    private static TextBlock Switch(InPlaceTranslation inPlace)
+    {
+        Run words = new(UiText.ShowOriginal);
+        Hyperlink link = new(words) { TextDecorations = null, Cursor = Cursors.Hand };
+        link.SetResourceReference(TextElement.ForegroundProperty, EnvironmentColors.ControlLinkTextBrushKey);
+        link.MouseEnter += (_, _) => link.TextDecorations = TextDecorations.Underline;
+        link.MouseLeave += (_, _) => link.TextDecorations = null;
+        link.Click += (_, _) =>
+        {
+            inPlace.Toggle();
+            words.Text = inPlace.ShowsTranslation ? UiText.ShowOriginal : UiText.ShowTranslation;
+        };
+
+        TextBlock text = new(link) { Margin = new Thickness(0, 2, 0, 0) };
+        text.SetResourceReference(TextBlock.FontFamilyProperty, VsFonts.EnvironmentFontFamilyKey);
+        text.SetResourceReference(TextBlock.FontSizeProperty, VsFonts.EnvironmentFontSizeKey);
+        return text;
     }
 
     // The translated lines that differ from their originals, each with the caption it stood under.
@@ -195,9 +263,16 @@ internal sealed class TooltipTranslation
     private static string Normalize(string text) => string.Join(" ", text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
     // The words in the grey of code the compiler leaves out, over the strip: present, but not yet the thing itself.
+    // A translation that is to take the original's place shows the strip alone.
     private StackPanel Pending()
     {
         StackPanel pending = new();
+
+        if (_inPlace)
+        {
+            pending.Children.Add(new TranslationProgress { Margin = new Thickness(0, 4, 0, 2) });
+            return pending;
+        }
         UIElement? words = Render(new ContainerElement(
             ContainerElementStyle.Stacked,
             new ClassifiedTextElement(new ClassifiedTextRun(

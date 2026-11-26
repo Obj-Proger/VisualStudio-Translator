@@ -35,6 +35,12 @@ public sealed class GeneralOptionsPage : DialogPage
     [DefaultValue(true)]
     public bool TranslateErrors { get; set; } = true;
 
+    [LocalizedCategory(Category)]
+    [LocalizedDisplayName(nameof(UiText.SettingsReplaceOriginal))]
+    [LocalizedDescription(nameof(UiText.SettingsReplaceOriginalDescription))]
+    [DefaultValue(false)]
+    public bool ReplaceOriginal { get; set; }
+
     [LocalizedCategory(LocalCategory)]
     [LocalizedDisplayName(nameof(UiText.SettingsModel))]
     [LocalizedDescription(nameof(UiText.SettingsModelDescription))]
