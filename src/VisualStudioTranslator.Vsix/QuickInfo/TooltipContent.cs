@@ -33,6 +33,32 @@ internal static class TooltipContent
         PredefinedClassificationTypeNames.Other,
     };
 
+    // The shapes already described in the log, so that each is described once.
+    private static readonly HashSet<string> DescribedShapes = [];
+
+    /// <summary>
+    /// What a tooltip is made of, without its text: the kinds of element and the colours its runs are drawn in. It is
+    /// what tells, from the log, why a tooltip in some language was not translated.
+    /// </summary>
+    /// <returns>The description, or <see langword="null"/> when this shape has been described before.</returns>
+    public static string? DescribeOnce(IEnumerable<object> items)
+    {
+        SortedSet<string> elements = new(StringComparer.Ordinal);
+        SortedSet<string> colours = new(StringComparer.Ordinal);
+
+        foreach (object item in items)
+        {
+            Describe(item, elements, colours);
+        }
+
+        string shape = $"elements: {string.Join(", ", elements)}; colours: {string.Join(", ", colours)}";
+
+        lock (DescribedShapes)
+        {
+            return DescribedShapes.Add(shape) ? shape : null;
+        }
+    }
+
     public static IReadOnlyList<TooltipLine> Read(IEnumerable<object> items)
     {
         List<TooltipLine> lines = [];
@@ -63,6 +89,35 @@ internal static class TooltipContent
 
             case string text when !string.IsNullOrWhiteSpace(text):
                 AddLine([new ClassifiedTextRun(PredefinedClassificationTypeNames.NaturalLanguage, text)], lines);
+                break;
+        }
+    }
+
+    private static void Describe(object? element, SortedSet<string> elements, SortedSet<string> colours)
+    {
+        if (element is null)
+        {
+            return;
+        }
+
+        elements.Add(element.GetType().FullName ?? element.GetType().Name);
+
+        switch (element)
+        {
+            case ContainerElement container:
+                foreach (object child in container.Elements)
+                {
+                    Describe(child, elements, colours);
+                }
+
+                break;
+
+            case ClassifiedTextElement text:
+                foreach (ClassifiedTextRun run in text.Runs)
+                {
+                    colours.Add((run.ClassificationTypeName ?? "(none)") + (run.NavigationAction is null ? string.Empty : " (link)"));
+                }
+
                 break;
         }
     }

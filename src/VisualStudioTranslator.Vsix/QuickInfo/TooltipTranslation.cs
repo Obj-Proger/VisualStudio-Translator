@@ -88,7 +88,7 @@ internal sealed class TooltipTranslation
         }
         catch (Exception ex)
         {
-            ActivityLog.LogError(Source, $"Reading the tooltip failed: {ex}");
+            DiagnosticLog.Error(Source, $"Reading the tooltip failed: {ex}");
         }
     }
 
@@ -120,6 +120,11 @@ internal sealed class TooltipTranslation
 
         if (prose.Count == 0)
         {
+            if (TooltipContent.DescribeOnce(content) is { } shape)
+            {
+                DiagnosticLog.Info(Source, $"A tooltip with nothing to translate: {shape}.");
+            }
+
             return;
         }
 
@@ -165,7 +170,7 @@ internal sealed class TooltipTranslation
         }
         catch (Exception ex)
         {
-            ActivityLog.LogError(Source, $"Translating the tooltip failed: {ex}");
+            DiagnosticLog.Error(Source, $"Translating the tooltip failed: {ex}");
         }
     }
 

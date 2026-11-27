@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.Text.Adornments;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using VisualStudioTranslator.Vsix.Options;
+using VisualStudioTranslator.Vsix.Service;
 
 namespace VisualStudioTranslator.Vsix.QuickInfo;
 
@@ -60,13 +61,15 @@ internal sealed class TranslatedQuickInfoSource(
             // No span of its own: the tooltip covers what the other sources say it covers.
             return new QuickInfoItem(null, translation.Element);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
         }
         catch (Exception ex)
         {
-            ActivityLog.LogError(Source, $"Quick Info failed: {ex}");
+            // Any other failure, a cancellation that is not the tooltip's own included, stays here: Quick Info would
+            // report it to the user as a fault of some extension.
+            DiagnosticLog.Error(Source, $"Quick Info failed: {ex}");
             return null;
         }
     }

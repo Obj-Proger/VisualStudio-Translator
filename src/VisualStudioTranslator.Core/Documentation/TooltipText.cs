@@ -21,14 +21,19 @@ public sealed record TranslatedPiece(string Text, int FirstCodeRun = -1, int Cod
 /// <list type="bullet">
 /// <item>Each line is one paragraph. Runs of code next to each other are one code span, which the pipeline keeps
 /// whole, so "LanguageTag.Normalize(string)" stays one name rather than six.</item>
-/// <item>A name quoted in the text, as compilers write them ('value', `Count`), is code too.</item>
+/// <item>A name quoted in the text, as compilers write them ('value', `Count`), and a web address are code too, so the
+/// translation can neither translate nor break them.</item>
+/// <item>A line break inside text is where the source comment happened to wrap, not where the translation should:
+/// it is sent as a space. An empty line between two pieces of text stays.</item>
 /// <item>A line is worth translating only when its text holds at least two words: a signature, a caption such as
 /// "Returns:" or a lone name is not prose.</item>
 /// </list>
 /// </summary>
 public static class TooltipText
 {
-    private static readonly Regex Quoted = new(@"'[^'\s]{1,80}'|`[^`\s]{1,80}`", RegexOptions.Compiled);
+    private static readonly Regex Quoted = new(@"https?://[^\s)\]>]+|'[^'\s]{1,80}'|`[^`\s]{1,80}`", RegexOptions.Compiled);
+    private static readonly Regex EmptyLine = new(@"\r?\n[ \t]*\r?\n", RegexOptions.Compiled);
+    private static readonly Regex LineBreak = new(@"[ \t]*\r?\n[ \t]*", RegexOptions.Compiled);
     private static readonly Regex Word = new(@"\p{L}{2,}", RegexOptions.Compiled);
     private static readonly Regex Whitespace = new(@"\s+", RegexOptions.Compiled);
 
@@ -116,9 +121,10 @@ public static class TooltipText
         return result;
     }
 
-    // Prose with quoted names taken out as code.
+    // Prose with quoted names and web addresses taken out as code, and wrapped lines joined.
     private static void AddProse(List<Inline> inlines, string text)
     {
+        text = string.Join("\n\n", EmptyLine.Split(text).Select(part => LineBreak.Replace(part, " ")));
         int at = 0;
 
         foreach (Match quoted in Quoted.Matches(text))

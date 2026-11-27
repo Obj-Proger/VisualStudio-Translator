@@ -67,6 +67,35 @@ public sealed class TooltipTextTests
     }
 
     [Fact]
+    public void ToDocument_WebAddressInText_IsACodeSpan()
+    {
+        Paragraph paragraph = (Paragraph)TooltipText.ToDocument(
+            [[Text("Writes a message. [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/log_static)")]])
+            .Summary!.Blocks.Single();
+
+        paragraph.Inlines.OfType<CodeSpan>().Single().Text
+            .Should().Be("https://developer.mozilla.org/docs/Web/API/console/log_static");
+    }
+
+    [Fact]
+    public void ToDocument_LineBreakInsideText_IsASpace()
+    {
+        Paragraph paragraph = (Paragraph)TooltipText.ToDocument([[Text("Values above the maximum become the\n  maximum.")]])
+            .Summary!.Blocks.Single();
+
+        paragraph.Inlines.Single().Should().BeOfType<TextRun>().Which.Text.Should().Be("Values above the maximum become the maximum.");
+    }
+
+    [Fact]
+    public void ToDocument_EmptyLineInsideText_Stays()
+    {
+        Paragraph paragraph = (Paragraph)TooltipText.ToDocument([[Text("First part of it.\n\nSecond part of it.")]])
+            .Summary!.Blocks.Single();
+
+        paragraph.Inlines.Single().Should().BeOfType<TextRun>().Which.Text.Should().Be("First part of it.\n\nSecond part of it.");
+    }
+
+    [Fact]
     public void FromDocument_TranslatedLine_PointsBackAtTheOriginalCodeRuns()
     {
         DocumentModel translated = new()
