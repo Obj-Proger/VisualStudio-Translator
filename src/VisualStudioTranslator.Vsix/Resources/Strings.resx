@@ -199,10 +199,10 @@
     <value>Translates the messages of errors and warnings shown when you hover over underlined code, along with the rest of the tooltip.</value>
   </data>
   <data name="SettingsReplaceOriginal" xml:space="preserve">
-    <value>Replace the original with the translation (experimental)</value>
+    <value>Replace the original with the translation</value>
   </data>
   <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
-    <value>Shows the translation in place of the original text of the tooltip, with a link to switch back. Where the text cannot be matched exactly, the translation is shown below it as usual.</value>
+    <value>Shows the translation in place of the original text of the tooltip, with a link to switch back. When this is off, or where the text cannot be matched exactly, the translation is shown below the original.</value>
   </data>
   <data name="ShowOriginal" xml:space="preserve">
     <value>Show original</value>

@@ -34,7 +34,7 @@ internal sealed class LanguageChoiceConverter : StringConverter
         value is string text ? TagOf(text) : base.ConvertFrom(context, culture, value);
 
     private static string LabelOf(string tag) =>
-        tag == TargetLanguages.FollowVisualStudio ? FollowVisualStudioLabel : TargetLanguages.NativeName(tag);
+        tag == TargetLanguages.FollowVisualStudio ? FollowVisualStudioLabel : TargetLanguages.ListName(tag);
 
     private static string TagOf(string text)
     {
@@ -43,6 +43,6 @@ internal sealed class LanguageChoiceConverter : StringConverter
             return TargetLanguages.FollowVisualStudio;
         }
 
-        return TargetLanguages.Choices.FirstOrDefault(tag => TargetLanguages.NativeName(tag) == text) ?? text;
+        return TargetLanguages.Choices.FirstOrDefault(tag => TargetLanguages.ListName(tag) == text) ?? text;
     }
 }

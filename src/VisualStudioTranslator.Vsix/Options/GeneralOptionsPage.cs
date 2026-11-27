@@ -38,8 +38,8 @@ public sealed class GeneralOptionsPage : DialogPage
     [LocalizedCategory(Category)]
     [LocalizedDisplayName(nameof(UiText.SettingsReplaceOriginal))]
     [LocalizedDescription(nameof(UiText.SettingsReplaceOriginalDescription))]
-    [DefaultValue(false)]
-    public bool ReplaceOriginal { get; set; }
+    [DefaultValue(true)]
+    public bool ReplaceOriginal { get; set; } = true;
 
     [LocalizedCategory(LocalCategory)]
     [LocalizedDisplayName(nameof(UiText.SettingsModel))]

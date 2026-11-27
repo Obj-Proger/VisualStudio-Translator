@@ -192,10 +192,10 @@
     <value>翻译将鼠标悬停在带下划线的代码上时显示的错误和警告消息，以及工具提示中的其他文本。</value>
   </data>
   <data name="SettingsReplaceOriginal" xml:space="preserve">
-    <value>用译文替换原文(实验性)</value>
+    <value>用译文替换原文</value>
   </data>
   <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
-    <value>在工具提示中用译文替换原文显示，并提供切换回原文的链接。如果无法精确匹配文本，译文将照常显示在其下方。</value>
+    <value>在工具提示中用译文替换原文显示，并提供切换回原文的链接。如果关闭此选项或无法精确匹配文本，译文将显示在原文下方。</value>
   </data>
   <data name="ShowOriginal" xml:space="preserve">
     <value>显示原文</value>

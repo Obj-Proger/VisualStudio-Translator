@@ -72,7 +72,7 @@ internal sealed class TranslatorView : UserControl
 
         foreach (string tag in TargetLanguages.Choices)
         {
-            _language.Items.Add(new ComboBoxItem { Content = TargetLanguages.NativeName(tag), Tag = tag });
+            _language.Items.Add(new ComboBoxItem { Content = TargetLanguages.ListName(tag), Tag = tag });
         }
 
         _language.SelectionChanged += (_, _) => RememberLanguage();

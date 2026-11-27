@@ -192,10 +192,10 @@
     <value>Tłumaczy komunikaty o błędach i ostrzeżeniach wyświetlane po wskazaniu podkreślonego kodu wraz z resztą tekstu etykietki.</value>
   </data>
   <data name="SettingsReplaceOriginal" xml:space="preserve">
-    <value>Zastępuj oryginał tłumaczeniem (eksperymentalne)</value>
+    <value>Zastępuj oryginał tłumaczeniem</value>
   </data>
   <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
-    <value>Wyświetla tłumaczenie w miejscu oryginalnego tekstu etykietki, z linkiem umożliwiającym powrót do oryginału. Jeśli tekstu nie da się dokładnie dopasować, tłumaczenie jest jak zwykle wyświetlane pod nim.</value>
+    <value>Wyświetla tłumaczenie w miejscu oryginalnego tekstu etykietki, z linkiem umożliwiającym powrót do oryginału. Jeśli opcja jest wyłączona lub tekstu nie da się dokładnie dopasować, tłumaczenie jest wyświetlane pod oryginałem.</value>
   </data>
   <data name="ShowOriginal" xml:space="preserve">
     <value>Pokaż oryginał</value>

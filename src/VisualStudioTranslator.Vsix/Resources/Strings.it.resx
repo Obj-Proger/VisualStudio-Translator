@@ -192,10 +192,10 @@
     <value>Traduce i messaggi di errori e avvisi visualizzati passando il mouse sul codice sottolineato, insieme al resto del testo della descrizione comando.</value>
   </data>
   <data name="SettingsReplaceOriginal" xml:space="preserve">
-    <value>Sostituisci l'originale con la traduzione (sperimentale)</value>
+    <value>Sostituisci l'originale con la traduzione</value>
   </data>
   <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
-    <value>Mostra la traduzione al posto del testo originale della descrizione comando, con un collegamento per tornare all'originale. Se il testo non può essere associato con esattezza, la traduzione viene mostrata sotto come di consueto.</value>
+    <value>Mostra la traduzione al posto del testo originale della descrizione comando, con un collegamento per tornare all'originale. Se l'opzione è disattivata o il testo non può essere associato con esattezza, la traduzione viene mostrata sotto l'originale.</value>
   </data>
   <data name="ShowOriginal" xml:space="preserve">
     <value>Mostra originale</value>

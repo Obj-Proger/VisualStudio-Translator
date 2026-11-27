@@ -184,7 +184,9 @@ public static class TooltipText
         {
             TooltipRun run = line[index];
             bool blank = string.IsNullOrWhiteSpace(run.Text);
-            bool isCode = run.IsCode || (blank && code && NextIsCode(line, index));
+            // Space on its own is never code, whatever colour it has: a line break coloured as whitespace between two
+            // words is part of the sentence, and would otherwise come back as a break in the middle of the translation.
+            bool isCode = blank ? code && NextIsCode(line, index) : run.IsCode;
 
             if (isCode != code && text.Length > 0)
             {

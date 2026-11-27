@@ -192,10 +192,10 @@
     <value>Altı çizili kodun üzerine gelindiğinde görüntülenen hata ve uyarı iletilerini, araç ipucunun diğer metniyle birlikte çevirir.</value>
   </data>
   <data name="SettingsReplaceOriginal" xml:space="preserve">
-    <value>Orijinali çeviriyle değiştir (deneysel)</value>
+    <value>Orijinali çeviriyle değiştir</value>
   </data>
   <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
-    <value>Çeviriyi, araç ipucunun özgün metninin yerinde, orijinale dönmek için bir bağlantıyla gösterir. Metin tam olarak eşleştirilemezse çeviri her zamanki gibi altında gösterilir.</value>
+    <value>Çeviriyi, araç ipucunun özgün metninin yerinde, orijinale dönmek için bir bağlantıyla gösterir. Seçenek kapalıysa veya metin tam olarak eşleştirilemezse çeviri orijinalin altında gösterilir.</value>
   </data>
   <data name="ShowOriginal" xml:space="preserve">
     <value>Orijinali göster</value>

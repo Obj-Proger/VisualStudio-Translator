@@ -26,7 +26,7 @@ namespace VisualStudioTranslator.Vsix.QuickInfo;
 /// for comes back unchanged and is not shown twice.
 /// </para>
 /// <para>
-/// With the experimental setting on, the translation takes the place of the original lines instead
+/// By default the translation takes the place of the original lines instead
 /// (<see cref="InPlaceTranslation"/>): there is no label, the strip alone shows while the translation is on its way,
 /// and a link then switches between the translation and the original. Where the lines cannot be found exactly, the
 /// translation is shown below as usual.

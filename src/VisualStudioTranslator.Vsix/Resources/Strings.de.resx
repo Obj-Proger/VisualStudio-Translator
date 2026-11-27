@@ -192,10 +192,10 @@
     <value>Übersetzt die Meldungen zu Fehlern und Warnungen, die beim Zeigen auf unterstrichenen Code erscheinen, zusammen mit dem übrigen Text der QuickInfo.</value>
   </data>
   <data name="SettingsReplaceOriginal" xml:space="preserve">
-    <value>Original durch die Übersetzung ersetzen (experimentell)</value>
+    <value>Original durch die Übersetzung ersetzen</value>
   </data>
   <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
-    <value>Zeigt die Übersetzung anstelle des Originaltexts der QuickInfo, mit einem Link zum Zurückwechseln. Lässt sich der Text nicht genau zuordnen, wird die Übersetzung wie gewohnt darunter angezeigt.</value>
+    <value>Zeigt die Übersetzung anstelle des Originaltexts der QuickInfo, mit einem Link zum Zurückwechseln. Ist die Option deaktiviert oder lässt sich der Text nicht genau zuordnen, wird die Übersetzung unter dem Original angezeigt.</value>
   </data>
   <data name="ShowOriginal" xml:space="preserve">
     <value>Original anzeigen</value>

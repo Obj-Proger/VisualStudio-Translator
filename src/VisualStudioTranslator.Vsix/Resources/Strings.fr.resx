@@ -192,10 +192,10 @@
     <value>Traduit les messages d'erreur et d'avertissement affichés au survol du code souligné, avec le reste du texte de l'info-bulle.</value>
   </data>
   <data name="SettingsReplaceOriginal" xml:space="preserve">
-    <value>Remplacer l'original par la traduction (expérimental)</value>
+    <value>Remplacer l'original par la traduction</value>
   </data>
   <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
-    <value>Affiche la traduction à la place du texte d'origine de l'info-bulle, avec un lien pour revenir à l'original. Si le texte ne peut pas être associé exactement, la traduction s'affiche dessous comme d'habitude.</value>
+    <value>Affiche la traduction à la place du texte d'origine de l'info-bulle, avec un lien pour revenir à l'original. Si l'option est désactivée ou si le texte ne peut pas être associé exactement, la traduction s'affiche sous l'original.</value>
   </data>
   <data name="ShowOriginal" xml:space="preserve">
     <value>Afficher l'original</value>

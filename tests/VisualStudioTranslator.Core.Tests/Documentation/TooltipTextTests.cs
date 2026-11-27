@@ -87,6 +87,15 @@ public sealed class TooltipTextTests
     }
 
     [Fact]
+    public void ToDocument_LineBreakColouredAsCodeBetweenWords_IsASpace()
+    {
+        Paragraph paragraph = (Paragraph)TooltipText.ToDocument(
+            [[Text("values above the maximum become"), Code("\n"), Text("the maximum.")]]).Summary!.Blocks.Single();
+
+        paragraph.Inlines.Single().Should().BeOfType<TextRun>().Which.Text.Should().Be("values above the maximum become the maximum.");
+    }
+
+    [Fact]
     public void ToDocument_EmptyLineInsideText_Stays()
     {
         Paragraph paragraph = (Paragraph)TooltipText.ToDocument([[Text("First part of it.\n\nSecond part of it.")]])

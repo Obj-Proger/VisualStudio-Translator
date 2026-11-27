@@ -58,6 +58,15 @@ public sealed class TargetLanguagesTests
         TargetLanguages.NativeName("de").Should().Be("Deutsch");
     }
 
+    [Theory]
+    [InlineData("ru", "Русский")]
+    [InlineData("fr", "Français")]
+    [InlineData("de", "Deutsch")]
+    public void ListName_StartsWithACapital(string tag, string expected)
+    {
+        TargetLanguages.ListName(tag).Should().StartWith(expected);
+    }
+
     [Fact]
     public void SettingsRegistration_OffersExactlyTheChoicesInTheirOrder()
     {

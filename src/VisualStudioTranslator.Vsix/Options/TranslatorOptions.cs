@@ -18,7 +18,7 @@ namespace VisualStudioTranslator.Vsix.Options;
 /// <param name="Model">The model chosen, as its tag (see <see cref="LocalModelSettings.ModelTags"/>).</param>
 /// <param name="UseGraphicsCard">Whether the model may run on a graphics card.</param>
 /// <param name="TranslateErrors">Whether the messages of errors and warnings in tooltips are translated too.</param>
-/// <param name="ReplaceOriginal">Whether a tooltip's translation takes the place of its original lines (experimental).</param>
+/// <param name="ReplaceOriginal">Whether a tooltip's translation takes the place of its original lines.</param>
 internal sealed record TranslatorSettings(
     bool TranslateTooltips,
     string TargetLanguage,
@@ -116,7 +116,7 @@ internal sealed class TranslatorOptions
         }
 
         return new TranslatorSettings(
-            true, TargetLanguages.FollowVisualStudio, displayLanguage, ModelChoiceConverter.Automatic, true, true, false);
+            true, TargetLanguages.FollowVisualStudio, displayLanguage, ModelChoiceConverter.Automatic, true, true, true);
     }
 
     // Null when Unified Settings is off or did not answer; the classic page holds the settings then.
@@ -151,7 +151,7 @@ internal sealed class TranslatorOptions
                         : ModelChoiceConverter.Automatic,
                     OrTrue(useGraphicsCard),
                     OrTrue(translateErrors),
-                    replaceOriginal.Outcome == SettingRetrievalOutcome.Success && replaceOriginal.Value);
+                    OrTrue(replaceOriginal));
             }
 
             return null;

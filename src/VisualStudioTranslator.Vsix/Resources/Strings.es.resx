@@ -192,10 +192,10 @@
     <value>Traduce los mensajes de errores y advertencias que aparecen al pasar el puntero sobre código subrayado, junto con el resto del texto de la información sobre herramientas.</value>
   </data>
   <data name="SettingsReplaceOriginal" xml:space="preserve">
-    <value>Reemplazar el original por la traducción (experimental)</value>
+    <value>Reemplazar el original por la traducción</value>
   </data>
   <data name="SettingsReplaceOriginalDescription" xml:space="preserve">
-    <value>Muestra la traducción en lugar del texto original de la información sobre herramientas, con un vínculo para volver al original. Si el texto no se puede hacer coincidir exactamente, la traducción se muestra debajo como siempre.</value>
+    <value>Muestra la traducción en lugar del texto original de la información sobre herramientas, con un vínculo para volver al original. Si la opción está desactivada o el texto no se puede hacer coincidir exactamente, la traducción se muestra debajo del original.</value>
   </data>
   <data name="ShowOriginal" xml:space="preserve">
     <value>Mostrar original</value>

@@ -6,7 +6,7 @@ using TranslatedPiece = VisualStudioTranslator.Core.Documentation.TranslatedPiec
 namespace VisualStudioTranslator.Vsix.QuickInfo;
 
 /// <summary>
-/// The experimental way of showing a translation: in place of the original lines, in the tooltip itself, rather than
+/// The usual way of showing a translation: in place of the original lines, in the tooltip itself, rather than
 /// below them. Quick Info offers no way to change what another source shows, so this goes by what is on screen, and
 /// as carefully as that allows:
 /// <list type="bullet">

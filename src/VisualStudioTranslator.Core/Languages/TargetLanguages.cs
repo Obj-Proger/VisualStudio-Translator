@@ -38,7 +38,34 @@ public static class TargetLanguages
     public static bool IsSameLanguage(string first, string second) =>
         string.Equals(PrimaryOf(first), PrimaryOf(second), StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>The language's name in itself, as language pickers show it: "русский", "Deutsch".</summary>
+    /// <summary>
+    /// The language's name in itself, as a list of languages shows it, with a capital: "Русский", "Deutsch". Some
+    /// languages write their own name in lower case ("русский", "français"), as is right inside a sentence but not at
+    /// the head of an item, which is how Windows and Visual Studio list them too.
+    /// </summary>
+    public static string ListName(string tag)
+    {
+        string name = NativeName(tag);
+
+        if (name.Length == 0 || !char.IsLower(name[0]))
+        {
+            return name;
+        }
+
+        CultureInfo culture;
+        try
+        {
+            culture = CultureInfo.GetCultureInfo(tag);
+        }
+        catch (CultureNotFoundException)
+        {
+            culture = CultureInfo.InvariantCulture;
+        }
+
+        return culture.TextInfo.ToUpper(name[0]) + name.Substring(1);
+    }
+
+    /// <summary>The language's name in itself, as it reads inside a sentence: "русский", "Deutsch".</summary>
     public static string NativeName(string tag)
     {
         try

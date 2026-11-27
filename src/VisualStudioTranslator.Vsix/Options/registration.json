@@ -44,7 +44,7 @@
       "type": "boolean",
       "title": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsReplaceOriginal;..\\VisualStudioTranslator.Vsix.dll",
       "description": "@VisualStudioTranslator.Vsix.Resources.Strings:SettingsReplaceOriginalDescription;..\\VisualStudioTranslator.Vsix.dll",
-      "default": false,
+      "default": true,
       "enableWhen": "${config:visualStudioTranslator.general.translateTooltips}=='true'",
       "order": 3
     },
