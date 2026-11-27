@@ -3,7 +3,11 @@
   <Metadata>
     <Identity Id="VisualStudioTranslator.Obj-Proger" Version="|%CurrentProject%;GetVersion|" Language="en-US" Publisher="Obj-Proger" />
     <DisplayName>Visual Studio Translator</DisplayName>
-    <Description>Translates IDE tooltips, XML documentation, and comments in place, without touching your source files.</Description>
+    <Description xml:space="preserve">Reads the documentation and messages in Visual Studio's tooltips in your language, in every programming language, translated on your own computer by a local model. Also translates Error List messages and any text in its own window.</Description>
+    <MoreInfo>https://github.com/Obj-Proger/VisualStudio-Translator</MoreInfo>
+    <License>LICENSE.txt</License>
+    <GettingStartedGuide>https://github.com/Obj-Proger/VisualStudio-Translator#readme</GettingStartedGuide>
+    <Tags>translation, translator, tooltip, quick info, documentation, localization, offline, local AI</Tags>
   </Metadata>
   <Installation>
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.14,)">

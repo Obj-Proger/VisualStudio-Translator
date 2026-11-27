@@ -44,6 +44,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- The notices, at the root of the .vsix beside the license (below). -->
+		<Content Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" IncludeInVSIX="true" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<!-- The translator window's menu items and shortcut, compiled into the resource the package names in
          ProvideMenuResource. -->
 		<VSCTCompile Include="TranslatorWindow\Commands.vsct">
@@ -158,6 +163,16 @@
 			<VSIXSourceItem Include="@(EnginePublishedFile)">
 				<VSIXSubPath>Engine\%(EnginePublishedFile.RecursiveDir)</VSIXSubPath>
 			</VSIXSourceItem>
+		</ItemGroup>
+	</Target>
+
+	<!-- The license, as LICENSE.txt at the root of the .vsix, where the manifest names it for the installer and the
+	     Marketplace. A linked item keeps its own file name in the package, "LICENSE" without an extension, so a copy
+	     under the right name goes in instead. -->
+	<Target Name="PackLicenseIntoVsix" BeforeTargets="GetVsixSourceItems">
+		<Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\LICENSE" DestinationFiles="$(IntermediateOutputPath)LICENSE.txt" SkipUnchangedFiles="true" />
+		<ItemGroup>
+			<VSIXSourceItem Include="$(IntermediateOutputPath)LICENSE.txt" />
 		</ItemGroup>
 	</Target>
 

@@ -16,7 +16,7 @@ namespace VisualStudioTranslator.Vsix;
 [Guid(PackageGuidString)]
 [InstalledProductRegistration(
     "Visual Studio Translator",
-    "Translates IDE tooltips, XML documentation, and comments in place, without touching your source files.",
+    "Reads the documentation and messages in Visual Studio's tooltips in your language, translated on your own computer.",
     "1.0")]
 [ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
 
