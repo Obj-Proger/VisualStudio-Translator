@@ -2,6 +2,7 @@
 using System.Globalization;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
 using VisualStudioTranslator.Core.Documentation;
 using VisualStudioTranslator.Vsix.Options;
@@ -28,11 +29,14 @@ internal static class TranslatorCommands
     public static async Task InitializeAsync(AsyncPackage package, CancellationToken cancellationToken)
     {
         object? service = await package.GetServiceAsync(typeof(IMenuCommandService)).ConfigureAwait(false);
+        object? shell = await package.GetServiceAsync(typeof(SVsUIShell)).ConfigureAwait(false);
 
         await package.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
         // Visual Studio's language, from the one thread whose culture is that language, before any window shows a word.
         UiText.Culture = CultureInfo.CurrentUICulture;
+
+        CorrectRestoredCaption(shell as IVsUIShell);
 
         if (service is not OleMenuCommandService commands)
         {
@@ -47,6 +51,24 @@ internal static class TranslatorCommands
         commands.AddCommand(new MenuCommand(
             (_, _) => Run(package, () => TranslateSelectionAsync(package)),
             new CommandID(CommandSet, TranslateSelectionId)));
+    }
+
+    // Visual Studio brings back a tab of the translator window without creating the window until it is shown, and labels
+    // it with the caption it remembered, which may be in another language, or from before the caption was translated.
+    // The caption is put right on the tab alone, without creating the window.
+    private static void CorrectRestoredCaption(IVsUIShell? shell)
+    {
+        ThreadHelper.ThrowIfNotOnUIThread();
+
+        Guid window = new(TranslatorToolWindow.WindowGuidString);
+
+        // Without the flag to force creation, this finds the frame Visual Studio already has, if any, and creates nothing.
+        if (shell is not null
+            && shell.FindToolWindow((uint)__VSFINDTOOLWIN.FTW_fFindFirst, ref window, out IVsWindowFrame frame) == VSConstants.S_OK
+            && frame is not null)
+        {
+            _ = frame.SetProperty((int)__VSFPROPID.VSFPROPID_Caption, UiText.WindowCaption);
+        }
     }
 
     private static void Run(AsyncPackage package, Func<Task> command) =>
