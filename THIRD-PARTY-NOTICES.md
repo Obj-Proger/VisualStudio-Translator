@@ -1,7 +1,8 @@
 # Third-party notices
 
-Visual Studio Translator is licensed under the [MIT License](LICENSE). It includes, or downloads when it is first
-used, the components below, each under its own license.
+Visual Studio Translator is licensed under the [GNU General Public License version 3 only](LICENSE), with an
+additional permission described in [NOTICE.md](NOTICE.md). It includes, or downloads when it is first used, the
+components below, each under its own license.
 
 ## Included in the extension
 

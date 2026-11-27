@@ -44,7 +44,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- The notices, at the root of the .vsix beside the license (below). -->
+		<!-- The license's additional permission and the notices, at the root of the .vsix beside the license (below). -->
+		<Content Include="..\..\NOTICE.md" Link="NOTICE.md" IncludeInVSIX="true" />
 		<Content Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" IncludeInVSIX="true" />
 	</ItemGroup>
 
