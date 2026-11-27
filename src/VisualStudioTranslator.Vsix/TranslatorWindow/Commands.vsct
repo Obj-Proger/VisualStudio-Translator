@@ -10,6 +10,11 @@
       <Group guid="guidCommandSet" id="EditorContextGroup" priority="0x0900">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN" />
       </Group>
+
+      <!-- The same at the end of the Error List's context menu. -->
+      <Group guid="guidCommandSet" id="ErrorListContextGroup" priority="0x0900">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ERRORLIST" />
+      </Group>
     </Groups>
 
     <Buttons>
@@ -26,6 +31,14 @@
           <ButtonText>Translate Selection</ButtonText>
         </Strings>
       </Button>
+
+      <!-- Disabled until an entry is selected, which TranslatorCommands.cs tells the menu. -->
+      <Button guid="guidCommandSet" id="TranslateErrorMessage" priority="0x0100" type="Button">
+        <Parent guid="guidCommandSet" id="ErrorListContextGroup" />
+        <Strings>
+          <ButtonText>Translate Message</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
   </Commands>
 
@@ -40,8 +53,10 @@
 
     <GuidSymbol name="guidCommandSet" value="{f65b69ac-b42e-45bf-8783-64d40fa8a22b}">
       <IDSymbol name="EditorContextGroup" value="0x1020" />
+      <IDSymbol name="ErrorListContextGroup" value="0x1021" />
       <IDSymbol name="ShowTranslator" value="0x0100" />
       <IDSymbol name="TranslateSelection" value="0x0101" />
+      <IDSymbol name="TranslateErrorMessage" value="0x0102" />
     </GuidSymbol>
 
     <!-- The text editor's scope for key bindings. -->
