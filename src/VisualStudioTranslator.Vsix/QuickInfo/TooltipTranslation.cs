@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Language.StandardClassification;
 using Microsoft.VisualStudio.PlatformUI;
@@ -35,6 +36,10 @@ internal sealed class TooltipTranslation
 {
     private const string Source = nameof(TooltipTranslation);
 
+    // How long a translation may take before the strip appears. One from the cache arrives well within it, and a strip
+    // flashing up for a moment only to vanish would be worse than none.
+    private static readonly TimeSpan PendingDelay = TimeSpan.FromMilliseconds(250);
+
     private readonly IViewElementFactoryService _viewElements;
     private readonly IAsyncQuickInfoSession _session;
     private readonly IReadOnlyList<object> _untranslated;
@@ -42,6 +47,7 @@ internal sealed class TooltipTranslation
     private readonly ContentControl _host;
     private bool _started;
     private IReadOnlyList<TranslatedLine>? _pendingLines;
+    private DispatcherTimer? _pendingTimer;
 
     /// <param name="untranslated">Tooltip content whose lines are to be left as they are: the messages of errors and
     /// warnings, when the user wants those in the original.</param>
@@ -71,6 +77,7 @@ internal sealed class TooltipTranslation
 
             if (e.NewState == QuickInfoSessionState.Dismissed)
             {
+                StopPendingTimer();
                 _session.StateChanged -= OnStateChanged;
             }
             else if (e.NewState == QuickInfoSessionState.Visible && !_started)
@@ -116,9 +123,22 @@ internal sealed class TooltipTranslation
             return;
         }
 
+        // The strip waits, hidden, for the translation; only one that takes a while shows it.
         _host.Content = Pending();
-        _host.Visibility = Visibility.Visible;
+        _pendingTimer = new DispatcherTimer(PendingDelay, DispatcherPriority.Normal, OnPendingDelayElapsed, _host.Dispatcher);
         _ = TranslateAsync(lines, prose);
+    }
+
+    private void OnPendingDelayElapsed(object? sender, EventArgs e)
+    {
+        StopPendingTimer();
+        _host.Visibility = Visibility.Visible;
+    }
+
+    private void StopPendingTimer()
+    {
+        _pendingTimer?.Stop();
+        _pendingTimer = null;
     }
 
     // Runs after the tooltip has been shown, so nothing may escape from it.
@@ -152,6 +172,8 @@ internal sealed class TooltipTranslation
     private void Show(IReadOnlyList<TranslatedLine> lines)
     {
         ThreadHelper.ThrowIfNotOnUIThread();
+
+        StopPendingTimer();
 
         if (_inPlace && lines.Count > 0)
         {
@@ -236,11 +258,16 @@ internal sealed class TooltipTranslation
         return result;
     }
 
-    // The line just above, when it is a caption such as "Returns:" rather than prose.
+    // The line above, blank lines aside, when it is a caption such as "Returns:" rather than prose.
     private static TooltipLine? CaptionOf(IReadOnlyList<TooltipLine> lines, TooltipLine line)
     {
-        int index = IndexOf(lines, line);
-        TooltipLine? above = index > 0 ? lines[index - 1] : null;
+        int index = IndexOf(lines, line) - 1;
+        while (index >= 0 && string.IsNullOrWhiteSpace(lines[index].Text))
+        {
+            index--;
+        }
+
+        TooltipLine? above = index >= 0 ? lines[index] : null;
 
         return above is not null && !TooltipText.IsProse(above.Runs) && above.Text.TrimEnd().EndsWith(":", StringComparison.Ordinal)
             ? above
