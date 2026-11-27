@@ -36,7 +36,13 @@ internal static class TranslatorCommands
         // Visual Studio's language, from the one thread whose culture is that language, before any window shows a word.
         UiText.Culture = CultureInfo.CurrentUICulture;
 
+        // Once now, and again when Visual Studio has finished starting, in case the tab is only brought back then.
         CorrectRestoredCaption(shell as IVsUIShell);
+        KnownUIContexts.ShellInitializedContext.WhenActivated(() => _ = package.JoinableTaskFactory.RunAsync(async () =>
+        {
+            await package.JoinableTaskFactory.SwitchToMainThreadAsync(package.DisposalToken);
+            CorrectRestoredCaption(shell as IVsUIShell);
+        }));
 
         if (service is not OleMenuCommandService commands)
         {
@@ -63,12 +69,20 @@ internal static class TranslatorCommands
         Guid window = new(TranslatorToolWindow.WindowGuidString);
 
         // Without the flag to force creation, this finds the frame Visual Studio already has, if any, and creates nothing.
-        if (shell is not null
-            && shell.FindToolWindow((uint)__VSFINDTOOLWIN.FTW_fFindFirst, ref window, out IVsWindowFrame frame) == VSConstants.S_OK
-            && frame is not null)
+        if (shell is null
+            || shell.FindToolWindow((uint)__VSFINDTOOLWIN.FTW_fFindFirst, ref window, out IVsWindowFrame frame) != VSConstants.S_OK
+            || frame is null)
         {
-            _ = frame.SetProperty((int)__VSFPROPID.VSFPROPID_Caption, UiText.WindowCaption);
+            DiagnosticLog.Info(Source, "No translator tab to correct the caption of.");
+            return;
         }
+
+        _ = frame.GetProperty((int)__VSFPROPID.VSFPROPID_Caption, out object? before);
+        int result = frame.SetProperty((int)__VSFPROPID.VSFPROPID_Caption, UiText.WindowCaption);
+        _ = frame.GetProperty((int)__VSFPROPID.VSFPROPID_Caption, out object? after);
+
+        // Captions only, which are the extension's own words, so the log stays free of anything the user wrote.
+        DiagnosticLog.Info(Source, $"Translator tab caption: \"{before}\" set to \"{after}\" (0x{result:X8}).");
     }
 
     private static void Run(AsyncPackage package, Func<Task> command) =>
