@@ -19,7 +19,8 @@ internal sealed record TooltipLine(IReadOnlyList<ClassifiedTextRun> Original, IR
 /// <item>a run coloured as text, a comment or natural language is prose, anything else (a keyword, a type's name,
 /// punctuation) is code, which stays as it is;</item>
 /// <item>a run that is a link (an error's code) is code too, so it still works after translation;</item>
-/// <item>pictures and elements drawn by hand are not read: there is no telling text from code in them.</item>
+/// <item>pictures are not read, and elements an extension draws itself are read off the screen instead
+/// (<see cref="ScreenText"/>).</item>
 /// </list>
 /// </summary>
 internal static class TooltipContent
@@ -58,6 +59,17 @@ internal static class TooltipContent
             return DescribedShapes.Add(shape) ? shape : null;
         }
     }
+
+    /// <summary>
+    /// Whether the item is something Quick Info does not describe, such as an element an extension draws itself, whose
+    /// text can only be read off the screen (<see cref="ScreenText"/>).
+    /// </summary>
+    public static bool IsOpaque(object item) => item switch
+    {
+        ContainerElement container => container.Elements.Any(IsOpaque),
+        ClassifiedTextElement or ImageElement or string => false,
+        _ => true,
+    };
 
     public static IReadOnlyList<TooltipLine> Read(IEnumerable<object> items)
     {

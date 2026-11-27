@@ -1,7 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Media;
 using TranslatedPiece = VisualStudioTranslator.Core.Documentation.TranslatedPiece;
 
 namespace VisualStudioTranslator.Vsix.QuickInfo;
@@ -36,13 +35,7 @@ internal sealed class InPlaceTranslation
     /// <returns>The change made, or <see langword="null"/> when nothing was changed.</returns>
     public static InPlaceTranslation? TryApply(DependencyObject own, IReadOnlyList<TranslatedLine> lines)
     {
-        DependencyObject root = own;
-        while (VisualTreeHelper.GetParent(root) is { } parent)
-        {
-            root = parent;
-        }
-
-        List<TextBlock> blocks = [.. Descendants(root, own).OfType<TextBlock>()];
+        List<TextBlock> blocks = [.. TooltipVisuals.TextBlocks(own)];
         HashSet<TextBlock> taken = [];
         List<Swap> swaps = [];
 
@@ -81,29 +74,6 @@ internal sealed class InPlaceTranslation
         }
     }
 
-    // Everything drawn under the root but this extension's own element and what is in it.
-    private static IEnumerable<DependencyObject> Descendants(DependencyObject root, DependencyObject own)
-    {
-        Stack<DependencyObject> pending = new();
-        pending.Push(root);
-
-        while (pending.Count > 0)
-        {
-            DependencyObject current = pending.Pop();
-            if (ReferenceEquals(current, own))
-            {
-                continue;
-            }
-
-            yield return current;
-
-            for (int index = VisualTreeHelper.GetChildrenCount(current) - 1; index >= 0; index--)
-            {
-                pending.Push(VisualTreeHelper.GetChild(current, index));
-            }
-        }
-    }
-
     private static bool Holds(TextBlock block, TooltipLine line)
     {
         if (block.Inlines.Count != line.Original.Count)
@@ -115,7 +85,7 @@ internal sealed class InPlaceTranslation
 
         foreach (Inline inline in block.Inlines)
         {
-            if (!string.Equals(TextOf(inline), line.Original[index++].Text, StringComparison.Ordinal))
+            if (!string.Equals(TooltipVisuals.TextOf(inline), line.Original[index++].Text, StringComparison.Ordinal))
             {
                 return false;
             }
@@ -123,14 +93,6 @@ internal sealed class InPlaceTranslation
 
         return true;
     }
-
-    // Null for anything other than text, which no line could match.
-    private static string? TextOf(Inline inline) => inline switch
-    {
-        Run run => run.Text,
-        Span span => string.Concat(span.Inlines.Select(TextOf)),
-        _ => null,
-    };
 
     private static List<Inline> Translated(List<Inline> original, TranslatedLine line)
     {

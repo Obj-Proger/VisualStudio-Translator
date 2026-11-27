@@ -48,6 +48,8 @@ internal sealed class TooltipTranslation
     private bool _started;
     private IReadOnlyList<TranslatedLine>? _pendingLines;
     private DispatcherTimer? _pendingTimer;
+    private DispatcherTimer? _readTimer;
+    private List<object> _content = [];
 
     /// <param name="untranslated">Tooltip content whose lines are to be left as they are: the messages of errors and
     /// warnings, when the user wants those in the original.</param>
@@ -113,14 +115,78 @@ internal sealed class TooltipTranslation
             return;
         }
 
+        _content = content;
+
+        if (content.Any(TooltipContent.IsOpaque))
+        {
+            ReadFromScreenWhenDrawn();
+        }
+        else
+        {
+            Translate(TooltipContent.Read(content));
+        }
+    }
+
+    // Content Quick Info does not describe is read off the screen, so only once the tooltip has been laid out and the
+    // other elements have drawn their text.
+    private void ReadFromScreenWhenDrawn()
+    {
+        if (PresentationSource.FromVisual(_host) is null)
+        {
+            _host.Loaded += OnLoadedForReading;
+            return;
+        }
+
+        // Layout runs before anything of this priority, so by the time this fires the tooltip is drawn.
+        _readTimer = new DispatcherTimer(TimeSpan.Zero, DispatcherPriority.Loaded, OnDrawn, _host.Dispatcher);
+    }
+
+    private void OnDrawn(object? sender, EventArgs e)
+    {
+        ThreadHelper.ThrowIfNotOnUIThread();
+
+        _readTimer?.Stop();
+        _readTimer = null;
+        ReadFromScreen();
+    }
+
+    private void OnLoadedForReading(object sender, RoutedEventArgs e)
+    {
+        _host.Loaded -= OnLoadedForReading;
+        ReadFromScreenWhenDrawn();
+    }
+
+    private void ReadFromScreen()
+    {
+        try
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (_session.State == QuickInfoSessionState.Dismissed)
+            {
+                return;
+            }
+
+            IReadOnlyList<TooltipLine> described = TooltipContent.Read(_content);
+            Translate([.. described, .. ScreenText.Read(_host, described)]);
+        }
+        catch (Exception ex)
+        {
+            DiagnosticLog.Error(Source, $"Reading the tooltip off the screen failed: {ex}");
+        }
+    }
+
+    private void Translate(IReadOnlyList<TooltipLine> lines)
+    {
+        ThreadHelper.ThrowIfNotOnUIThread();
+
         // The lines to leave are told by their text: a source may draw a copy of the content rather than the content.
         HashSet<string> leave = [.. TooltipContent.Read(_untranslated).Select(line => line.Text)];
-        IReadOnlyList<TooltipLine> lines = TooltipContent.Read(content);
         List<TooltipLine> prose = [.. lines.Where(line => TooltipText.IsProse(line.Runs) && !leave.Contains(line.Text))];
 
         if (prose.Count == 0)
         {
-            if (TooltipContent.DescribeOnce(content) is { } shape)
+            if (TooltipContent.DescribeOnce(_content) is { } shape)
             {
                 DiagnosticLog.Info(Source, $"A tooltip with nothing to translate: {shape}.");
             }
