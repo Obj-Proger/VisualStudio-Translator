@@ -1,0 +1,38 @@
+# A tag such as v1.0.0 builds that version, tests it, and publishes the .vsix as a GitHub release whose notes are
+# made from the commits since the previous tag. Publishing to the Visual Studio Marketplace is a separate step.
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Version from the tag
+        shell: pwsh
+        run: '"VERSION=$($env:GITHUB_REF_NAME.TrimStart(''v''))" >> $env:GITHUB_ENV'
+
+      - name: Build
+        run: dotnet build -c Release -p:Version=${{ env.VERSION }}
+
+      - name: Test
+        run: dotnet test -c Release --no-build
+
+      - name: Publish the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $vsix = Get-ChildItem src/VisualStudioTranslator.Vsix/bin/Release/net48/*.vsix | Select-Object -First 1
+          gh release create $env:GITHUB_REF_NAME $vsix.FullName --title "Visual Studio Translator $env:VERSION" --generate-notes
