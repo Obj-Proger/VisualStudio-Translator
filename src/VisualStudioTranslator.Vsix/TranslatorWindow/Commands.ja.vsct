@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Commands.vsct with its menu text in this language: nothing else may differ (VsctTranslationsTests). -->
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <Extern href="stdidcmd.h" />
+  <Extern href="vsshlids.h" />
+
+  <Commands package="guidPackage">
+    <Groups>
+      <!-- A group of its own at the end of the editor's context menu, set off by a separator. -->
+      <Group guid="guidCommandSet" id="EditorContextGroup" priority="0x0900">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN" />
+      </Group>
+
+      <!-- The same at the end of the Error List's context menu. -->
+      <Group guid="guidCommandSet" id="ErrorListContextGroup" priority="0x0900">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ERRORLIST" />
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <Button guid="guidCommandSet" id="ShowTranslator" priority="0x0300" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+        <Strings>
+          <ButtonText>翻訳ツール</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidCommandSet" id="TranslateSelection" priority="0x0100" type="Button">
+        <Parent guid="guidCommandSet" id="EditorContextGroup" />
+        <Strings>
+          <ButtonText>選択範囲を翻訳</ButtonText>
+        </Strings>
+      </Button>
+
+      <!-- Disabled until an entry is selected, which TranslatorCommands.cs tells the menu. -->
+      <Button guid="guidCommandSet" id="TranslateErrorMessage" priority="0x0100" type="Button">
+        <Parent guid="guidCommandSet" id="ErrorListContextGroup" />
+        <Strings>
+          <ButtonText>メッセージを翻訳</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <KeyBindings>
+    <!-- Everywhere it opens the window; in the text editor, where it is bound more narrowly, it translates the selection. -->
+    <KeyBinding guid="guidCommandSet" id="ShowTranslator" editor="guidVSStd97" key1="T" mod1="Control Shift Alt" />
+    <KeyBinding guid="guidCommandSet" id="TranslateSelection" editor="guidTextEditor" key1="T" mod1="Control Shift Alt" />
+  </KeyBindings>
+
+  <Symbols>
+    <GuidSymbol name="guidPackage" value="{5f2c9f7f-3f2e-4a7f-9b0e-1a2b3c4d5e6f}" />
+
+    <GuidSymbol name="guidCommandSet" value="{f65b69ac-b42e-45bf-8783-64d40fa8a22b}">
+      <IDSymbol name="EditorContextGroup" value="0x1020" />
+      <IDSymbol name="ErrorListContextGroup" value="0x1021" />
+      <IDSymbol name="ShowTranslator" value="0x0100" />
+      <IDSymbol name="TranslateSelection" value="0x0101" />
+      <IDSymbol name="TranslateErrorMessage" value="0x0102" />
+    </GuidSymbol>
+
+    <!-- The text editor's scope for key bindings. -->
+    <GuidSymbol name="guidTextEditor" value="{8B382828-6202-11D1-8870-0000F87579D2}" />
+  </Symbols>
+</CommandTable>

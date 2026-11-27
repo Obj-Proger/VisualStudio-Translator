@@ -49,6 +49,44 @@
 		<VSCTCompile Include="TranslatorWindow\Commands.vsct">
 			<ResourceName>Menus.ctmenu</ResourceName>
 		</VSCTCompile>
+		<!-- The same in each language the extension speaks, named by culture, so they build into the satellite
+         assemblies beside Strings.*.resx and Visual Studio shows the menu in its own language. -->
+		<VSCTCompile Include="TranslatorWindow\Commands.ru.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+		<VSCTCompile Include="TranslatorWindow\Commands.de.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+		<VSCTCompile Include="TranslatorWindow\Commands.fr.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+		<VSCTCompile Include="TranslatorWindow\Commands.es.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+		<VSCTCompile Include="TranslatorWindow\Commands.it.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+		<VSCTCompile Include="TranslatorWindow\Commands.pt-BR.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+		<VSCTCompile Include="TranslatorWindow\Commands.pl.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+		<VSCTCompile Include="TranslatorWindow\Commands.cs.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+		<VSCTCompile Include="TranslatorWindow\Commands.tr.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+		<VSCTCompile Include="TranslatorWindow\Commands.zh-Hans.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+		<VSCTCompile Include="TranslatorWindow\Commands.ja.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+		<VSCTCompile Include="TranslatorWindow\Commands.ko.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
 	</ItemGroup>
 
 	<ItemGroup>
