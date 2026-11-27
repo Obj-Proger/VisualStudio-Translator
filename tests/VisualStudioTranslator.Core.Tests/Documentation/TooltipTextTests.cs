@@ -96,12 +96,36 @@ public sealed class TooltipTextTests
     }
 
     [Fact]
-    public void ToDocument_EmptyLineInsideText_Stays()
+    public void ToDocument_EmptyLineInsideText_PartsTheParagraphs()
     {
-        Paragraph paragraph = (Paragraph)TooltipText.ToDocument([[Text("First part of it.\n\nSecond part of it.")]])
-            .Summary!.Blocks.Single();
+        DocumentModel document = TooltipText.ToDocument([[Text("First part of it.\n\n  Second part of it.")]]);
 
-        paragraph.Inlines.Single().Should().BeOfType<TextRun>().Which.Text.Should().Be("First part of it.\n\nSecond part of it.");
+        document.Summary!.Blocks.Cast<Paragraph>().Select(paragraph => ((TextRun)paragraph.Inlines.Single()).Text)
+            .Should().Equal("First part of it.", "  Second part of it.");
+    }
+
+    [Fact]
+    public void FromDocument_PartedLine_ComesBackWithTheEmptyLine()
+    {
+        IReadOnlyList<TooltipRun> line = [Text("First part, see "), Code("Count"), Text(".\n\nSecond part of it.")];
+        DocumentModel document = TooltipText.ToDocument([line]);
+
+        IReadOnlyList<TranslatedPiece> pieces = TooltipText.FromDocument([line], document).Single()!;
+
+        string.Concat(pieces.Select(piece => piece.Text)).Should().Be("First part, see Count.\n\nSecond part of it.");
+        pieces.Single(piece => piece.IsCode).FirstCodeRun.Should().Be(1);
+    }
+
+    [Fact]
+    public void FromDocument_LineWithAPartMissing_IsNull()
+    {
+        IReadOnlyList<TooltipRun> line = [Text("First part of it.\n\nSecond part of it.")];
+        DocumentModel translated = new()
+        {
+            Summary = new Section { Blocks = [new Paragraph { Inlines = [new TextRun { Text = "Первая часть." }] }] },
+        };
+
+        TooltipText.FromDocument([line], translated).Should().ContainSingle().Which.Should().BeNull();
     }
 
     [Fact]

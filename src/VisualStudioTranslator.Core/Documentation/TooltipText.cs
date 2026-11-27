@@ -19,12 +19,14 @@ public sealed record TranslatedPiece(string Text, int FirstCodeRun = -1, int Cod
 /// The lines of a tooltip, whoever drew them and whatever the programming language, as a document the translation
 /// pipeline takes, and the translation back as lines.
 /// <list type="bullet">
-/// <item>Each line is one paragraph. Runs of code next to each other are one code span, which the pipeline keeps
+/// <item>Each line is one paragraph, or more where an empty line parts its text: the translation keeps a paragraph's
+/// breaks no more than its line breaks, so each part goes as a paragraph of its own and the translated parts are put
+/// back together with the empty line between them. Runs of code next to each other are one code span, which the pipeline keeps
 /// whole, so "LanguageTag.Normalize(string)" stays one name rather than six.</item>
 /// <item>A name quoted in the text, as compilers write them ('value', `Count`), and a web address are code too, so the
 /// translation can neither translate nor break them.</item>
 /// <item>A line break inside text is where the source comment happened to wrap, not where the translation should:
-/// it is sent as a space. An empty line between two pieces of text stays.</item>
+/// it is sent as a space.</item>
 /// <item>A line is worth translating only when its text holds at least two words: a signature, a caption such as
 /// "Returns:" or a lone name is not prose.</item>
 /// </list>
@@ -34,6 +36,8 @@ public static class TooltipText
     private static readonly Regex Quoted = new(@"https?://[^\s)\]>]+|'[^'\s]{1,80}'|`[^`\s]{1,80}`", RegexOptions.Compiled);
     private static readonly Regex EmptyLine = new(@"\r?\n[ \t]*\r?\n", RegexOptions.Compiled);
     private static readonly Regex LineBreak = new(@"[ \t]*\r?\n[ \t]*", RegexOptions.Compiled);
+    private const string ParagraphBreak = "\n\n";
+
     private static readonly Regex Word = new(@"\p{L}{2,}", RegexOptions.Compiled);
     private static readonly Regex Whitespace = new(@"\s+", RegexOptions.Compiled);
 
@@ -49,11 +53,11 @@ public static class TooltipText
     {
         List<Block> paragraphs = [];
 
-        foreach (IReadOnlyList<TooltipRun> line in lines)
+        foreach (List<Piece> part in lines.SelectMany(Parts))
         {
             List<Inline> inlines = [];
 
-            foreach (Piece piece in Pieces(line))
+            foreach (Piece piece in part)
             {
                 if (piece.IsCode)
                 {
@@ -80,39 +84,29 @@ public static class TooltipText
     {
         IReadOnlyList<Block> blocks = translated.Summary?.Blocks ?? [];
         List<IReadOnlyList<TranslatedPiece>?> result = [];
+        int next = 0;
 
-        for (int index = 0; index < lines.Count; index++)
+        foreach (IReadOnlyList<TooltipRun> line in lines)
         {
-            if (index >= blocks.Count || blocks[index] is not Paragraph paragraph)
+            List<List<Piece>> parts = Parts(line);
+            List<TranslatedPiece>? pieces = [];
+
+            foreach (List<Piece> part in parts)
             {
-                result.Add(null);
-                continue;
-            }
+                int index = next++;
 
-            List<Piece> groups = [.. Pieces(lines[index]).Where(piece => piece.IsCode && piece.FirstRun >= 0)];
-            bool[] used = new bool[groups.Count];
-            List<TranslatedPiece> pieces = [];
-
-            foreach (Inline inline in paragraph.Inlines)
-            {
-                if (inline is CodeSpan code)
+                if (pieces is null || index >= blocks.Count || blocks[index] is not Paragraph paragraph)
                 {
-                    int match = FindGroup(groups, used, code.Text);
+                    pieces = null;
+                    continue;
+                }
 
-                    if (match >= 0)
-                    {
-                        used[match] = true;
-                        pieces.Add(new TranslatedPiece(groups[match].Text, groups[match].FirstRun, groups[match].RunCount));
-                    }
-                    else
-                    {
-                        pieces.Add(new TranslatedPiece(code.Text));
-                    }
-                }
-                else
+                if (pieces.Count > 0)
                 {
-                    pieces.Add(new TranslatedPiece(TextOf(inline)));
+                    pieces.Add(new TranslatedPiece(ParagraphBreak));
                 }
+
+                pieces.AddRange(Translated(part, paragraph));
             }
 
             result.Add(pieces);
@@ -121,10 +115,75 @@ public static class TooltipText
         return result;
     }
 
+    // The translated paragraph of one part of a line, its code pointing back at the part's own runs.
+    private static List<TranslatedPiece> Translated(List<Piece> part, Paragraph paragraph)
+    {
+        List<Piece> groups = [.. part.Where(piece => piece.IsCode && piece.FirstRun >= 0)];
+        bool[] used = new bool[groups.Count];
+        List<TranslatedPiece> pieces = [];
+
+        foreach (Inline inline in paragraph.Inlines)
+        {
+            if (inline is CodeSpan code)
+            {
+                int match = FindGroup(groups, used, code.Text);
+
+                if (match >= 0)
+                {
+                    used[match] = true;
+                    pieces.Add(new TranslatedPiece(groups[match].Text, groups[match].FirstRun, groups[match].RunCount));
+                }
+                else
+                {
+                    pieces.Add(new TranslatedPiece(code.Text));
+                }
+            }
+            else
+            {
+                pieces.Add(new TranslatedPiece(TextOf(inline)));
+            }
+        }
+
+        return pieces;
+    }
+
+    // The line in the parts an empty line in its text marks off; a line without one is a single part. Parts with
+    // nothing but space are dropped, the same way here and when the translation comes back.
+    private static List<List<Piece>> Parts(IReadOnlyList<TooltipRun> line)
+    {
+        List<List<Piece>> parts = [[]];
+
+        foreach (Piece piece in Pieces(line))
+        {
+            if (piece.IsCode)
+            {
+                parts[parts.Count - 1].Add(piece);
+                continue;
+            }
+
+            string[] texts = EmptyLine.Split(piece.Text);
+
+            for (int index = 0; index < texts.Length; index++)
+            {
+                if (index > 0)
+                {
+                    parts.Add([]);
+                }
+
+                if (texts[index].Length > 0)
+                {
+                    parts[parts.Count - 1].Add(new Piece(texts[index], false, -1, 0));
+                }
+            }
+        }
+
+        return [.. parts.Where(part => part.Any(piece => !string.IsNullOrWhiteSpace(piece.Text)))];
+    }
+
     // Prose with quoted names and web addresses taken out as code, and wrapped lines joined.
     private static void AddProse(List<Inline> inlines, string text)
     {
-        text = string.Join("\n\n", EmptyLine.Split(text).Select(part => LineBreak.Replace(part, " ")));
+        text = LineBreak.Replace(text, " ");
         int at = 0;
 
         foreach (Match quoted in Quoted.Matches(text))
