@@ -2,7 +2,6 @@
 using System.Globalization;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
 using VisualStudioTranslator.Core.Documentation;
 using VisualStudioTranslator.Vsix.Options;
@@ -29,20 +28,11 @@ internal static class TranslatorCommands
     public static async Task InitializeAsync(AsyncPackage package, CancellationToken cancellationToken)
     {
         object? service = await package.GetServiceAsync(typeof(IMenuCommandService)).ConfigureAwait(false);
-        object? shell = await package.GetServiceAsync(typeof(SVsUIShell)).ConfigureAwait(false);
 
         await package.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
         // Visual Studio's language, from the one thread whose culture is that language, before any window shows a word.
         UiText.Culture = CultureInfo.CurrentUICulture;
-
-        // Once now, and again when Visual Studio has finished starting, in case the tab is only brought back then.
-        CorrectRestoredCaption(shell as IVsUIShell);
-        KnownUIContexts.ShellInitializedContext.WhenActivated(() => _ = package.JoinableTaskFactory.RunAsync(async () =>
-        {
-            await package.JoinableTaskFactory.SwitchToMainThreadAsync(package.DisposalToken);
-            CorrectRestoredCaption(shell as IVsUIShell);
-        }));
 
         if (service is not OleMenuCommandService commands)
         {
@@ -57,32 +47,6 @@ internal static class TranslatorCommands
         commands.AddCommand(new MenuCommand(
             (_, _) => Run(package, () => TranslateSelectionAsync(package)),
             new CommandID(CommandSet, TranslateSelectionId)));
-    }
-
-    // Visual Studio brings back a tab of the translator window without creating the window until it is shown, and labels
-    // it with the caption it remembered, which may be in another language, or from before the caption was translated.
-    // The caption is put right on the tab alone, without creating the window.
-    private static void CorrectRestoredCaption(IVsUIShell? shell)
-    {
-        ThreadHelper.ThrowIfNotOnUIThread();
-
-        Guid window = new(TranslatorToolWindow.WindowGuidString);
-
-        // Without the flag to force creation, this finds the frame Visual Studio already has, if any, and creates nothing.
-        if (shell is null
-            || shell.FindToolWindow((uint)__VSFINDTOOLWIN.FTW_fFindFirst, ref window, out IVsWindowFrame frame) != VSConstants.S_OK
-            || frame is null)
-        {
-            DiagnosticLog.Info(Source, "No translator tab to correct the caption of.");
-            return;
-        }
-
-        _ = frame.GetProperty((int)__VSFPROPID.VSFPROPID_Caption, out object? before);
-        int result = frame.SetProperty((int)__VSFPROPID.VSFPROPID_Caption, UiText.WindowCaption);
-        _ = frame.GetProperty((int)__VSFPROPID.VSFPROPID_Caption, out object? after);
-
-        // Captions only, which are the extension's own words, so the log stays free of anything the user wrote.
-        DiagnosticLog.Info(Source, $"Translator tab caption: \"{before}\" set to \"{after}\" (0x{result:X8}).");
     }
 
     private static void Run(AsyncPackage package, Func<Task> command) =>
