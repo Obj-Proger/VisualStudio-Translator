@@ -47,6 +47,10 @@
 		<!-- The license's additional permission and the notices, at the root of the .vsix beside the license (below). -->
 		<Content Include="..\..\NOTICE.md" Link="NOTICE.md" IncludeInVSIX="true" />
 		<Content Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" IncludeInVSIX="true" />
+		<!-- The extension's icon, drawn from art\icon.svg: 128 pixels for the manifest's icon, which Visual Studio scales
+         down in its lists, and 200 for the Marketplace's preview. -->
+		<Content Include="Resources\Icon.png" IncludeInVSIX="true" />
+		<Content Include="Resources\PreviewImage.png" IncludeInVSIX="true" />
 	</ItemGroup>
 
 	<ItemGroup>

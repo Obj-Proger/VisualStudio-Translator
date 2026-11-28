@@ -7,6 +7,8 @@
     <MoreInfo>https://github.com/Obj-Proger/VisualStudio-Translator</MoreInfo>
     <License>LICENSE.txt</License>
     <GettingStartedGuide>https://github.com/Obj-Proger/VisualStudio-Translator#readme</GettingStartedGuide>
+    <Icon>Resources\Icon.png</Icon>
+    <PreviewImage>Resources\PreviewImage.png</PreviewImage>
     <Tags>translation, translator, tooltip, quick info, documentation, localization, offline, local AI</Tags>
   </Metadata>
   <Installation>
