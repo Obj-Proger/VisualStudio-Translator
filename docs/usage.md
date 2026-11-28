@@ -9,6 +9,13 @@ match the tooltip's lines exactly, it shows the translation below the original i
 Text already in the language you translate into is left as it is, and a text translated once comes from a cache on
 your disk the next time.
 
+## Signature help
+
+While you type a method's arguments, the popup with its signatures shows its documentation translated, in place of
+the original; the signatures themselves stay as they are. The popup has no room for a link back to the original, so
+there is none, and where the extension cannot match its lines exactly it leaves the popup as it is. It follows the
+*Translate tooltips* setting.
+
 ## The translator window
 
 *View > Other Windows > Translator*, or Ctrl+Shift+Alt+T. Type or paste text on the left; the translation appears on
