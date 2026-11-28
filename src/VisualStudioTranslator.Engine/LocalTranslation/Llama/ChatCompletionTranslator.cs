@@ -26,10 +26,13 @@ internal sealed class ChatCompletionTranslator(HttpClient client)
     // leaves room for a short segment; a model that has not stopped by the limit is not going to.
     private const int MinimumAnswerTokens = 96;
 
-    /// <param name="text">The segment as the pipeline protects it: plain text with placeholder tokens.</param>
+    /// <param name="source">The segment as the pipeline protects it, plain text with placeholder tokens, with the code
+    /// they stand for and the paragraphs around it.</param>
     /// <returns>The translation, with the same placeholder tokens if the model kept them.</returns>
-    public async Task<string> TranslateAsync(LanguagePair pair, string text, CancellationToken cancellationToken)
+    public async Task<string> TranslateAsync(LanguagePair pair, SourceText source, CancellationToken cancellationToken)
     {
+        string text = source.Text;
+
         // Checked here because not every HTTP handler looks at the token before it has an answer.
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -38,7 +41,11 @@ internal sealed class ChatCompletionTranslator(HttpClient client)
         bool tagged = MarkupTags.CanCarry(text);
         string wireText = tagged ? MarkupTags.ToTags(text) : text;
 
-        string answer = await AskAsync(TranslationPrompt.Build(pair, wireText), wireText.Length, cancellationToken)
+        // The code is named by the tags it stands behind, so it goes only with text that has them.
+        IReadOnlyDictionary<int, string>? codes = tagged ? source.Codes : null;
+
+        string answer = await AskAsync(
+                TranslationPrompt.Build(pair, wireText, codes, source.Context), wireText.Length, cancellationToken)
             .ConfigureAwait(false);
 
         return tagged ? MarkupTags.ToTokens(answer, wireText) : answer;

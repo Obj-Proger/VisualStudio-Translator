@@ -140,6 +140,49 @@ public sealed class TranslationOrchestratorTests
     }
 
     [Fact]
+    public async Task TranslateAsync_CodeSpan_IsSentWithTheCodeItStandsFor()
+    {
+        DocumentModel document = new()
+        {
+            Summary = new Section
+            {
+                Blocks =
+                [
+                    new Paragraph
+                    {
+                        Inlines =
+                        [
+                            new TextRun { Text = "Returns the number of items in " },
+                            new CodeSpan { Text = "List<T>" },
+                            new TextRun { Text = "." },
+                        ],
+                    },
+                ],
+            },
+        };
+        FakeProvider provider = new(Translations);
+
+        await Orchestrator(new MemoryTranslationCache()).TranslateAsync(Request(document), provider, Token);
+
+        SourceText sent = provider.Sent.Single().Single();
+        sent.Codes.Should().ContainSingle().Which.Should().Be(new KeyValuePair<int, string>(0, "List<T>"));
+        sent.Context.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TranslateAsync_Segments_AreSentWithTheParagraphsAroundThem()
+    {
+        FakeProvider provider = new(Translations);
+
+        await Orchestrator(new MemoryTranslationCache()).TranslateAsync(Request(Doc(Returns, Gets, Sets)), provider, Token);
+
+        IReadOnlyList<SourceText> sent = provider.Sent.Single();
+        sent[0].Context.Should().Be(Gets);
+        sent[1].Context.Should().Be(Returns + "\n\n" + Sets);
+        sent[2].Context.Should().Be(Gets);
+    }
+
+    [Fact]
     public async Task TranslateAsync_StrayBracketAfterAPlaceholder_IsRemovedBeforeTheTranslationIsUsed()
     {
         DocumentModel document = new()
@@ -611,6 +654,8 @@ public sealed class TranslationOrchestratorTests
 
         public List<IReadOnlyList<string>> Calls { get; } = [];
 
+        public List<IReadOnlyList<SourceText>> Sent { get; } = [];
+
         public string Id { get; init; } = "fake";
 
         public string Revision { get; init; } = "1";
@@ -634,10 +679,11 @@ public sealed class TranslationOrchestratorTests
         public bool Supports(LanguagePair pair) => SupportsPairs;
 
         public Task<IReadOnlyList<string>> TranslateAsync(
-            LanguagePair pair, IReadOnlyList<string> texts, CancellationToken cancellationToken)
+            LanguagePair pair, IReadOnlyList<SourceText> texts, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Calls.Add(texts);
+            Calls.Add([.. texts.Select(text => text.Text)]);
+            Sent.Add(texts);
 
             if (Throws is not null)
             {
@@ -649,7 +695,7 @@ public sealed class TranslationOrchestratorTests
                 return Task.FromResult<IReadOnlyList<string>>([]);
             }
 
-            return Task.FromResult<IReadOnlyList<string>>([.. texts.Select(Translate)]);
+            return Task.FromResult<IReadOnlyList<string>>([.. texts.Select(text => Translate(text.Text))]);
         }
 
         private string Translate(string text) =>

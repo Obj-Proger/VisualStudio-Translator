@@ -71,7 +71,8 @@ internal sealed class LlamaTranslationProvider : ITranslationProvider, IDisposab
         MaxSegmentsPerRequest = 8,
 
         // Prompt, segment and translation share the server's context of 4096 tokens. A segment of this size
-        // is under a thousand tokens of English, and its translation may take twice that.
+        // is under a thousand tokens of English, and its translation may take twice that; the paragraphs around
+        // it (at most twice SegmentHints.MaxNeighbourLength characters) and its code fit in what is left.
         MaxCharactersPerRequest = 3000,
     };
 
@@ -82,7 +83,7 @@ internal sealed class LlamaTranslationProvider : ITranslationProvider, IDisposab
     public bool Supports(LanguagePair pair) => File.Exists(_options.ExecutablePath) && File.Exists(_server.ModelPath);
 
     public async Task<IReadOnlyList<string>> TranslateAsync(
-        LanguagePair pair, IReadOnlyList<string> texts, CancellationToken cancellationToken)
+        LanguagePair pair, IReadOnlyList<SourceText> texts, CancellationToken cancellationToken)
     {
         if (texts.Count == 0)
         {
@@ -105,7 +106,7 @@ internal sealed class LlamaTranslationProvider : ITranslationProvider, IDisposab
 
             List<string> results = new(texts.Count);
 
-            foreach (string text in texts)
+            foreach (SourceText text in texts)
             {
                 results.Add(await _translator.TranslateAsync(pair, text, cancellationToken).ConfigureAwait(false));
             }

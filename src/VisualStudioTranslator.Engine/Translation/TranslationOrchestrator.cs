@@ -24,6 +24,12 @@ namespace VisualStudioTranslator.Engine.Translation;
 /// the better one is switched off.
 /// </para>
 /// <para>
+/// A segment goes to the provider with the code its tokens stand for and the paragraphs around it
+/// (<see cref="SegmentHints"/>), so it is read as part of the comment rather than on its own. They are hints:
+/// the cache is still keyed by the segment's text, so identical segments share one translation, and the hints
+/// of the first occurrence stand for all.
+/// </para>
+/// <para>
 /// A segment whose translation this provider got rejected is not sent to it again for a while (see
 /// <see cref="RejectedTranslations"/>): the same text would come back the same and be rejected the same.
 /// </para>
@@ -138,8 +144,9 @@ internal sealed class TranslationOrchestrator(
         List<Group> ordered = [];
         Dictionary<string, Group> byKey = [];
 
-        foreach (Segment segment in segments)
+        for (int index = 0; index < segments.Count; index++)
         {
+            Segment segment = segments[index];
             ProtectedSegment protectedSegment = GlossaryProtector.Apply(
                 MarkupProtector.Protect(segment.Inlines), request.Glossary);
 
@@ -158,7 +165,13 @@ internal sealed class TranslationOrchestrator(
 
             if (!byKey.TryGetValue(key.Value, out Group? group))
             {
-                group = new Group(key, protectedSegment.Text);
+                // The first occurrence's code and neighbours stand for all: they only help the text be read.
+                SourceText source = new(protectedSegment.Text)
+                {
+                    Codes = SegmentHints.Codes(protectedSegment),
+                    Context = SegmentHints.Around(segments, index),
+                };
+                group = new Group(key, source);
                 byKey[key.Value] = group;
                 ordered.Add(group);
             }
@@ -184,7 +197,7 @@ internal sealed class TranslationOrchestrator(
             try
             {
                 results = await provider
-                    .TranslateAsync(request.Languages, [.. batch.Select(group => group.Text)], cancellationToken)
+                    .TranslateAsync(request.Languages, [.. batch.Select(group => group.Source)], cancellationToken)
                     .ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -342,11 +355,13 @@ internal sealed class TranslationOrchestrator(
 
     // All the segments of one document whose protected text is identical, and so share one
     // cache key and one translation.
-    private sealed class Group(TranslationCacheKey key, string text)
+    private sealed class Group(TranslationCacheKey key, SourceText source)
     {
         public TranslationCacheKey Key { get; } = key;
 
-        public string Text { get; } = text;
+        public SourceText Source { get; } = source;
+
+        public string Text => Source.Text;
 
         public List<Prepared> Members { get; } = [];
 

@@ -16,6 +16,9 @@ internal sealed class StubProvider(
 
     public List<IReadOnlyList<string>> Calls { get; } = [];
 
+    /// <summary>What each call was given, hints included.</summary>
+    public List<IReadOnlyList<SourceText>> Sent { get; } = [];
+
     // A cloud stub is of the cloud tier and a local one of the compact tier, unless a test says otherwise.
     public ProviderInfo Info { get; } = new()
     {
@@ -36,17 +39,18 @@ internal sealed class StubProvider(
     public bool Supports(LanguagePair pair) => SupportsPair(pair);
 
     public Task<IReadOnlyList<string>> TranslateAsync(
-        LanguagePair pair, IReadOnlyList<string> texts, CancellationToken cancellationToken)
+        LanguagePair pair, IReadOnlyList<SourceText> texts, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        Calls.Add(texts);
+        Calls.Add([.. texts.Select(text => text.Text)]);
+        Sent.Add(texts);
 
         if (Throws is not null)
         {
             throw Throws;
         }
 
-        return Task.FromResult<IReadOnlyList<string>>([.. texts.Select(Translate)]);
+        return Task.FromResult<IReadOnlyList<string>>([.. texts.Select(text => Translate(text.Text))]);
     }
 
     private string Translate(string text) =>

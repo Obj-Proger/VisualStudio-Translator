@@ -57,7 +57,7 @@ public sealed class LlamaTranslationProviderTests : IDisposable
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     private Task<IReadOnlyList<string>> TranslateAsync(params string[] texts) =>
-        _provider.TranslateAsync(EnglishToRussian, texts, Token);
+        _provider.TranslateAsync(EnglishToRussian, [.. texts.Select(SourceText.FromString)], Token);
 
     [Fact]
     public void Info_IsTheLocalProvider()

@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Text;
 using VisualStudioTranslator.Core.Languages;
 
 namespace VisualStudioTranslator.Engine.LocalTranslation.Llama;
@@ -17,10 +18,17 @@ internal static class TranslationPrompt
     /// Goes into the provider's revision. Change it with any change to the wording: the same text can then
     /// translate differently, and what was cached under the old wording must not be served as current.
     /// </summary>
-    public const string Version = "4";
+    public const string Version = "5";
+
+    // The longest piece of code named under "Tags:"; a longer one is cut, since only its gist helps the reading.
+    private const int MaxCodeLength = 80;
 
     /// <param name="text">The segment, with its markup already written as tags (see <see cref="MarkupTags"/>).</param>
-    public static string Build(LanguagePair pair, string text)
+    /// <param name="codes">The code each <c>&lt;xN/&gt;</c> tag stands for, by N, so the model knows what the sentence
+    /// is about: "a copy of &lt;x0/&gt;" reads otherwise as a copy of anything.</param>
+    /// <param name="context">The paragraphs around the segment, to be read and not translated.</param>
+    public static string Build(
+        LanguagePair pair, string text, IReadOnlyDictionary<int, string>? codes = null, string? context = null)
     {
         string target = LanguageName(pair.Target);
         bool sourceKnown = pair.Source != LanguageTag.Undetermined;
@@ -42,9 +50,22 @@ internal static class TranslationPrompt
               "translate the phrase and keep both tags around its translation.\n"
             : string.Empty;
 
+        string legend = Legend(text, codes);
+        string legendRule = legend.Length > 0
+            ? "- The lines under \"Tags:\" say which code each <xN/> tag stands for. Read the sentence with that code in " +
+              "mind, so each word relates to it as in the original, but write the tag itself, not the code.\n"
+            : string.Empty;
+
+        bool hasContext = !string.IsNullOrWhiteSpace(context);
+        string contextNote = hasContext
+            ? "The text is one paragraph of a longer documentation comment. The paragraphs around it are given between " +
+              "the lines \"Context:\" and \"End of context.\" only to help understand it: do not translate them.\n\n"
+            : string.Empty;
+
         return
             role +
             $"Translate the text that follows the line \"Text:\" into {target}.\n\n" +
+            contextNote +
             "Rules:\n" +
             "- Translate faithfully and completely. Do not omit, add or explain anything.\n" +
             "- Do not translate code: identifiers, names of types, members and parameters, and keywords such as true, false " +
@@ -56,9 +77,42 @@ internal static class TranslationPrompt
             "every subject and object the original sentence has.\n" +
             $"- Write natural, grammatical {target}: words agree in gender, number and case.\n" +
             tagRule +
+            legendRule +
             alreadyRule +
-            $"- Output only the {target} translation, with no notes and no added quotes or formatting.\n\n" +
+            $"- Output only the {target} translation of the text, with no notes and no added quotes or formatting.\n\n" +
+            (hasContext ? "Context:\n" + context!.Trim() + "\nEnd of context.\n\n" : string.Empty) +
+            legend +
             "Text:\n" + text;
+    }
+
+    // "Tags:" and a line for each stand-alone tag the text holds, such as "<x0/> = sourceFolder", or nothing.
+    private static string Legend(string text, IReadOnlyDictionary<int, string>? codes)
+    {
+        if (codes is null || codes.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        StringBuilder legend = new();
+
+        foreach (KeyValuePair<int, string> code in codes.OrderBy(pair => pair.Key))
+        {
+            string tag = "<x" + code.Key.ToString(CultureInfo.InvariantCulture) + "/>";
+            if (!text.Contains(tag, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            string written = string.Join(" ", code.Value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+            if (written.Length > MaxCodeLength)
+            {
+                written = written[..MaxCodeLength] + "…";
+            }
+
+            legend.Append(tag).Append(" = ").Append(written).Append('\n');
+        }
+
+        return legend.Length > 0 ? "Tags:\n" + legend + "\n" : string.Empty;
     }
 
     // "Russian" for "ru", "Portuguese (Brazil)" for "pt-BR". A tag the system has no name for is used as it is.

@@ -68,6 +68,23 @@ public sealed class ChatCompletionTranslatorTests : IDisposable
     }
 
     [Fact]
+    public async Task TranslateAsync_SendsTheCodeOfEachTagAndTheParagraphsAround()
+    {
+        _server.Answer("Гарантирует, что копия <x0/> существует.");
+        SourceText source = new("Ensures a copy of ⟦0⟧ exists.")
+        {
+            Codes = new Dictionary<int, string> { [0] = "sourceFolder" },
+            Context = "The folder to copy.",
+        };
+
+        string translated = await _translator.TranslateAsync(EnglishToRussian, source, Token);
+
+        SentPrompt().Should().Be(TranslationPrompt.Build(
+            EnglishToRussian, "Ensures a copy of <x0/> exists.", source.Codes, source.Context));
+        translated.Should().Be("Гарантирует, что копия ⟦0⟧ существует.");
+    }
+
+    [Fact]
     public async Task TranslateAsync_AsksForTheSameAnswerEveryTime()
     {
         _server.Answer("Получает имя.");

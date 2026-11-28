@@ -23,6 +23,8 @@ public interface ITranslationProvider
     /// <summary>
     /// Translates <paramref name="texts"/> and returns one result per input, in the same order.
     /// <list type="bullet">
+    /// <item>Each text comes with the code its tokens stand for and the paragraphs around it
+    /// (<see cref="SourceText"/>), to read it by; only <see cref="SourceText.Text"/> is translated.</item>
     /// <item>The texts may contain placeholder tokens like <c>⟦0⟧</c>, which must come back
     /// unchanged. A provider cannot guarantee that, so
     /// <see cref="Quality.TranslationValidator"/> checks every result.</item>
@@ -32,11 +34,11 @@ public interface ITranslationProvider
     /// is the caller's job.</item>
     /// <item>Failure is reported as <see cref="TranslationProviderException"/>, cancellation
     /// as <see cref="OperationCanceledException"/>; nothing else escapes.</item>
-    /// <item>The texts are the user's code comments: an implementation must not log or keep
-    /// them beyond the call.</item>
+    /// <item>The texts, their code and their context are the user's code comments: an implementation
+    /// must not log or keep them beyond the call.</item>
     /// <item>It may be called from several threads at once.</item>
     /// </list>
     /// </summary>
     Task<IReadOnlyList<string>> TranslateAsync(
-        LanguagePair pair, IReadOnlyList<string> texts, CancellationToken cancellationToken);
+        LanguagePair pair, IReadOnlyList<SourceText> texts, CancellationToken cancellationToken);
 }

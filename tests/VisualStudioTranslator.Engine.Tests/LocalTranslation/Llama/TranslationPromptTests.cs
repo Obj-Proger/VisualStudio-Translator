@@ -7,6 +7,8 @@ namespace VisualStudioTranslator.Engine.Tests.LocalTranslation.Llama;
 
 public sealed class TranslationPromptTests
 {
+    private static readonly LanguagePair EnglishToRussian = LanguagePair.Create("en", "ru")!;
+
     private static string Build(string source, string target, string text = "Gets the name.") =>
         TranslationPrompt.Build(LanguagePair.Create(source, target)!, text);
 
@@ -86,5 +88,54 @@ public sealed class TranslationPromptTests
     public void Build_SameInput_GivesTheSamePrompt()
     {
         Build("en", "ru").Should().Be(Build("en", "ru"));
+    }
+
+    [Fact]
+    public void Build_Codes_AreNamedUnderTheirTagsBeforeTheText()
+    {
+        string prompt = TranslationPrompt.Build(
+            EnglishToRussian,
+            "Ensures a copy of <x0/> exists in <x1/>.",
+            new Dictionary<int, string> { [0] = "sourceFolder", [1] = "deploymentsRoot" });
+
+        prompt.Should().Contain("Tags:\n<x0/> = sourceFolder\n<x1/> = deploymentsRoot\n\nText:\n")
+            .And.Contain("write the tag itself, not the code");
+    }
+
+    [Fact]
+    public void Build_CodeOfATagTheTextDoesNotHold_IsLeftOut()
+    {
+        TranslationPrompt.Build(EnglishToRussian, "Returns <x1/>.", new Dictionary<int, string> { [0] = "a", [1] = "count" })
+            .Should().Contain("<x1/> = count").And.NotContain("<x0/> = a");
+    }
+
+    [Fact]
+    public void Build_LongCode_IsCut()
+    {
+        string code = new('a', 200);
+
+        TranslationPrompt.Build(EnglishToRussian, "Returns <x0/>.", new Dictionary<int, string> { [0] = code })
+            .Should().Contain("<x0/> = " + new string('a', 80) + "…\n").And.NotContain(new string('a', 81));
+    }
+
+    [Fact]
+    public void Build_NoCodes_HasNoTagList()
+    {
+        Build("en", "ru", "Returns <x0/>.").Should().NotContain("Tags:");
+    }
+
+    [Fact]
+    public void Build_Context_IsGivenBeforeTheTextNotToBeTranslated()
+    {
+        string prompt = TranslationPrompt.Build(EnglishToRussian, "Gets the name.", context: "The person to greet.");
+
+        prompt.Should().Contain("Context:\nThe person to greet.\nEnd of context.\n\nText:\nGets the name.")
+            .And.Contain("do not translate them");
+    }
+
+    [Fact]
+    public void Build_NoContext_DoesNotMentionIt()
+    {
+        Build("en", "ru").Should().NotContain("Context:").And.NotContain("End of context");
     }
 }
