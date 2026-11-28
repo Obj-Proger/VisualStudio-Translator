@@ -27,6 +27,14 @@ public sealed class TranslationPromptTests
     }
 
     [Fact]
+    public void Build_AsksForProgrammingTermsAndKeepsNamesAndSubjects()
+    {
+        Build("en", "ru").Should().Contain("in their programming sense")
+            .And.Contain("Keep the names of products and components")
+            .And.Contain("Write natural, grammatical Russian");
+    }
+
+    [Fact]
     public void Build_SourceKnown_HasNoRuleForTextAlreadyInTheTarget()
     {
         Build("en", "ru").Should().NotContain("already written");

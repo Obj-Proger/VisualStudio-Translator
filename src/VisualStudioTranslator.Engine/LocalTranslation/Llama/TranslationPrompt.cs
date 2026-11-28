@@ -17,7 +17,7 @@ internal static class TranslationPrompt
     /// Goes into the provider's revision. Change it with any change to the wording: the same text can then
     /// translate differently, and what was cached under the old wording must not be served as current.
     /// </summary>
-    public const string Version = "3";
+    public const string Version = "4";
 
     /// <param name="text">The segment, with its markup already written as tags (see <see cref="MarkupTags"/>).</param>
     public static string Build(LanguagePair pair, string text)
@@ -49,6 +49,12 @@ internal static class TranslationPrompt
             "- Translate faithfully and completely. Do not omit, add or explain anything.\n" +
             "- Do not translate code: identifiers, names of types, members and parameters, and keywords such as true, false " +
             "and null stay exactly as written.\n" +
+            "- The text documents code and is read in a code editor such as Visual Studio. Translate technical words in " +
+            $"their programming sense, with the terms programmers writing in {target} use: a run of text is a piece of " +
+            "text, not a launch; a tooltip is the editor's popup hint.\n" +
+            "- Keep the names of products and components, such as Visual Studio, Quick Info or Engine, as written, and keep " +
+            "every subject and object the original sentence has.\n" +
+            $"- Write natural, grammatical {target}: words agree in gender, number and case.\n" +
             tagRule +
             alreadyRule +
             $"- Output only the {target} translation, with no notes and no added quotes or formatting.\n\n" +
