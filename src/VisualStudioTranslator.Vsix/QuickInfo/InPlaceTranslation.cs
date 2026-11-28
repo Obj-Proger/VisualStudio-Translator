@@ -33,9 +33,15 @@ internal sealed class InPlaceTranslation
     /// <summary>Puts the translation in place of every line, or, if any line cannot be found, changes nothing.</summary>
     /// <param name="own">An element of this extension's in the tooltip, which tells which tooltip it is.</param>
     /// <returns>The change made, or <see langword="null"/> when nothing was changed.</returns>
-    public static InPlaceTranslation? TryApply(DependencyObject own, IReadOnlyList<TranslatedLine> lines)
+    public static InPlaceTranslation? TryApply(DependencyObject own, IReadOnlyList<TranslatedLine> lines) =>
+        Apply([.. TooltipVisuals.TextBlocks(own)], lines);
+
+    /// <summary>The same in a popup another component draws, such as signature help, under <paramref name="root"/>.</summary>
+    public static InPlaceTranslation? TryApplyWithin(DependencyObject root, IReadOnlyList<TranslatedLine> lines) =>
+        Apply([.. TooltipVisuals.Within(root)], lines);
+
+    private static InPlaceTranslation? Apply(List<TextBlock> blocks, IReadOnlyList<TranslatedLine> lines)
     {
-        List<TextBlock> blocks = [.. TooltipVisuals.TextBlocks(own)];
         HashSet<TextBlock> taken = [];
         List<Swap> swaps = [];
 

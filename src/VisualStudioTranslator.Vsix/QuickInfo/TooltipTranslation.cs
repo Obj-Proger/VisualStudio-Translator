@@ -11,7 +11,6 @@ using Microsoft.VisualStudio.Text.Adornments;
 using VisualStudioTranslator.Core.Documentation;
 using VisualStudioTranslator.Vsix.Resources;
 using VisualStudioTranslator.Vsix.Service;
-using VisualStudioTranslator.Vsix.Translation;
 
 namespace VisualStudioTranslator.Vsix.QuickInfo;
 
@@ -217,13 +216,7 @@ internal sealed class TooltipTranslation
     {
         try
         {
-            IReadOnlyList<IReadOnlyList<TooltipRun>> runs = [.. prose.Select(line => line.Runs)];
-            string documentation = DocumentationXmlWriter.Write(TooltipText.ToDocument(runs));
-
-            DocumentModel? translated = await DocumentationTranslator.Shared.TranslateAsync(documentation).ConfigureAwait(false);
-            IReadOnlyList<TranslatedLine> result = translated is null
-                ? []
-                : Pair(lines, prose, TooltipText.FromDocument(runs, translated));
+            IReadOnlyList<TranslatedLine> result = await LineTranslation.TranslateAsync(lines, prose).ConfigureAwait(false);
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -304,61 +297,6 @@ internal sealed class TooltipTranslation
         text.SetResourceReference(TextBlock.FontSizeProperty, VsFonts.EnvironmentFontSizeKey);
         return text;
     }
-
-    // The translated lines that differ from their originals, each with the caption it stood under.
-    private static List<TranslatedLine> Pair(
-        IReadOnlyList<TooltipLine> lines, IReadOnlyList<TooltipLine> prose, IReadOnlyList<IReadOnlyList<TranslatedPiece>?> translated)
-    {
-        List<TranslatedLine> result = [];
-
-        for (int index = 0; index < prose.Count; index++)
-        {
-            if (translated[index] is not { } pieces)
-            {
-                continue;
-            }
-
-            TranslatedLine line = new(prose[index], pieces, CaptionOf(lines, prose[index]));
-
-            if (!string.Equals(Normalize(line.Text), Normalize(line.Original.Text), StringComparison.Ordinal))
-            {
-                result.Add(line);
-            }
-        }
-
-        return result;
-    }
-
-    // The line above, blank lines aside, when it is a caption such as "Returns:" rather than prose.
-    private static TooltipLine? CaptionOf(IReadOnlyList<TooltipLine> lines, TooltipLine line)
-    {
-        int index = IndexOf(lines, line) - 1;
-        while (index >= 0 && string.IsNullOrWhiteSpace(lines[index].Text))
-        {
-            index--;
-        }
-
-        TooltipLine? above = index >= 0 ? lines[index] : null;
-
-        return above is not null && !TooltipText.IsProse(above.Runs) && above.Text.TrimEnd().EndsWith(":", StringComparison.Ordinal)
-            ? above
-            : null;
-    }
-
-    private static int IndexOf(IReadOnlyList<TooltipLine> lines, TooltipLine line)
-    {
-        for (int index = 0; index < lines.Count; index++)
-        {
-            if (ReferenceEquals(lines[index], line))
-            {
-                return index;
-            }
-        }
-
-        return -1;
-    }
-
-    private static string Normalize(string text) => string.Join(" ", text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
     // The words in the grey of code the compiler leaves out, over the strip: present, but not yet the thing itself.
     // A translation that is to take the original's place shows the strip alone.
