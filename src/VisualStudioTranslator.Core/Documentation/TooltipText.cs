@@ -140,7 +140,7 @@ public static class TooltipText
             }
             else
             {
-                pieces.Add(new TranslatedPiece(TextOf(inline)));
+                pieces.Add(new TranslatedPiece(Unbroken(TextOf(inline))));
             }
         }
 
@@ -201,6 +201,25 @@ public static class TooltipText
         {
             inlines.Add(new TextRun { Text = text.Substring(at) });
         }
+    }
+
+    // The translation as one line: a line break the model put in, which the original line does not have where it put
+    // it, would break the line in the middle, or leave a list item's bullet alone above its text.
+    private static string Unbroken(string text)
+    {
+        string unbroken = LineBreak.Replace(text, " ");
+
+        if (text.Length > 0 && text[0] is '\r' or '\n')
+        {
+            unbroken = unbroken.TrimStart();
+        }
+
+        if (text.Length > 0 && text[text.Length - 1] is '\r' or '\n')
+        {
+            unbroken = unbroken.TrimEnd();
+        }
+
+        return unbroken;
     }
 
     private static int FindGroup(List<Piece> groups, bool[] used, string text)

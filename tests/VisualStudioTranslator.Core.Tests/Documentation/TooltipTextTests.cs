@@ -159,6 +159,25 @@ public sealed class TooltipTextTests
     }
 
     [Fact]
+    public void FromDocument_LineBreaksTheTranslationAdded_AreGone()
+    {
+        IReadOnlyList<TooltipRun> line = [Text("• the code in a line stays the same.")];
+        DocumentModel translated = new()
+        {
+            Summary = new Section
+            {
+                Blocks =
+                [
+                    new Paragraph { Inlines = [new TextRun { Text = "\n• код в строке\n  остаётся прежним.\n" }] },
+                ],
+            },
+        };
+
+        string.Concat(TooltipText.FromDocument([line], translated).Single()!.Select(piece => piece.Text))
+            .Should().Be("• код в строке остаётся прежним.");
+    }
+
+    [Fact]
     public void FromDocument_CodeTheTranslationMoved_StillFindsItsRuns()
     {
         IReadOnlyList<TooltipRun> line = [Code("Count"), Text(" is never negative, and "), Code("Length"), Text(" neither.")];
