@@ -40,6 +40,18 @@ public static class TooltipText
 
     private static readonly Regex Word = new(@"\p{L}{2,}", RegexOptions.Compiled);
     private static readonly Regex Whitespace = new(@"\s+", RegexOptions.Compiled);
+    private static readonly Regex WordsInARow = new(@"\p{L}+[ \u00A0]+\p{L}+", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Whether the line's text holds two words in a row, with nothing but a space between them, as a sentence does and
+    /// a signature does not: in a signature drawn with only some of its names coloured, the plain names stand apart,
+    /// with code, a colon or a comma between them ("clamp: value: 'a -> minimum: 'a").
+    /// </summary>
+    public static bool HasSentence(IReadOnlyList<TooltipRun> line)
+    {
+        string text = string.Join("\n", line.Select(run => run.IsCode ? string.Empty : run.Text));
+        return WordsInARow.IsMatch(Quoted.Replace(text, "\n"));
+    }
 
     /// <summary>Whether the line holds prose to translate.</summary>
     public static bool IsProse(IReadOnlyList<TooltipRun> line)

@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
 using Microsoft.VisualStudio.Text.Adornments;
 using TooltipRun = VisualStudioTranslator.Core.Documentation.TooltipRun;
 
@@ -24,17 +25,18 @@ internal static class ScreenText
     public static IReadOnlyList<TooltipLine> Read(DependencyObject own, IReadOnlyList<TooltipLine> known) =>
         Read(TooltipVisuals.TextBlocks(own), known, codeByLook: false);
 
-    /// <param name="codeByLook">Whether a run drawn in a colour or weight of its own is code: true for a popup that
-    /// shows signatures among its text, where every run would otherwise read as text.</param>
+    /// <param name="codeByLook">Whether a run drawn in a colour other than the popup's text, or in bold, is code: true
+    /// for a popup that shows signatures among its text, where every run would otherwise read as text.</param>
     public static IReadOnlyList<TooltipLine> Read(IEnumerable<TextBlock> blocks, IReadOnlyList<TooltipLine> known, bool codeByLook)
     {
         HashSet<string> read = [.. known.Select(line => line.Text)];
+        List<TextBlock> visible = [.. blocks.Where(block => block.IsVisible)];
+        Color? text = codeByLook ? TooltipVisuals.TextColour(visible) : null;
         List<TooltipLine> lines = [];
 
-        foreach (TextBlock block in blocks)
+        foreach (TextBlock block in visible)
         {
-            if (!block.IsVisible
-                || Line(block, codeByLook) is not { } line
+            if (Line(block, codeByLook, text) is not { } line
                 || string.IsNullOrWhiteSpace(line.Text)
                 || !read.Add(line.Text))
             {
@@ -47,21 +49,21 @@ internal static class ScreenText
         return lines;
     }
 
-    private static TooltipLine? Line(TextBlock block, bool codeByLook)
+    private static TooltipLine? Line(TextBlock block, bool codeByLook, Color? text)
     {
         List<ClassifiedTextRun> original = [];
         List<TooltipRun> runs = [];
 
         foreach (Inline inline in block.Inlines)
         {
-            if (TooltipVisuals.TextOf(inline) is not { } text)
+            if (TooltipVisuals.TextOf(inline) is not { } part)
             {
                 return null;
             }
 
-            original.Add(new ClassifiedTextRun(Text, text));
-            bool code = TooltipVisuals.IsLink(inline) || (codeByLook && TooltipVisuals.LooksLikeCode(inline, block));
-            runs.Add(new TooltipRun(text, code));
+            original.Add(new ClassifiedTextRun(Text, part));
+            bool code = TooltipVisuals.IsLink(inline) || (codeByLook && TooltipVisuals.LooksLikeCode(inline, text));
+            runs.Add(new TooltipRun(part, code));
         }
 
         return runs.Count > 0 ? new TooltipLine(original, runs) : null;

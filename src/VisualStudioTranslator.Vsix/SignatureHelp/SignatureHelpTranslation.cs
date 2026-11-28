@@ -56,10 +56,11 @@ internal sealed class SignatureHelpTranslationSource : ISignatureHelpSource
 /// The translation of one signature help popup, the one that shows a method's signatures and documentation while its
 /// arguments are typed. Language services fill it in their own ways, and some keep its documentation to themselves,
 /// so it is read off the screen, as tooltips drawn by an extension's own element are: once the popup has drawn its
-/// text, and again whenever it redraws it for another signature or parameter. Runs in a colour or weight of their own
-/// are code, so a signature stays as it is. There is no room in the popup for anything of the extension's, so the
-/// translation always takes the place of the original lines, without a link back; where the lines cannot be found
-/// exactly, the popup is left as it is.
+/// text, and again whenever it redraws it for another signature or parameter. Runs in a colour other than the popup's
+/// text, or in bold, are code, and only lines with two words in a row are sentences
+/// (<see cref="TooltipText.HasSentence"/>), so a signature stays as it is. There is no room in the popup for anything
+/// of the extension's, so the translation always takes the place of the original lines, without a link back; where
+/// the lines cannot be found exactly, the popup is left as it is.
 /// </summary>
 internal sealed class SignatureHelpTranslation
 {
@@ -70,6 +71,8 @@ internal sealed class SignatureHelpTranslation
     private ISignature? _signature;
     private DispatcherTimer? _readTimer;
     private bool _enabled;
+    private string? _lastDescription;
+    private int _descriptions;
     private int _generation;
 
     public SignatureHelpTranslation(ISignatureHelpSession session)
@@ -197,17 +200,27 @@ internal sealed class SignatureHelpTranslation
 
         try
         {
-            if (!_enabled || _session.IsDismissed || _presenter?.SurfaceElement is not { } surface)
+            if (!_enabled || _session.IsDismissed)
             {
                 return;
             }
 
+            if (_presenter?.SurfaceElement is not { } surface)
+            {
+                DescribeOnce($"no popup to read: the presenter is {_session.Presenter?.GetType().FullName ?? "none"}");
+                return;
+            }
+
             IReadOnlyList<TooltipLine> lines = ScreenText.Read(TooltipVisuals.Within(surface), [], codeByLook: true);
-            List<TooltipLine> prose = [.. lines.Where(line => TooltipText.IsProse(line.Runs))];
+            List<TooltipLine> prose = [.. lines.Where(line => TooltipText.IsProse(line.Runs) && TooltipText.HasSentence(line.Runs))];
 
             if (prose.Count > 0)
             {
                 _ = TranslateAsync(surface, lines, prose, ++_generation);
+            }
+            else
+            {
+                DescribeOnce($"nothing to translate in {lines.Count} lines of {surface.GetType().FullName}: {Describe(lines)}");
             }
         }
         catch (Exception ex)
@@ -239,6 +252,27 @@ internal sealed class SignatureHelpTranslation
         {
             DiagnosticLog.Error(Source, $"Translating signature help failed: {ex}");
         }
+    }
+
+    // What a popup that is left untranslated holds, so a language service drawn in a way this does not expect can be
+    // told from the log: each line, with its code in brackets. A few times a popup at most, and not twice alike.
+    private void DescribeOnce(string what)
+    {
+        const int MaxDescriptions = 3;
+        if (_descriptions < MaxDescriptions && what != _lastDescription)
+        {
+            _descriptions++;
+            _lastDescription = what;
+            DiagnosticLog.Info(Source, $"Signature help left as it is, {what}");
+        }
+    }
+
+    private static string Describe(IReadOnlyList<TooltipLine> lines)
+    {
+        const int MaxLength = 400;
+        string text = string.Join(" | ", lines.Select(line =>
+            string.Concat(line.Runs.Select(run => run.IsCode ? $"[{run.Text}]" : run.Text))));
+        return text.Length <= MaxLength ? text : text.Substring(0, MaxLength) + "...";
     }
 
     private void StopReadTimer()

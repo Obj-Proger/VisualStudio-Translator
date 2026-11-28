@@ -39,6 +39,40 @@ public sealed class TooltipTextTests
     }
 
     [Fact]
+    public void HasSentence_Documentation_IsTrue()
+    {
+        TooltipText.HasSentence(Documentation).Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasSentence_ParameterDescriptionAfterItsName_IsTrue()
+    {
+        TooltipText.HasSentence([Code("value:"), Text(" The value to restrict.")]).Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasSentence_SignatureWithPlainNames_IsFalse()
+    {
+        TooltipText.HasSentence(
+        [
+            Code("val"), Text(" clamp: "), Code("value"), Text(": 'a -> minimum: 'a -> maximum: 'a"),
+        ]).Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasSentence_WordsPartedByCode_IsFalse()
+    {
+        TooltipText.HasSentence([Text("clamp_value("), Code("int"), Text(" minimum, "), Code("int"), Text(" maximum)")])
+            .Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasSentence_WordsPartedByAQuotedName_IsFalse()
+    {
+        TooltipText.HasSentence([Text("value 'a' minimum")]).Should().BeFalse();
+    }
+
+    [Fact]
     public void ToDocument_CodeRunsNextToEachOther_AreOneCodeSpan()
     {
         Paragraph paragraph = (Paragraph)TooltipText.ToDocument([Documentation]).Summary!.Blocks.Single();

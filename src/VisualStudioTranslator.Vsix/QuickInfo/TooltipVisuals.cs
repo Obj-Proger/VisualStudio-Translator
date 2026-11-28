@@ -86,16 +86,36 @@ internal static class TooltipVisuals
     }
 
     /// <summary>
-    /// Whether the run is drawn as code rather than as text: bold, as a parameter's name is, or in a colour of its own
-    /// rather than the colour of the text around it, as names and keywords are.
+    /// The colour the text of a popup is drawn in: the one most of its letters have, since the documentation is longer
+    /// than the signature above it. Taken from the runs rather than from the text blocks, because some language
+    /// services colour every run, the text too, with a colour a little other than the popup's own.
     /// </summary>
-    public static bool LooksLikeCode(Inline inline, TextBlock block) =>
-        inline.FontWeight.ToOpenTypeWeight() > FontWeights.Normal.ToOpenTypeWeight()
-        || !SameColour(inline.Foreground, block.Foreground);
+    public static Color? TextColour(IEnumerable<TextBlock> blocks)
+    {
+        Dictionary<Color, int> letters = [];
 
-    private static bool SameColour(Brush? one, Brush? other) =>
-        ReferenceEquals(one, other)
-        || (one is SolidColorBrush first && other is SolidColorBrush second && first.Color == second.Color);
+        foreach (TextBlock block in blocks)
+        {
+            foreach (Inline inline in block.Inlines)
+            {
+                if (inline.Foreground is SolidColorBrush brush && TextOf(inline) is { } text)
+                {
+                    letters.TryGetValue(brush.Color, out int count);
+                    letters[brush.Color] = count + text.Count(char.IsLetter);
+                }
+            }
+        }
+
+        return letters.Count == 0 ? null : letters.OrderByDescending(pair => pair.Value).First().Key;
+    }
+
+    /// <summary>
+    /// Whether the run is drawn as code rather than as text: bold, as a parameter's name is, or in a colour other than
+    /// <paramref name="text"/>, the colour of the popup's text (<see cref="TextColour"/>), as names and keywords are.
+    /// </summary>
+    public static bool LooksLikeCode(Inline inline, Color? text) =>
+        inline.FontWeight.ToOpenTypeWeight() > FontWeights.Normal.ToOpenTypeWeight()
+        || (text is { } colour && inline.Foreground is SolidColorBrush brush && brush.Color != colour);
 
     /// <summary>Whether the run is a link, or holds one.</summary>
     public static bool IsLink(Inline inline) => inline switch
